@@ -1,3 +1,33 @@
+# Azure Data Center Attestation Primitives (DCAP) Client
+
+This library serves as a quoting data provider plugin for the
+[Intel SGX Data Center Attestation Primitives (DCAP)](https://github.com/intel/SGXDataCenterAttestationPrimitives).
+Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP
+Client. This provider plugin is then used to fetch certain data files, such as platform certificates,
+TCB structures, and revocation lists.
+
+The Azure DCAP Client fetches artifacts from an Azure-internal caching service. The purpose of this
+cache is to ensure that all Azure hosts always have the correct data available and local within
+the Azure cloud.
+
+The data serviced by the Azure cache are all Intel-originating, and are rooted to Intel CAs. The
+cache serves simply to ensure that there are no external dependencies on Intel for workloads running
+on Azure infrastructure.
+
+# Building
+
+## Linux
+
+See [src/Linux/README.MD](src/Linux/README.MD).
+
+## Windows
+
+See [src/Windows/README.MD](src/Windows/README.MD).
+
+# See Also
+
+1. [Open Enclave](https://github.com/Microsoft/openenclave), a cross-platform library for authoring
+   enclaves.
 
 # Contributing
 

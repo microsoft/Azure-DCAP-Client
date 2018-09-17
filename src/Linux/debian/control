@@ -1,0 +1,15 @@
+Source: azquotprov
+Section: unknown
+Priority: optional
+Maintainer: "Seth Moore" <sethmo@microsoft.com>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+Homepage: <insert the upstream URL, if relevant>
+
+Package: azquotprov
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenEnclave pluging for Azure Integration
+ This package, specifically libquotprov.so, is loaded by OpenEnclave to
+ locate certification and revocation information for SGX platforms hosted
+ by Microsoft Azure.

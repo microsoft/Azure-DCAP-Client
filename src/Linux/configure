@@ -1,0 +1,35 @@
+#!/bin/sh
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+fetch_from_intel_github()
+{
+    path=$1
+    file=`basename $path`
+    echo "Fetching $file from Intel(R) GitHub project"
+    wget -q -N -P ext/intel https://raw.githubusercontent.com/intel/$path
+}
+
+
+# This is very brute-force because curl-config --cflags appears to
+# return an empty string on some platforms, meaning we have to resort
+# to drastic measures to locate curl.h.
+echo "Searching for curl.h"
+CURLHFILE=`find /usr -name curl.h -print -quit`
+if [ -z "$CURLHFILE" ]; then
+    echo "ERROR: could not find curl.h"
+    exit 1
+fi
+
+CURLHPATH=`dirname $CURLHFILE`
+cat Makefile.in | sed "s|##CURLINC##|$CURLHPATH|g" > Makefile
+
+fetch_from_intel_github SGXDataCenterAttestationPrimitives/c27fe49f499104eda9364c7b048aff290fa00766/QuoteGeneration/psw/quote_wrapper/common/inc/sgx_ql_lib_common.h
+fetch_from_intel_github linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_report.h
+fetch_from_intel_github linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_key.h
+fetch_from_intel_github linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_attributes.h
+
+echo ""
+echo "---------------------------------------"
+echo "To build: make"
+echo "To install to /usr/local: make install"

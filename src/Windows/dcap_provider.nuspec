@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Microsoft.Azure.OpenEnclave.PlatformQuoteProvider</id>
+    <version>0.10</version>
+    <title>Plugin for use with OpenEnclave to get platform certification info.</title>
+    <authors>Microsoft Corporation</authors>
+    <owners>Microsoft Corporation</owners>
+    <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
+    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This plugin is intended to be included with SGX-based applications using OpenEnclave on Azure. OpenEnclave will load the plugin and use it to locate certificates and revocation data for SGX platforms.</description>
+    <copyright>Copyright ©2018 Microsoft Corporation. All rights reserved.</copyright>
+
+    <dependencies>
+      <dependency id="curl" version="7.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\..\..\out\retail-amd64\dcap_quoteprov\dcap_quoteprov.dll" target="lib" />
+    <file src="..\..\..\out\retail-amd64\dcap_quoteprov\dcap_quoteprov.pdb" target="lib" />
+    <file src="PlatformQuoteProvider.h" target="inc" />
+  </files>
+</package>
