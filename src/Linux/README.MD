@@ -3,7 +3,7 @@
 ## Prerequisites
 This library requires libcurl built with OpenSSL support.
 
-* On Ubuntu/Debian: `sudo apt install libcurl-openssl-dev`
+* On Ubuntu/Debian: `sudo apt install libcurl4-openssl-dev libssl-dev`
 
 ## Quick Start
 ```
