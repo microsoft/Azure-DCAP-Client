@@ -1,0 +1,14 @@
+Source: az-dcap-client
+Section: unknown
+Priority: optional
+Maintainer: Microsoft Corp
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+
+Package: az-dcap-client
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Intel(R) SGX DCAP plugin for Azure Integration
+ This package, specifically dcap_quoteprov.so, is loaded by the DCAP stack to
+ locate certification and revocation information for SGX platforms hosted
+ by Microsoft Azure.
