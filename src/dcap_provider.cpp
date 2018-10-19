@@ -231,7 +231,14 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
 //
 static std::string build_cert_chain(const curl_easy& curl)
 {
-    const std::string leaf_cert(curl.get_body().begin(), curl.get_body().end());
+    std::string leaf_cert(curl.get_body().begin(), curl.get_body().end());
+
+    // The cache service does not return a newline in the response body.
+    // Add one here so that we have a properly formatted chain.
+    if (leaf_cert.back() != '\n')
+    {
+        leaf_cert += "\n";
+    }
 
     const std::string chain =
         curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
