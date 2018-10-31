@@ -86,6 +86,10 @@ std::unique_ptr<curl_easy> curl_easy::create(
     easy->set_opt_or_throw(CURLOPT_HEADERFUNCTION, &header_callback);
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
+    // verify the server's SSL certificate
+    easy->set_opt_or_throw(CURLOPT_SSL_VERIFYPEER, 1L);
+    // verify server certificate's name against host name
+    easy->set_opt_or_throw(CURLOPT_SSL_VERIFYHOST, 2L);
 
 #ifdef __LINUX__
     if (!ca_cert.empty())

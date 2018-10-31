@@ -36,6 +36,9 @@ constexpr char PCK_CERT_ISSUER_CHAIN[] = "SGX-PCK-Certificate-Issuer-Chain";
 constexpr char CRL_ISSUER_CHAIN[] = "SGX-PCK-CRL-Issuer-Chain";
 constexpr char TCB_INFO_ISSUER_CHAIN[] = "SGX-TCB-Info-Issuer-Chain";
 constexpr char TCB_INFO[] = "SGX-TCBm";
+constexpr char CONTENT_TYPE[] = "Content-Type";
+constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
+constexpr char REQUEST_ID[] = "Request-ID";
 };
 
 static constexpr char CYBERTRUST_ROOT_CERT[] =
@@ -67,10 +70,15 @@ static char DEFAULT_CERT_URL[] =
     "https://pck-cache-prod-webapp-eastus.azurewebsites.net/sgx/certificates";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
+// Before Azure PCK service supports caching qe identity, fetch directly from
+// Intel server for now
+static char QE_IDENTITY_URL[] =
+    "https://api.trustedservices.intel.com/sgx/certification/v1/qe/identity";
+
 #if 0 // Flip this to true for easy local debugging
 static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
 {
-    printf("[%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
+    printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
 }
 
 static sgx_ql_logging_function_t logger_callback = DefaultLogCallback;
@@ -97,6 +105,53 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
 
         logger_callback(level, message);
     }
+}
+
+//
+// get raw value for header_item item if exists
+//
+sgx_plat_error_t get_raw_header(
+    const curl_easy& curl,
+    const std::string header_item,
+    std::string* out_header)
+{
+    const std::string* raw_header = curl.get_header(header_item);
+    if (raw_header == nullptr)
+    {
+        log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item);
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    if (out_header != nullptr)
+    {
+        *out_header = *raw_header;
+        log(SGX_QL_LOG_INFO,
+            "raw_header %s:[%s]\n",
+            header_item,
+            raw_header->c_str());
+    }
+    return SGX_PLAT_ERROR_OK;
+}
+
+//
+// get unescape value for header_item item if exists
+//
+sgx_plat_error_t get_unescape_header(
+    const curl_easy& curl,
+    const std::string header_item,
+    std::string* unescape_header)
+{
+    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
+    std::string raw_header;
+
+    result = get_raw_header(curl, header_item, &raw_header);
+    if (result != SGX_PLAT_ERROR_OK)
+        return result;
+    *unescape_header = curl.unescape(raw_header);
+    log(SGX_QL_LOG_INFO,
+        "unescape_header %s:[%s]\n",
+        header_item,
+        unescape_header->c_str());
+    return result;
 }
 
 //
@@ -243,6 +298,7 @@ static std::string build_cert_chain(const curl_easy& curl)
     const std::string chain =
         curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
 
+    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]\n", chain.c_str());
     return leaf_cert + chain;
 }
 
@@ -292,12 +348,12 @@ static sgx_plat_error_t parse_svn_values(
     const curl_easy& curl,
     sgx_ql_config_t* quote_config)
 {
-    const std::string* tcb = curl.get_header(headers::TCB_INFO);
-    if (tcb == nullptr)
-    {
-        log(SGX_QL_LOG_ERROR, "TCB info header is missing.");
-        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-    }
+    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
+
+    std::string tcb;
+    result = get_raw_header(curl, headers::TCB_INFO, &tcb);
+    if (result != SGX_PLAT_ERROR_OK)
+        return result;
 
     // string size == byte size * 2 (for hex-encoding)
     static constexpr size_t CPUSVN_SIZE =
@@ -305,13 +361,13 @@ static sgx_plat_error_t parse_svn_values(
     static constexpr size_t PCESVN_SIZE =
         2 * sizeof(quote_config->cert_pce_isv_svn);
 
-    if (tcb->size() != CPUSVN_SIZE + PCESVN_SIZE)
+    if (tcb.size() != CPUSVN_SIZE + PCESVN_SIZE)
     {
         log(SGX_QL_LOG_ERROR, "TCB info header is malformed.");
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
 
-    const std::string cpu_svn_string = tcb->substr(0, CPUSVN_SIZE);
+    const std::string cpu_svn_string = tcb.substr(0, CPUSVN_SIZE);
     log(SGX_QL_LOG_INFO, "CPU SVN: '%s'.", cpu_svn_string.c_str());
     if (const sgx_plat_error_t err =
             hex_decode(cpu_svn_string, &quote_config->cert_cpu_svn))
@@ -320,7 +376,7 @@ static sgx_plat_error_t parse_svn_values(
         return err;
     }
 
-    const std::string pce_svn_string = tcb->substr(CPUSVN_SIZE, PCESVN_SIZE);
+    const std::string pce_svn_string = tcb.substr(CPUSVN_SIZE, PCESVN_SIZE);
     log(SGX_QL_LOG_INFO, "PCE ISV SVN: '%s'.", pce_svn_string.c_str());
     if (const sgx_plat_error_t err =
             hex_decode(pce_svn_string, &quote_config->cert_pce_isv_svn))
@@ -390,8 +446,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     try
     {
-        *out = cert_base_url + "/pckcrl?uri=" + escaped +
-               '&' + API_VERSION;
+        *out = cert_base_url + "/pckcrl?uri=" + escaped + '&' + API_VERSION;
         curl_free(escaped);
         return SGX_PLAT_ERROR_OK;
     }
@@ -409,8 +464,8 @@ static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
     return cert_base_url + "/tcb/" +
-           format_as_hex_string(params.fmspc, params.fmspc_size) +
-           '?' + API_VERSION;
+           format_as_hex_string(params.fmspc, params.fmspc_size) + '?' +
+           API_VERSION;
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
@@ -433,10 +488,11 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         curl->perform();
 
         // we better get TCB info and the cert chain, else we cannot provide the
-        // required
-        // data to the caller.
-        if (!curl->get_header(headers::TCB_INFO) ||
-            !curl->get_header(headers::PCK_CERT_ISSUER_CHAIN))
+        // required data to the caller.
+        if ((get_raw_header(*curl, headers::TCB_INFO, nullptr) !=
+             SGX_PLAT_ERROR_OK) ||
+            (get_raw_header(*curl, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
+             SGX_PLAT_ERROR_OK))
         {
             log(SGX_QL_LOG_ERROR, "Required HTTP headers are missing.");
             return SGX_QL_ERROR_UNEXPECTED;
@@ -489,9 +545,10 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
     const sgx_ql_get_revocation_info_params_t* params,
     sgx_ql_revocation_info_t** pp_revocation_info)
 {
+    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
+
     // Requests for higher versions work, but this function will ONLY return the
-    // highest
-    // version of output that it supports.
+    // highest version of output that it supports.
     if (params->version < SGX_QL_REVOCATION_INFO_VERSION_1)
     {
         log(SGX_QL_LOG_ERROR,
@@ -545,18 +602,15 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
             total_crl_size =
                 safe_add(total_crl_size, 1); // include null terminator
 
-            const std::string* crl_issuer_chain_raw_header =
-                crl_operation->get_header(headers::CRL_ISSUER_CHAIN);
-            if (crl_issuer_chain_raw_header == nullptr)
-            {
-                log(SGX_QL_LOG_ERROR,
-                    "Header '%s' is missing.",
-                    headers::PCK_CERT_ISSUER_CHAIN);
-                return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-            }
+            std::string crl_issuer_chain_header;
+            result = get_unescape_header(
+                *crl_operation,
+                headers::CRL_ISSUER_CHAIN,
+                &crl_issuer_chain_header);
+            if (result != SGX_PLAT_ERROR_OK)
+                return result;
 
-            crl_issuer_chains.push_back(
-                crl_operation->unescape(*crl_issuer_chain_raw_header));
+            crl_issuer_chains.push_back(crl_issuer_chain_header);
             total_crl_issuer_chain_size = safe_add(
                 total_crl_issuer_chain_size, crl_issuer_chains.back().size());
             total_crl_issuer_chain_size = safe_add(
@@ -573,18 +627,13 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
             tcb_info_operation->perform();
 
             tcb_info = tcb_info_operation->get_body();
-            const std::string* tcb_issuer_chain_raw_header =
-                tcb_info_operation->get_header(headers::TCB_INFO_ISSUER_CHAIN);
-            if (tcb_issuer_chain_raw_header == nullptr)
-            {
-                log(SGX_QL_LOG_ERROR,
-                    "Header '%s' is missing.",
-                    headers::TCB_INFO_ISSUER_CHAIN);
-                return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-            }
 
-            tcb_issuer_chain =
-                tcb_info_operation->unescape(*tcb_issuer_chain_raw_header);
+            result = get_unescape_header(
+                *tcb_info_operation,
+                headers::TCB_INFO_ISSUER_CHAIN,
+                &tcb_issuer_chain);
+            if (result != SGX_PLAT_ERROR_OK)
+                return result;
         }
 
         // last, pack it all up into a single buffer
@@ -713,4 +762,113 @@ extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
 {
     logger_callback = logger;
     return SGX_PLAT_ERROR_OK;
+}
+
+extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
+    sgx_qe_identity_info_t** pp_qe_identity_info)
+{
+    sgx_qe_identity_info_t* p_qe_identity_info = NULL;
+    sgx_plat_error_t result;
+    char* buffer = nullptr;
+
+    if (!pp_qe_identity_info)
+    {
+        log(SGX_QL_LOG_ERROR, "Invalid parameter pp_qe_identity_info");
+        return SGX_PLAT_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        std::vector<uint8_t> identity_info;
+        std::string issuer_chain;
+        std::string request_id;
+        size_t total_buffer_size = 0;
+        const auto curl =
+            curl_easy::create(QE_IDENTITY_URL, CYBERTRUST_ROOT_CERT);
+        log(SGX_QL_LOG_INFO,
+            "Fetching QE Identity from remote server: '%s'.",
+            QE_IDENTITY_URL);
+        curl->perform();
+
+        // issuer chain
+        result =
+            get_unescape_header(*curl, headers::QE_ISSUER_CHAIN, &issuer_chain);
+        if (result != SGX_PLAT_ERROR_OK)
+            return result;
+
+        result = get_unescape_header(*curl, headers::REQUEST_ID, &request_id);
+        if (result != SGX_PLAT_ERROR_OK)
+            return result;
+
+        // read body
+        identity_info = curl->get_body();
+        std::string qe_identity(
+            curl->get_body().begin(), curl->get_body().end());
+
+        // Calculate total buffer size
+        total_buffer_size =
+            safe_add(sizeof(sgx_qe_identity_info_t), identity_info.size());
+        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
+        total_buffer_size = safe_add(total_buffer_size, issuer_chain.size());
+        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
+
+        buffer = new char[total_buffer_size];
+        memset(buffer, 0, total_buffer_size);
+
+#ifndef NDEBUG
+        const char* buffer_end = buffer + total_buffer_size;
+#endif
+        // fill in the qe info
+        p_qe_identity_info = reinterpret_cast<sgx_qe_identity_info_t*>(buffer);
+
+        // advance to the end of the sgx_qe_identity_info_t structure
+        buffer += sizeof(*p_qe_identity_info);
+
+        // qe_id_info
+        p_qe_identity_info->qe_id_info_size =
+            static_cast<uint32_t>(identity_info.size());
+        p_qe_identity_info->qe_id_info = buffer;
+        memcpy(
+            p_qe_identity_info->qe_id_info,
+            identity_info.data(),
+            identity_info.size());
+        buffer += identity_info.size() + 1; // skip null terminator
+        assert(buffer < buffer_end);
+
+        // set issuer_chain info
+        p_qe_identity_info->issuer_chain_size =
+            static_cast<uint32_t>(issuer_chain.size());
+        p_qe_identity_info->issuer_chain = buffer;
+        buffer += issuer_chain.size() + 1; // skip null terminator
+        assert(buffer == buffer_end);
+        memcpy(
+            p_qe_identity_info->issuer_chain,
+            issuer_chain.data(),
+            issuer_chain.size());
+        *pp_qe_identity_info = p_qe_identity_info;
+    }
+    catch (std::bad_alloc&)
+    {
+        return SGX_PLAT_ERROR_OUT_OF_MEMORY;
+    }
+    catch (std::overflow_error& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
+        *pp_qe_identity_info = nullptr;
+        return SGX_PLAT_ERROR_OVERFLOW;
+    }
+    catch (curl_easy::error& error)
+    {
+        return error.code == CURLE_HTTP_RETURNED_ERROR
+                   ? SGX_PLAT_NO_DATA_FOUND
+                   : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+
+    return SGX_PLAT_ERROR_OK;
+}
+
+extern "C" void sgx_free_qe_identity_info(
+    sgx_qe_identity_info_t* p_qe_identity_info)
+{
+    delete[] reinterpret_cast<uint8_t*>(p_qe_identity_info);
 }
