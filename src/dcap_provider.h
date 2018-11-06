@@ -51,12 +51,10 @@ typedef struct _sgx_ql_crl_data_t
 typedef struct _sgx_ql_revocation_info_t
 {
     sgx_ql_revocation_info_version_t version;
-
-    uint32_t tcb_info_size;         // size of tcb_info
-    char* tcb_info;                 // Intel-signed TCB info structure (JSON)
+    uint32_t tcb_info_size; // size of tcb_info
+    char* tcb_info; // null-terminated Intel-signed TCB info structure (JSON)
     uint32_t tcb_issuer_chain_size; // size of issuer chain for TCB info
-    char* tcb_issuer_chain;         // PEM-encoded certificate chain
-
+    char* tcb_issuer_chain;  // null-terminated PEM-encoded certificate chain
     uint32_t crl_count;      // number of CRL data blobs returned
     sgx_ql_crl_data_t* crls; // array of CRL data blobs
 } sgx_ql_revocation_info_t;
@@ -67,6 +65,24 @@ typedef sgx_plat_error_t (*sgx_ql_get_revocation_info_t)(
 
 typedef void (*sgx_ql_free_revocation_info_t)(
     sgx_ql_revocation_info_t* p_revocation_info);
+
+/*****************************************************************************
+ * Data types and interfaces for getting qe identity info
+ ****************************************************************************/
+
+typedef struct _sgx_qe_identity_info_t
+{
+    uint32_t qe_id_info_size; // size of qe identity
+    char* qe_id_info; // null-terminated qe identity info structure (JSON)
+    uint32_t issuer_chain_size; // size of issuer chain for qe identity info
+    char* issuer_chain;         // null-terminated PEM-encoded certificate chain
+} sgx_qe_identity_info_t;
+
+typedef sgx_plat_error_t (*sgx_get_qe_identity_info_t)(
+    sgx_qe_identity_info_t** pp_qe_identity_info);
+
+typedef void (*sgx_free_qe_identity_info_t)(
+    sgx_qe_identity_info_t* p_qe_identity_info);
 
 /*****************************************************************************
  * Data types and interfaces for configuration the platform quote provider

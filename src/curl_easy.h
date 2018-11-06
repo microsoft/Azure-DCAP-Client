@@ -79,16 +79,12 @@ class curl_easy
         void* ssl_context,
         void* user_data);
 
-    static void throw_on_error(
-        CURLcode code,
-        const std::string& function)
+    static void throw_on_error(CURLcode code, const std::string& function)
     {
         throw_on_error(code, function.c_str());
     }
 
-    static void throw_on_error(
-        CURLcode code,
-        const char* function);
+    static void throw_on_error(CURLcode code, const char* function);
 
     // Wraps curl_easy_setopt operations which are not ever supposed to fail.
     template <typename T>
