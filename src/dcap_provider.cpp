@@ -41,29 +41,6 @@ constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 };
 
-static constexpr char CYBERTRUST_ROOT_CERT[] =
-    "-----BEGIN CERTIFICATE-----\n"
-    "MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n"
-    "RTESMBAGA1UEChMJQmFsdGltb3JlMRMwEQYDVQQLEwpDeWJlclRydXN0MSIwIAYD\n"
-    "VQQDExlCYWx0aW1vcmUgQ3liZXJUcnVzdCBSb290MB4XDTAwMDUxMjE4NDYwMFoX\n"
-    "DTI1MDUxMjIzNTkwMFowWjELMAkGA1UEBhMCSUUxEjAQBgNVBAoTCUJhbHRpbW9y\n"
-    "ZTETMBEGA1UECxMKQ3liZXJUcnVzdDEiMCAGA1UEAxMZQmFsdGltb3JlIEN5YmVy\n"
-    "VHJ1c3QgUm9vdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMEuyKr\n"
-    "mD1X6CZymrV51Cni4eiVgLGw41uOKymaZN+hXe2wCQVt2yguzmKiYv60iNoS6zjr\n"
-    "IZ3AQSsBUnuId9Mcj8e6uYi1agnnc+gRQKfRzMpijS3ljwumUNKoUMMo6vWrJYeK\n"
-    "mpYcqWe4PwzV9/lSEy/CG9VwcPCPwBLKBsua4dnKM3p31vjsufFoREJIE9LAwqSu\n"
-    "XmD+tqYF/LTdB1kC1FkYmGP1pWPgkAx9XbIGevOF6uvUA65ehD5f/xXtabz5OTZy\n"
-    "dc93Uk3zyZAsuT3lySNTPx8kmCFcB5kpvcY67Oduhjprl3RjM71oGDHweI12v/ye\n"
-    "jl0qhqdNkNwnGjkCAwEAAaNFMEMwHQYDVR0OBBYEFOWdWTCCR1jMrPoIVDaGezq1\n"
-    "BE3wMBIGA1UdEwEB/wQIMAYBAf8CAQMwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\n"
-    "DQEBBQUAA4IBAQCFDF2O5G9RaEIFoN27TyclhAO992T9Ldcw46QQF+vaKSm2eT92\n"
-    "9hkTI7gQCvlYpNRhcL0EYWoSihfVCr3FvDB81ukMJY2GQE/szKN+OMY3EU/t3Wgx\n"
-    "jkzSswF07r51XgdIGn9w/xZchMB5hbgF/X++ZRGjD8ACtPhSNzkE1akxehi/oCr0\n"
-    "Epn3o0WC4zxe9Z2etciefC7IpJ5OCBRLbf1wbWsaY71k5h+3zvDyny67G7fyUIhz\n"
-    "ksLi4xaNmjICq44Y3ekQEe5+NauQrz4wlHrQMz2nZQ/1/I6eYs9HRCwBXbsdtTLS\n"
-    "R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n"
-    "-----END CERTIFICATE-----";
-
 constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
 
 static char DEFAULT_CERT_URL[] =
@@ -481,7 +458,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         p_quote_config->version = SGX_QL_CONFIG_VERSION_1;
 
         const std::string cert_url = build_pck_cert_url(*p_pck_cert_id);
-        const auto curl = curl_easy::create(cert_url, CYBERTRUST_ROOT_CERT);
+        const auto curl = curl_easy::create(cert_url);
         log(SGX_QL_LOG_INFO,
             "Fetching quote config from remote server: '%s'.",
             cert_url.c_str());
@@ -591,8 +568,7 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
                 return err;
             }
 
-            const auto crl_operation =
-                curl_easy::create(crl_url, CYBERTRUST_ROOT_CERT);
+            const auto crl_operation = curl_easy::create(crl_url);
             log(SGX_QL_LOG_INFO,
                 "Fetching revocation info from remote server: '%s'",
                 crl_url.c_str());
@@ -622,8 +598,7 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         std::string tcb_issuer_chain;
         if (params->fmspc_size > 0)
         {
-            const auto tcb_info_operation = curl_easy::create(
-                build_tcb_info_url(*params), CYBERTRUST_ROOT_CERT);
+            const auto tcb_info_operation = curl_easy::create(build_tcb_info_url(*params));
             tcb_info_operation->perform();
 
             tcb_info = tcb_info_operation->get_body();
@@ -783,8 +758,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         std::string issuer_chain;
         std::string request_id;
         size_t total_buffer_size = 0;
-        const auto curl =
-            curl_easy::create(QE_IDENTITY_URL, CYBERTRUST_ROOT_CERT);
+        const auto curl = curl_easy::create(QE_IDENTITY_URL);
         log(SGX_QL_LOG_INFO,
             "Fetching QE Identity from remote server: '%s'.",
             QE_IDENTITY_URL);

@@ -36,9 +36,7 @@ class curl_easy
         char function[128]{};
     };
 
-    static std::unique_ptr<curl_easy> create(
-        const std::string& url,
-        const std::string& ca_cert = "");
+    static std::unique_ptr<curl_easy> create(const std::string& url);
 
     ~curl_easy();
 
@@ -102,7 +100,6 @@ class curl_easy
     CURL* handle = nullptr;
     std::vector<uint8_t> body;
     std::map<std::string, std::string> headers;
-    std::string ca_cert;
 };
 
 #endif
