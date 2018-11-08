@@ -66,9 +66,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(
-    const std::string& url,
-    const std::string& ca_cert)
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -86,23 +84,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
     easy->set_opt_or_throw(CURLOPT_HEADERFUNCTION, &header_callback);
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
-    // verify the server's SSL certificate
-    easy->set_opt_or_throw(CURLOPT_SSL_VERIFYPEER, 1L);
-    // verify server certificate's name against host name
-    easy->set_opt_or_throw(CURLOPT_SSL_VERIFYHOST, 2L);
-
-#ifdef __LINUX__
-    if (!ca_cert.empty())
-    {
-        easy->ca_cert = ca_cert;
-        easy->set_opt_or_throw(CURLOPT_SSL_CTX_FUNCTION, ssl_context_callback);
-        easy->set_opt_or_throw(CURLOPT_SSL_CTX_DATA, easy.get());
-    }
-#else // ifdef __LINUX__
-    // TODO: Support HTTPS on Windows
-    // https://github.com/Microsoft/Azure-DCAP-Client/issues/1
-    UNREFERENCED_PARAMETER(ca_cert);
-#endif
 
     return easy;
 }
@@ -260,85 +241,6 @@ size_t curl_easy::header_callback(
     static_cast<curl_easy*>(user_data)->headers[field_name] = content;
 
     return buffer_size;
-}
-
-CURLcode curl_easy::ssl_context_callback(
-    CURL* curl,
-    void* ssl_context,
-    void* user_data)
-{
-#ifdef __LINUX__
-    ERR_clear_error();
-
-    CURLcode retval = CURLE_ABORTED_BY_CALLBACK;
-    curl_easy* self = static_cast<curl_easy*>(user_data);
-    X509* cert = nullptr;
-    BIO* bio = nullptr;
-
-    X509_STORE* store = SSL_CTX_get_cert_store((SSL_CTX*)ssl_context);
-    if (store == nullptr)
-    {
-        log(SGX_QL_LOG_ERROR, "Error fetching cert store.");
-        goto done;
-    }
-
-    bio = BIO_new_mem_buf(self->ca_cert.c_str(), -1);
-    if (bio == nullptr)
-    {
-        retval = CURLE_OUT_OF_MEMORY;
-        goto done;
-    }
-
-    if (!PEM_read_bio_X509(bio, &cert, 0, NULL))
-    {
-        log(SGX_QL_LOG_ERROR, "Error parsing CA cert.");
-        goto done;
-    }
-
-    if (!X509_STORE_add_cert(store, cert))
-    {
-        unsigned long error = ERR_peek_last_error();
-
-        // Ignore  X509_R_CERT_ALREADY_IN_HASH_TABLE, because that means the
-        // cert is already loaded into the store.
-        if (ERR_GET_LIB(error) != ERR_LIB_X509 ||
-            ERR_GET_REASON(error) != X509_R_CERT_ALREADY_IN_HASH_TABLE)
-        {
-            goto done;
-        }
-
-        ERR_clear_error();
-    }
-
-    retval = CURLE_OK;
-
-done:
-    if (retval != CURLE_OK)
-    {
-        if (unsigned long error = ERR_peek_last_error())
-        {
-            char error_string[256];
-            ERR_error_string_n(error, error_string, sizeof(error_string));
-            log(SGX_QL_LOG_ERROR, "OpenSSL Error: '%s'", error_string);
-        }
-    }
-
-    X509_free(cert);
-    BIO_free(bio);
-    ERR_clear_error();
-
-    return retval;
-
-#else // ifdef __LINUX__
-
-    // TODO: Support HTTPS on Windows
-    // https://github.com/Microsoft/Azure-DCAP-Client/issues/1
-    UNREFERENCED_PARAMETER(curl);
-    UNREFERENCED_PARAMETER(ssl_context);
-    UNREFERENCED_PARAMETER(user_data);
-
-    return CURLE_OK;
-#endif
 }
 
 void curl_easy::throw_on_error(CURLcode code, const char* function)
