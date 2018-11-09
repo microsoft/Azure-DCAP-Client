@@ -1,0 +1,77 @@
+// oetools-image:tag  Docker image from OE Jenkins Registry
+OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.7"
+
+// Tests running on hardware with custom path to libdcap_quoteprov.so
+def coffeelakeTest(String compiler, String suite) {
+    stage("Coffeelake $compiler SGX1-FLC $suite") {
+        node('hardware') {
+            checkout scm
+            
+            // Generate libdcap_quoteprov.so in the $WORKSPACE/src/Linux folder
+            def buildImage = docker.build("az-dcap-builder", '.jenkins')
+            buildImage.inside {
+                dir('src/Linux') {
+                    sh './configure'
+                    sh 'make'
+                }
+            }
+            
+            // Run hardware tests using custom LD_PRELOAD
+            dir('openenclave') {
+                git url: 'https://github.com/Microsoft/openenclave.git'
+                timeout(15) {
+                    sh "LD_PRELOAD=$WORKSPACE/src/Linux/libdcap_quoteprov.so ./scripts/test-build-config -p  SGX1FLC -b $suite -d --compiler=$compiler"
+                }
+            }
+        }
+    }
+}
+
+// Test using oetools-test Docker image with /dev/sgx mounted inside container
+def nonSimulationTest() {
+    stage('Non-Simulation Container SGX1-FLC RelWithDebInfo') {
+        node('hardware') {
+            checkout scm
+            
+            // build az-dcap-client deb package
+            def buildImage = docker.build("az-dcap-builder", '.jenkins')
+            buildImage.inside {
+                dir('src/Linux') {
+                    sh 'dpkg-buildpackage -us -uc' 
+                }
+            }
+
+            // Clone openenclave repo
+            dir('openenclave') {
+                git url: 'https://github.com/Microsoft/openenclave.git'
+            }
+            /*
+            Use oetools-azure image from OE Jenkins Registry
+            Remove the installed az-dcap-client from the container
+            Install az-dcap-client in the container from the deb package we previously built
+            */
+            docker.image(OETOOLS_IMAGE).inside('-u root --privileged -v /dev/sgx:/dev/sgx') {
+                dir('src') {
+                    sh 'apt remove -y az-dcap-client'
+                    sh 'dpkg -i *.deb'
+                }
+                dir('openenclave') {
+                    timeout(15) {
+                        sh './scripts/test-build-config -p SGX1FLC -b RelWithDebInfo -d'
+                        // We need to remove the build folder because is created as root
+                        sh 'rm -rf ./build'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+parallel "Non-Simulation Container SGX1-FLC RelWithDebInfo" : { nonSimulationTest() },
+         "Coffeelake clang-7 SGX1-FLC Debug" : { coffeelakeTest('clang-7', 'Debug') },
+         "Coffeelake clang-7 SGX1-FLC Release" : { coffeelakeTest('clang-7', 'Release') },
+         "Coffeelake clang-7 SGX1-FLC RelWithDebInfo" : { coffeelakeTest('clang-7', 'RelWithDebinfo') },
+         "Coffeelake gcc SGX1-FLC Debug" : { coffeelakeTest('gcc', 'Debug') },
+         "Coffeelake gcc SGX1-FLC Release" : { coffeelakeTest('gcc', 'Release') },
+         "Coffeelake gcc SGX1-FLC RelWithDebInfo" : { coffeelakeTest('gcc', 'RelWithDebInfo') }
