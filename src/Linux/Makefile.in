@@ -17,6 +17,9 @@ PROVIDER_LDFLAGS = -shared $(shell curl-config --libs)
 $(PROVIDER_LIB): $(PROVIDER_OBJ)
 	g++ $^ $(PROVIDER_LDFLAGS) -o $@
 
+ci-testing: $(PROVIDER_OBJ)
+	g++ $^ $(PROVIDER_LDFLAGS) -o $(PROVIDER_LIB) -Wl,--soname=$(PROVIDER_LIB)
+
 all: $(PROVIDER_LIB)
 
 clean:

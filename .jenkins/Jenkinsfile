@@ -12,7 +12,7 @@ def coffeelakeTest(String compiler, String suite) {
             buildImage.inside {
                 dir('src/Linux') {
                     sh './configure'
-                    sh 'make'
+                    sh 'make ci-testing'
                 }
             }
             
