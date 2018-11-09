@@ -24,6 +24,9 @@ See [src/Linux/README.MD](src/Linux/README.MD).
 
 See [src/Windows/README.MD](src/Windows/README.MD).
 
+## CI
+   Pull request will be run againt OpenEnclave repo as part this repo's CI test process
+
 # See Also
 
 1. [Open Enclave](https://github.com/Microsoft/openenclave), a cross-platform library for authoring
