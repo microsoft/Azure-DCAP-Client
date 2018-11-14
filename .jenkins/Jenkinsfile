@@ -20,7 +20,7 @@ def coffeelakeTest(String compiler, String suite) {
             dir('openenclave') {
                 git url: 'https://github.com/Microsoft/openenclave.git'
                 timeout(15) {
-                    sh "LD_LIBRARY_PATH=$WORKSPACE/src/Linux ./scripts/test-build-config -p  SGX1FLC -b $suite -d --compiler=$compiler"
+                    sh "LD_LIBRARY_PATH=$WORKSPACE/src/Linux LD_PRELOAD=$WORKSPACE/src/Linux/libdcap_quoteprov.so ./scripts/test-build-config -p  SGX1FLC -b $suite -d --compiler=$compiler"
                 }
             }
         }
