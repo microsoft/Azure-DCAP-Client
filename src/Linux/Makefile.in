@@ -3,13 +3,18 @@
 
 prefix = /usr/local
 
-INCLUDES = -I##CURLINC## -I. -Iext
-CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas
+INCLUDES = -I##CURLINC## -I. -I.. -Iext
+CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
 
-PROVIDER_SRC = ../dcap_provider.cpp ../curl_easy.cpp init.cpp 
+PROVIDER_SRC = ../dcap_provider.cpp ../curl_easy.cpp local_cache.cpp init.cpp
 PROVIDER_OBJ = $(PROVIDER_SRC:.cpp=.o)
 PROVIDER_LIB = libdcap_quoteprov.so # this name is dictated by Intel
-PROVIDER_LDFLAGS = -shared $(shell curl-config --libs)
+PROVIDER_LDFLAGS = -shared $(shell curl-config --libs) `pkg-config --libs openssl`
+
+TEST_SUITE = tests
+TEST_SUITE_SRC = ../UnitTests/main.cpp ../UnitTests/test_local_cache.cpp local_cache.cpp
+TEST_SUITE_OBJ = $(TEST_SUITE_SRC:.cpp=.o)
+TEST_SUITE_LDFLAGS = -ldl `pkg-config --libs openssl`
 
 .cpp.o:
 	g++ $(CFLAGS) -c $< -o $@
@@ -17,10 +22,16 @@ PROVIDER_LDFLAGS = -shared $(shell curl-config --libs)
 $(PROVIDER_LIB): $(PROVIDER_OBJ)
 	g++ $^ $(PROVIDER_LDFLAGS) -o $@
 
+$(TEST_SUITE): $(PROVIDER_LIB) $(TEST_SUITE_OBJ)
+	g++ $(CFLAGS) $(TEST_SUITE_OBJ) $(TEST_SUITE_LDFLAGS) -o $@
+
 all: $(PROVIDER_LIB)
 
 clean:
-	rm -rf $(PROVIDER_OBJ) $(PROVIDER_LIB) $(TESTS_OBJ) $(TESTS)
+	rm -rf $(PROVIDER_OBJ) $(PROVIDER_LIB) $(TEST_SUITE_OBJ) $(TEST_SUITE)
+
+check: $(TEST_SUITE)
+	LD_LIBRARY_PATH=`dirname $(PROVIDER_LIB)` ./$(TEST_SUITE)
 
 distclean: clean
 
