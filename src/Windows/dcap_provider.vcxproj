@@ -47,7 +47,7 @@
       <AdditionalIncludeDirectories>$(PkgCurl)\inc</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\ext;$(NugetMachineInstallRoot)\Json11.1.0.1\build</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..;$(MSBuildProjectDirectory)\ext;$(NugetMachineInstallRoot)\Json11.1.0.1\build</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -80,6 +80,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="local_cache.cpp" />
     <ClCompile Include="..\curl_easy.cpp" />
     <ClCompile Include="..\dcap_provider.cpp" />
   </ItemGroup>
