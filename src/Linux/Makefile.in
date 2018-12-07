@@ -31,7 +31,7 @@ clean:
 	rm -rf $(PROVIDER_OBJ) $(PROVIDER_LIB) $(TEST_SUITE_OBJ) $(TEST_SUITE)
 
 check: $(TEST_SUITE)
-	LD_LIBRARY_PATH=`dirname $(PROVIDER_LIB)` ./$(TEST_SUITE)
+    LD_LIBRARY_PATH=`dirname $(PROVIDER_LIB)` ./$(TEST_SUITE)
 
 distclean: clean
 
