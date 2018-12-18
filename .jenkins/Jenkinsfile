@@ -1,27 +1,30 @@
 // oetools-image:tag  Docker image from OE Jenkins Registry
-OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.7"
+OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.8"
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def coffeelakeTest(String compiler, String suite) {
     stage("Coffeelake $compiler SGX1-FLC $suite") {
         node('hardware') {
-            checkout scm
-            
-            // Generate libdcap_quoteprov.so in the $WORKSPACE/src/Linux folder
-            def buildImage = docker.build("az-dcap-builder", '.jenkins')
-            buildImage.inside {
-                dir('src/Linux') {
-                    sh './configure'
-                    sh 'make'
-                }
-            }
-            
-            // Run hardware tests using custom LD_PRELOAD
-            dir('openenclave') {
-                git url: 'https://github.com/Microsoft/openenclave.git'
-                timeout(15) {
-                    sh "LD_LIBRARY_PATH=$WORKSPACE/src/Linux ./scripts/test-build-config -p  SGX1FLC -b $suite -d --compiler=$compiler"
-                }
+            ws("$HOME/workspace/$JOB_NAME/$BUILD_ID") {
+              cleanWs()
+              checkout scm
+
+              // Generate libdcap_quoteprov.so in the $WORKSPACE/src/Linux folder
+              def buildImage = docker.build("az-dcap-builder", '.jenkins')
+              buildImage.inside {
+                  dir('src/Linux') {
+                      sh './configure'
+                      sh 'make'
+                  }
+              }
+
+              // Run hardware tests using custom LD_PRELOAD
+              dir('openenclave') {
+                  git url: 'https://github.com/Microsoft/openenclave.git'
+                  timeout(15) {
+                      sh "LD_LIBRARY_PATH=$WORKSPACE/src/Linux ./scripts/test-build-config -p  SGX1FLC -b $suite -d --compiler=$compiler"
+                  }
+              }
             }
         }
     }
@@ -31,13 +34,15 @@ def coffeelakeTest(String compiler, String suite) {
 def nonSimulationTest() {
     stage('Non-Simulation Container SGX1-FLC RelWithDebInfo') {
         node('hardware') {
+          ws("$HOME/workspace/$JOB_NAME/$BUILD_ID") {
+            cleanWs()
             checkout scm
-            
+
             // build az-dcap-client deb package
             def buildImage = docker.build("az-dcap-builder", '.jenkins')
             buildImage.inside {
                 dir('src/Linux') {
-                    sh 'dpkg-buildpackage -us -uc' 
+                    sh 'dpkg-buildpackage -us -uc'
                 }
             }
 
@@ -64,6 +69,7 @@ def nonSimulationTest() {
                 }
             }
         }
+      }
     }
 }
 
