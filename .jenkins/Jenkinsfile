@@ -74,10 +74,4 @@ def nonSimulationTest() {
 }
 
 
-parallel "Non-Simulation Container SGX1-FLC RelWithDebInfo" : { nonSimulationTest() },
-         "Coffeelake clang-7 SGX1-FLC Debug" : { coffeelakeTest('clang-7', 'Debug') },
-         "Coffeelake clang-7 SGX1-FLC Release" : { coffeelakeTest('clang-7', 'Release') },
-         "Coffeelake clang-7 SGX1-FLC RelWithDebInfo" : { coffeelakeTest('clang-7', 'RelWithDebinfo') },
-         "Coffeelake gcc SGX1-FLC Debug" : { coffeelakeTest('gcc', 'Debug') },
-         "Coffeelake gcc SGX1-FLC Release" : { coffeelakeTest('gcc', 'Release') },
-         "Coffeelake gcc SGX1-FLC RelWithDebInfo" : { coffeelakeTest('gcc', 'RelWithDebInfo') }
+parallel "Non-Simulation Container SGX1-FLC RelWithDebInfo" : { nonSimulationTest() }
