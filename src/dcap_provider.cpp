@@ -2,6 +2,7 @@
 
 #include "dcap_provider.h"
 #include "curl_easy.h"
+#include "local_cache.h"
 
 #include <cassert>
 #include <cstdarg>
@@ -39,6 +40,13 @@ constexpr char TCB_INFO[] = "SGX-TCBm";
 constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
+constexpr char CACHE_CONTROL[] = "Cache-Control";
+
+    namespace cache_control
+    {
+        // as of the initial API version, max-age is the only supported header
+        constexpr char MAX_AGE[] = "max-age";
+    };
 };
 
 constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
@@ -85,17 +93,38 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
 }
 
 //
+// need to implement
+//
+sgx_plat_error_t get_cache_max_age(
+    const curl_easy& curl,
+    time_t* max_age)
+{
+    if (max_age == nullptr)
+    {
+        return SGX_PLAT_ERROR_INVALID_PARAMETER;
+    }
+
+    // TODO:
+    //  Currently setting this value to zero, need to
+    //  determine better logic for determining age of
+    //  a cert within local cache.
+    *max_age = 0;
+
+    return SGX_PLAT_ERROR_OK;
+}
+
+//
 // get raw value for header_item item if exists
 //
 sgx_plat_error_t get_raw_header(
     const curl_easy& curl,
-    const std::string header_item,
+    const std::string& header_item,
     std::string* out_header)
 {
     const std::string* raw_header = curl.get_header(header_item);
     if (raw_header == nullptr)
     {
-        log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item);
+        log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     if (out_header != nullptr)
@@ -103,7 +132,7 @@ sgx_plat_error_t get_raw_header(
         *out_header = *raw_header;
         log(SGX_QL_LOG_INFO,
             "raw_header %s:[%s]\n",
-            header_item,
+            header_item.c_str(),
             raw_header->c_str());
     }
     return SGX_PLAT_ERROR_OK;
@@ -114,7 +143,7 @@ sgx_plat_error_t get_raw_header(
 //
 sgx_plat_error_t get_unescape_header(
     const curl_easy& curl,
-    const std::string header_item,
+    const std::string& header_item,
     std::string* unescape_header)
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
@@ -126,7 +155,7 @@ sgx_plat_error_t get_unescape_header(
     *unescape_header = curl.unescape(raw_header);
     log(SGX_QL_LOG_INFO,
         "unescape_header %s:[%s]\n",
-        header_item,
+        header_item.c_str(),
         unescape_header->c_str());
     return result;
 }
@@ -453,11 +482,18 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
     try
     {
-        auto p_quote_config = std::make_unique<sgx_ql_config_t>();
-        memset(p_quote_config.get(), 0, sizeof(*p_quote_config));
-        p_quote_config->version = SGX_QL_CONFIG_VERSION_1;
-
         const std::string cert_url = build_pck_cert_url(*p_pck_cert_id);
+
+        if (auto cache_hit = local_cache_get(cert_url))
+        {
+            // we could optimize out a memory allocation and copy here,
+            // but it's subtly tricky because it means we'd need to ensure
+            // the
+            *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
+            memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
+            return SGX_QL_SUCCESS;
+        }
+
         const auto curl = curl_easy::create(cert_url);
         log(SGX_QL_LOG_INFO,
             "Fetching quote config from remote server: '%s'.",
@@ -475,22 +511,55 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             return SGX_QL_ERROR_UNEXPECTED;
         }
 
-        if (const sgx_plat_error_t err =
-                parse_svn_values(*curl, p_quote_config.get()))
+        // figure out how long we should cache the data (if at all)
+        time_t max_age = 0;
+        if (get_cache_max_age(*curl, &max_age) != SGX_PLAT_ERROR_OK)
+        {
+            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
+            return SGX_QL_ERROR_UNEXPECTED;
+        }
+
+        // parse the SVNs into a local data structure so we can handle any parse
+        // errors before allocating the output buffer
+        sgx_ql_config_t temp_config{};
+        if (const sgx_plat_error_t err = parse_svn_values(*curl, &temp_config))
         {
             return convert_to_intel_error(err);
         }
 
-        std::string cert_data = build_cert_chain(*curl);
+        const std::string cert_data = build_cert_chain(*curl);
 
         // copy the null-terminator for convenience (less error-prone)
         const uint32_t cert_data_size =
             static_cast<uint32_t>(cert_data.size()) + 1;
-        p_quote_config->p_cert_data = new uint8_t[cert_data_size];
-        p_quote_config->cert_data_size = cert_data_size;
-        memcpy(p_quote_config->p_cert_data, cert_data.data(), cert_data_size);
 
-        *pp_quote_config = p_quote_config.release();
+        // allocate return value contiguously (makes caching easier)
+        const size_t buf_size = sizeof(sgx_ql_config_t) + cert_data_size;
+        uint8_t* buf = new uint8_t[buf_size];
+        memset(buf, 0, buf_size);
+
+#ifndef NDEBUG
+        const uint8_t* buf_end = buf + buf_size;
+#endif
+
+        *pp_quote_config = reinterpret_cast<sgx_ql_config_t*>(buf);
+        buf += sizeof(sgx_ql_config_t);
+        assert(buf <= buf_end);
+
+        (*pp_quote_config)->cert_cpu_svn = temp_config.cert_cpu_svn;
+        (*pp_quote_config)->cert_pce_isv_svn = temp_config.cert_pce_isv_svn;
+        (*pp_quote_config)->version = SGX_QL_CONFIG_VERSION_1;
+        (*pp_quote_config)->p_cert_data = buf;
+        (*pp_quote_config)->cert_data_size = cert_data_size;
+        memcpy((*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
+        buf += cert_data_size;
+        assert(buf == buf_end);
+
+        if (max_age > 0)
+        {
+            time_t expiry = time(nullptr) + max_age;
+            local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+        }
     }
     catch (std::bad_alloc&)
     {
@@ -509,11 +578,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 extern "C" quote3_error_t sgx_ql_free_quote_config(
     sgx_ql_config_t* p_quote_config)
 {
-    if (p_quote_config != nullptr)
-    {
-        delete[] p_quote_config->p_cert_data;
-        delete p_quote_config;
-    }
+    delete[] p_quote_config;
 
     return SGX_QL_SUCCESS;
 }
