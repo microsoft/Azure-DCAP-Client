@@ -4,7 +4,7 @@ OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.8"
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def coffeelakeTest(String compiler, String suite) {
     stage("Coffeelake $compiler SGX1-FLC $suite") {
-        node('hardware') {
+        node('ACC-1604') {
             ws("$HOME/workspace/$JOB_NAME/$BUILD_ID") {
               cleanWs()
               checkout scm
@@ -33,7 +33,7 @@ def coffeelakeTest(String compiler, String suite) {
 // Test using oetools-test Docker image with /dev/sgx mounted inside container
 def nonSimulationTest() {
     stage('Non-Simulation Container SGX1-FLC RelWithDebInfo') {
-        node('hardware') {
+        node('ACC-1604') {
           ws("$HOME/workspace/$JOB_NAME/$BUILD_ID") {
             cleanWs()
             checkout scm
