@@ -7,8 +7,10 @@
 
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <memory>
 #include <dlfcn.h>
+#include <tgmath.h>
 
 #include "intel/sgx_ql_lib_common.h"
 
@@ -78,8 +80,8 @@ static void GetCertsTest()
 
     // Setup the input (choose an arbitrary Azure server)
     uint8_t qe_id[16] = {
-        0x49, 0xed, 0xbe, 0x4e, 0xd9, 0x5f, 0x8b, 0xbb,
-        0x8d, 0x34, 0x9a, 0x7d, 0x8b, 0xae, 0x25, 0x1c
+        0x00, 0xbd, 0x4b, 0x28, 0x79, 0xd5, 0xa2, 0x76,
+        0x4a, 0x96, 0x4a, 0xb9, 0x90, 0x90, 0x8b, 0x67
     };
 
     sgx_cpu_svn_t cpusvn = {
@@ -151,6 +153,9 @@ static void GetCrlTest()
 
 extern void QuoteProvTests()
 {
+    std::clock_t start;
+    double duration_curl;
+    double duration_local;
     void* library = LoadFunctions();
 
     assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -158,18 +163,28 @@ extern void QuoteProvTests()
     //
     // First pass: Get the data from the service, no cache allowed
     //
-    sgx_ql_set_base_url("http://localhost");
+    sgx_ql_set_base_url("https://pck-cache-prod-webapp-eastus.azurewebsites.net/sgx/certificates");
     local_cache_clear();
+
+    start = std::clock();
     GetCertsTest();
+    duration_curl = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+
     GetCrlTest();
 
     //
-    // Second pass: Ensure that we ONLY get data from the cache by
-    // setting an invalid base URL.
+    // Second pass: Ensure that we ONLY get data from the cache
     //
-    sgx_ql_set_base_url("This is a totally bogus URL");
+    start = std::clock();
     GetCertsTest();
+    duration_local = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+
     GetCrlTest();
 
+    // Ensure that there is a signficiant enough difference between the cert fetch
+    // to the end point and cert fetch to local cache and that local cache call is
+    // fast enough
+    assert (fabs(duration_curl - duration_local) > 0.0001 && duration_local < 0.0001);
+    
     dlclose(library);
 }

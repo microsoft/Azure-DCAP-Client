@@ -93,7 +93,7 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
 }
 
 //
-// need to implement
+// determines the maximum age in local cache
 //
 sgx_plat_error_t get_cache_max_age(
     const curl_easy& curl,
@@ -104,11 +104,13 @@ sgx_plat_error_t get_cache_max_age(
         return SGX_PLAT_ERROR_INVALID_PARAMETER;
     }
 
-    // TODO:
-    //  Currently setting this value to zero, need to
-    //  determine better logic for determining age of
-    //  a cert within local cache.
-    *max_age = 0;
+    //
+    // currently set to persist all cached
+    // certs for exactly 1 day.
+    //
+    tm * max_age_s = localtime(max_age);
+    max_age_s->tm_mday += 1;
+    *max_age = mktime(max_age_s);
 
     return SGX_PLAT_ERROR_OK;
 }
