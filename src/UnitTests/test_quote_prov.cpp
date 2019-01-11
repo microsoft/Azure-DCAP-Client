@@ -184,7 +184,7 @@ extern void QuoteProvTests()
     // Ensure that there is a signficiant enough difference between the cert fetch
     // to the end point and cert fetch to local cache and that local cache call is
     // fast enough
-    assert (fabs(duration_curl - duration_local) > 0.0001 && duration_local < 0.0001);
+    assert (fabs(duration_curl - duration_local) > 0.0001 && duration_local < 0.001);
     
     dlclose(library);
 }

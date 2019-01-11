@@ -493,6 +493,11 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             // the
             *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
             memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
+
+            // re-aligning the p_cert_data pointer
+            (*pp_quote_config)->p_cert_data = (uint8_t *)(*pp_quote_config) +
+                sizeof(sgx_ql_config_t);
+            
             return SGX_QL_SUCCESS;
         }
 
