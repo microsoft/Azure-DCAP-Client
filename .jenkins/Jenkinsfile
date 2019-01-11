@@ -9,8 +9,11 @@ def coffeelakeTest(String compiler, String suite) {
               cleanWs()
               checkout scm
 
+              // Get Jenkins user and group for docker image
+              def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn)"
+
               // Generate libdcap_quoteprov.so in the $WORKSPACE/src/Linux folder
-              def buildImage = docker.build("az-dcap-builder", '.jenkins')
+              def buildImage = docker.build("az-dcap-builder", "${dockerBuildArgs} ${WORKSPACE}/.jenkins")
               buildImage.inside {
                   dir('src/Linux') {
                       sh './configure'
@@ -38,8 +41,11 @@ def nonSimulationTest() {
             cleanWs()
             checkout scm
 
+            // Get Jenkins user and group for docker image
+            def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn)"
+
             // build az-dcap-client deb package
-            def buildImage = docker.build("az-dcap-builder", '.jenkins')
+            def buildImage = docker.build("az-dcap-builder", "${dockerBuildArgs} ${WORKSPACE}/.jenkins")
             buildImage.inside {
                 dir('src/Linux') {
                     sh 'dpkg-buildpackage -us -uc'
