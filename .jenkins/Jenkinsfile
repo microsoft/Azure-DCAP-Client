@@ -1,5 +1,9 @@
 // oetools-image:tag  Docker image from OE Jenkins Registry
-OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.8"
+OETOOLS_REPO = "https://oejenkinscidockerregistry.azurecr.io"
+OETOOLS_REPO_CREDENTIAL_ID = "oejenkinscidockerregistry"
+OETOOLS_IMAGE = "oetools-azure:1.8"
+
+
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def coffeelakeTest(String compiler, String suite) {
@@ -55,16 +59,18 @@ def nonSimulationTest() {
             Remove the installed az-dcap-client from the container
             Install az-dcap-client in the container from the deb package we previously built
             */
-            docker.image(OETOOLS_IMAGE).inside('-u root --privileged -v /dev/sgx:/dev/sgx') {
-                dir('src') {
-                    sh 'apt remove -y az-dcap-client'
-                    sh 'dpkg -i *.deb'
-                }
-                dir('openenclave') {
-                    timeout(15) {
-                        sh './scripts/test-build-config -p SGX1FLC -b RelWithDebInfo -d'
-                        // We need to remove the build folder because is created as root
-                        sh 'rm -rf ./build'
+            docker.withRegistry(OETOOLS_REPO, OETOOLS_REPO_CREDENTIAL_ID) {
+                docker.image(OETOOLS_IMAGE).inside('-u root --privileged -v /dev/sgx:/dev/sgx') {
+                    dir('src') {
+                        sh 'apt remove -y az-dcap-client'
+                        sh 'dpkg -i *.deb'
+                    }
+                    dir('openenclave') {
+                        timeout(15) {
+                            sh './scripts/test-build-config -p SGX1FLC -b RelWithDebInfo -d'
+                            // We need to remove the build folder because is created as root
+                            sh 'rm -rf ./build'
+                        }
                     }
                 }
             }
