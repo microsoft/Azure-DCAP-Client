@@ -159,33 +159,6 @@ private:
 #undef RETRY_ON_EINTR
 };
 
-static std::string get_user_name()
-{
-    // sysconf could return -1, in which case we have to guess at the max size
-    size_t buf_size = std::max(sysconf(_SC_GETPW_R_SIZE_MAX), 128L);
-
-    int rc = 0;
-    do
-    {
-        std::vector<char> buf(buf_size);
-        passwd pwd{};
-        passwd* result = nullptr;
-        rc = getpwuid_r(geteuid(), &pwd, buf.data(), buf.size(), &result);
-
-        if (rc == 0)
-        {
-            return result->pw_name;
-        }
-        else if (rc == ERANGE)
-        {
-            buf_size *= 2;
-        }
-    } while (rc == ERANGE || rc == EINTR);
-
-    throw_errno("Error getting user name", rc);
-    return "";
-}
-
 static void make_dir(const std::string& dirname, mode_t mode)
 {
     struct stat buf{};
@@ -213,7 +186,7 @@ static void init_callback()
     const char * env_azdcapcache = ::getenv("AZDCAPCACHE");
     const std::string application_name("/.az-dcap-client/");
     
-    std::string dirname = "/var/tmp/";
+    std::string dirname;
 
     if (env_azdcapcache != 0 && (strcmp(env_azdcapcache,"") != 0))
     {
@@ -225,9 +198,10 @@ static void init_callback()
     }
     else
     {
-        dirname += get_user_name();
+        // Throwing exception if the expected HOME
+        // environment variable is not defined.
 
-        make_dir(dirname, 0777);
+        throw std::runtime_error("HOME and AZDCAPCACHE environment variables not defined");
     }
 
     dirname += application_name;
