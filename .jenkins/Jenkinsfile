@@ -1,6 +1,3 @@
-// oetools-image:tag  Docker image from OE Jenkins Registry
-OETOOLS_IMAGE = "oejenkinscidockerregistry.azurecr.io/oetools-azure:1.8"
-
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def coffeelakeTest(String compiler, String suite) {
     stage("Coffeelake $compiler SGX1-FLC $suite") {
@@ -51,11 +48,12 @@ def nonSimulationTest() {
                 git url: 'https://github.com/Microsoft/openenclave.git'
             }
             /*
-            Use oetools-azure image from OE Jenkins Registry
+            Use oetools-azure Dockerfile from Openenclave repository
             Remove the installed az-dcap-client from the container
             Install az-dcap-client in the container from the deb package we previously built
             */
-            docker.image(OETOOLS_IMAGE).inside('-u root --privileged -v /dev/sgx:/dev/sgx') {
+            def oetoolsImage = docker.build("oetools-test", "-f openenclave/.jenkins/Dockerfile ./openenclave")
+            oetoolsImage.inside('-u root --privileged -v /dev/sgx:/dev/sgx') {
                 dir('src') {
                     sh 'apt remove -y az-dcap-client'
                     sh 'dpkg -i *.deb'
