@@ -41,12 +41,6 @@ constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
-
-    namespace cache_control
-    {
-        // as of the initial API version, max-age is the only supported header
-        constexpr char MAX_AGE[] = "max-age";
-    };
 };
 
 constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
@@ -488,9 +482,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         if (auto cache_hit = local_cache_get(cert_url))
         {
-            // we could optimize out a memory allocation and copy here,
-            // but it's subtly tricky because it means we'd need to ensure
-            // the
             *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
             memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
 

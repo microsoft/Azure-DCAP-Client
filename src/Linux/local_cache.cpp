@@ -209,10 +209,29 @@ static void make_dir(const std::string& dirname, mode_t mode)
 
 static void init_callback()
 {
-    std::string dirname = "/var/tmp/az-dcap-cache/";
-    make_dir(dirname, 0777);
+    const char * env_home = ::getenv("HOME");
+    const char * env_azdcapcache = ::getenv("AZDCAPCACHE");
+    const std::string application_name("/.az-dcap-client/");
+    
+    std::string dirname = "/var/tmp/";
 
-    dirname += get_user_name();
+    if (env_azdcapcache != 0 && (strcmp(env_azdcapcache,"") != 0))
+    {
+        dirname = env_azdcapcache;
+    }
+    else if (env_home != 0 && (strcmp(env_home,"") != 0))
+    {
+        dirname = std::string(env_home);
+    }
+    else
+    {
+        dirname += get_user_name();
+
+        make_dir(dirname, 0777);
+    }
+
+    dirname += application_name;
+
     make_dir(dirname, 0700);
 
     g_cache_dirname = dirname;
