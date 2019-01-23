@@ -15,4 +15,5 @@ RUN apt-get update \
     debhelper \
     libcurl4-openssl-dev \
     libssl-dev \
+    pkg-config \
     wget

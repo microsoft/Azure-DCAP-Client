@@ -32,4 +32,5 @@ fetch_from_intel_github linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/commo
 echo ""
 echo "---------------------------------------"
 echo "To build: make"
+echo "To test: make check"
 echo "To install to /usr/local: make install"
