@@ -163,7 +163,7 @@ extern void QuoteProvTests()
     //
     // First pass: Get the data from the service, no cache allowed
     //
-    sgx_ql_set_base_url("https://pck-cache-prod-webapp-eastus.azurewebsites.net/sgx/certificates");
+    sgx_ql_set_base_url("https://global.acccache.azure.net/sgx/certificates");
     local_cache_clear();
 
     start = std::clock();
