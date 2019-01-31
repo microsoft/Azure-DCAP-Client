@@ -1,9 +1,3 @@
-az-dcap-client (1.0) unstable; urgency=medium
-
-  * Public release
-
- -- "Seth Moore" <sethmo@microsoft.com>  Mon, 28 Sep 2018 09:00:00 -0700
-
 az-dcap-client (1.1) unstable; urgency=medium
  
   * Added Quote Identity support
@@ -11,3 +5,9 @@ az-dcap-client (1.1) unstable; urgency=medium
   * and pointing to the global PCK Cache service endpoint.
  
  -- "Srujan Jonnadula" <srujon@microsoft.com>  Wed, 30 Jan 2019 17:23:09
+
+az-dcap-client (1.0) unstable; urgency=medium
+
+  * Public release
+
+ -- "Seth Moore" <sethmo@microsoft.com>  Mon, 28 Sep 2018 09:00:00 -0700
