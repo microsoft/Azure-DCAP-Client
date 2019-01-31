@@ -46,7 +46,7 @@ constexpr char CACHE_CONTROL[] = "Cache-Control";
 constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
 
 static char DEFAULT_CERT_URL[] =
-    "https://pck-cache-prod-webapp-eastus.azurewebsites.net/sgx/certificates";
+    "https://global.acccache.azure.net/sgx/certificates";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
 // Before Azure PCK service supports caching qe identity, fetch directly from
