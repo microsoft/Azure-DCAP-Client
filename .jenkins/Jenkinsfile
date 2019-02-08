@@ -1,19 +1,19 @@
 // Tests running on hardware with custom path to libdcap_quoteprov.so
-def ACCTest(String compiler, String build_type) {
+def ACCTest(String label, String version, String compiler, String build_type) {
     def c_compiler = "clang-7"
     def cpp_compiler = "clang++-7"
     if (compiler == "gcc") {
         c_compiler = "gcc"
         cpp_compiler = "g++"
     }
-    stage("ACC1604 ${compiler} SGX1-FLC ${build_type}") {
-        node('ACC-1604') {
+    stage("${label} ${compiler} SGX1-FLC ${build_type}") {
+        node("${label}") {
             ws("${HOME}/workspace/${JOB_NAME}/${BUILD_ID}") {
                 cleanWs()
                 checkout scm
 
                 // Get Jenkins user and group for docker image
-                def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn)"
+                def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn) --build-arg UBUNTU_VERSION=${version}"
 
                 // Generate libdcap_quoteprov.so in the $WORKSPACE/src/Linux folder
                 def buildImage = docker.build("az-dcap-builder", "${dockerBuildArgs} ${WORKSPACE}/.jenkins")
@@ -45,15 +45,15 @@ def ACCTest(String compiler, String build_type) {
 }
 
 // Test using oetools-test Docker image with /dev/sgx mounted inside container
-def ACCContainerTest() {
-    stage('Non-Simulation Container SGX1-FLC RelWithDebInfo') {
-        node('ACC-1604') {
+def ACCContainerTest(String label, String version) {
+    stage("Ubuntu${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
+        node("${label}") {
             ws("${HOME}/workspace/${JOB_NAME}/${BUILD_ID}") {
                 cleanWs()
                 checkout scm
 
                 // Get Jenkins user and group for docker image
-                def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn)"
+                def dockerBuildArgs = "--build-arg UID=\$(id -u) --build-arg GID=\$(id -g) --build-arg UNAME=\$(id -un) --build-arg GNAME=\$(id -gn) --build-arg UBUNTU_VERSION=${version}"
 
                 // build az-dcap-client deb package
                 def buildImage = docker.build("az-dcap-builder", "${dockerBuildArgs} ${WORKSPACE}/.jenkins")
@@ -72,7 +72,7 @@ def ACCContainerTest() {
                 Remove the installed az-dcap-client from the container
                 Install az-dcap-client in the container from the deb package we previously built
                 */
-                def oetoolsImage = docker.build("oetools-test", "--build-arg ubuntu_version=16.04 -f openenclave/.jenkins/Dockerfile ./openenclave")
+                def oetoolsImage = docker.build("oetools-test", "--build-arg ubuntu_version=${version} -f openenclave/.jenkins/Dockerfile ./openenclave")
                 oetoolsImage.inside('-u root --device /dev/sgx:/dev/sgx') {
                     dir('src') {
                         sh 'apt remove -y az-dcap-client'
@@ -146,11 +146,17 @@ def ACCTestOeRelease(String label, String ubuntu_version) {
     }
 }
 
-parallel "Non-Simulation Container SGX1-FLC RelWithDebInfo" : { ACCContainerTest() },
-         "ACC1604 clang-7 SGX1-FLC Debug"                   : { ACCTest('clang-7', 'Debug') },
-         "ACC1604 clang-7 SGX1-FLC Release"                 : { ACCTest('clang-7', 'Release') },
-         "ACC1604 clang-7 SGX1-FLC RelWithDebInfo"          : { ACCTest('clang-7', 'RelWithDebinfo') },
-         "ACC1604 gcc SGX1-FLC Debug"                       : { ACCTest('gcc', 'Debug') },
-         "ACC1604 gcc SGX1-FLC Release"                     : { ACCTest('gcc', 'Release') },
-         "ACC1604 gcc SGX1-FLC RelWithDebInfo"              : { ACCTest('gcc', 'RelWithDebInfo') },
-         "ACC1604 OpenEnclave Release Test"                 : { ACCTestOeRelease('ACC-1604','16.04') }
+parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
+         "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
+         "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
+         "ACC1604 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-7', 'Release') },
+         "ACC1604 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-7', 'RelWithDebinfo') },
+         "ACC1604 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1604', '16.04', 'gcc', 'Debug') },
+         "ACC1604 SGX1-FLC gcc Release" :              { ACCTest('ACC-1604', '16.04', 'gcc', 'Release') },
+         "ACC1604 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1604', '16.04', 'gcc', 'RelWithDebInfo') },
+         "ACC1804 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-7', 'Debug') },
+         "ACC1804 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-7', 'Release') },
+         "ACC1804 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-7', 'RelWithDebinfo') },
+         "ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
+         "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
+         "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') }
