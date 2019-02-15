@@ -69,12 +69,13 @@ def ACCContainerTest(String label, String version) {
             Remove the installed az-dcap-client from the container
             Install az-dcap-client in the container from the deb package we previously built
             */
-            def oetoolsImage = docker.build("oetools-test", "--build-arg ubuntu_version=${version} -f openenclave/.jenkins/Dockerfile ./openenclave")
-            oetoolsImage.inside('-u root --device /dev/sgx:/dev/sgx') {
-                dir('src') {
-                    sh 'apt remove -y az-dcap-client'
-                    sh 'dpkg -i *.deb'
-                }
+            def oetoolsImage = docker.build("oetools-test-${version}", "--build-arg ubuntu_version=${version} -f openenclave/.jenkins/Dockerfile ./openenclave")
+            /*
+            This is build from oetoolsImage, must be built without cache so it actually installs
+            the current build of az-dcap-client from the .deb we just built
+            */
+            def testImage = docker.build("az-dcap-test-${version}", "--build-arg ubuntu_version=${version} --no-cache -f .jenkins/Dockerfile.scripts .")
+            testImage.inside('--device /dev/sgx:/dev/sgx') {
                 dir('openenclave/build') {
                     timeout(15) {
                         withEnv(["CC=clang-7","CXX=clang++-7"]) {
@@ -118,14 +119,14 @@ def ACCTestOeRelease(String label, String version) {
             Install az-dcap-client in the container from the deb package we previously built
             then install the open-enclave package and run the samples
             */
-            def oeToolsBuildarg="--build-arg ubuntu_version=${version}"
-            def oetoolsImage = docker.build("oetools-test", "${oeToolsBuildarg} -f openenclave/.jenkins/Dockerfile ./openenclave")
-            oetoolsImage.inside('-u root --device /dev/sgx:/dev/sgx') {
-                dir('src') {
-                    sh 'apt remove -y az-dcap-client'
-                    sh 'dpkg -i *.deb'
-                    sh 'apt-get install -y open-enclave'
-                }
+            def oetoolsImage = docker.build("oetools-test-${version}", "--build-arg ubuntu_version=${version} -f openenclave/.jenkins/Dockerfile ./openenclave")
+            /*
+            This is build from oetoolsImage, musb be built without cache so it actually installs
+            the current build of az-dcap-client from the .deb we just built 
+            and installs open-enclave release candidate
+            */
+            def testImage = docker.build("az-dcap-test-${version}", "--build-arg ubuntu_version=${version} --build-arg oeinstall=true --no-cache -f .jenkins/Dockerfile.scripts .")
+            testImage.inside('--device /dev/sgx:/dev/sgx') {
                 dir('samples') {
                     timeout(5) {
                         sh 'cp -r /opt/openenclave/share/openenclave/samples/* .'
@@ -133,8 +134,6 @@ def ACCTestOeRelease(String label, String version) {
                         sh '. /opt/openenclave/share/openenclaverc && make world'
                     }
                 }
-                // We need to remove the build folder because is created as root
-                sh 'rm -rf ./samples'
             }
         }
     }
