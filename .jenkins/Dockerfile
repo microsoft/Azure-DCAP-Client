@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-ARG UBUNTU_VERSION=16.04
-FROM ubuntu:${UBUNTU_VERSION}
+ARG ubuntu_version=16.04
+FROM ubuntu:${ubuntu_version}
 
 ARG UNAME
 ARG GNAME
