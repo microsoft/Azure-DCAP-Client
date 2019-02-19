@@ -29,14 +29,24 @@ static sgx_ql_free_revocation_info_t sgx_ql_free_revocation_info;
 static sgx_ql_get_revocation_info_t sgx_ql_get_revocation_info;
 static sgx_ql_free_quote_config_t sgx_ql_free_quote_config;
 static sgx_ql_get_quote_config_t sgx_ql_get_quote_config;
-static sgx_ql_set_base_url_t sgx_ql_set_base_url;
 static sgx_ql_set_logging_function_t sgx_ql_set_logging_function;
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
+    char const * levelText = "ERROR";
+    switch (level) {
+        case SGX_QL_LOG_WARNING:
+            levelText = "WARNING";
+            break;
+        case SGX_QL_LOG_INFO:
+            levelText = "INFO";
+            break;
+        default:
+	    levelText = "ERROR";
+    }
     printf(
         "[%s]: %s\n",
-        level == SGX_QL_LOG_ERROR ? "ERROR" : "INFO",
+        levelText,
         message);
 }
 
@@ -61,9 +71,6 @@ static void* LoadFunctions()
 
     sgx_ql_get_quote_config = reinterpret_cast<sgx_ql_get_quote_config_t>(dlsym(library, "sgx_ql_get_quote_config"));
     assert(sgx_ql_get_quote_config);
-
-    sgx_ql_set_base_url = reinterpret_cast<sgx_ql_set_base_url_t>(dlsym(library, "sgx_ql_set_base_url"));
-    assert(sgx_ql_set_base_url);
 
     sgx_ql_set_logging_function = reinterpret_cast<sgx_ql_set_logging_function_t>(dlsym(library, "sgx_ql_set_logging_function"));
     assert(sgx_ql_set_logging_function);
@@ -163,7 +170,7 @@ extern void QuoteProvTests()
     //
     // First pass: Get the data from the service, no cache allowed
     //
-    sgx_ql_set_base_url("https://global.acccache.azure.net/sgx/certificates");
+    setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
     local_cache_clear();
 
     start = std::clock();

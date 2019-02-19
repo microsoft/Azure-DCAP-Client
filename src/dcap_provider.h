@@ -90,6 +90,7 @@ typedef void (*sgx_free_qe_identity_info_t)(
  ****************************************************************************/
 typedef enum _sgx_ql_log_level_t {
     SGX_QL_LOG_ERROR,
+    SGX_QL_LOG_WARNING,
     SGX_QL_LOG_INFO
 } sgx_ql_log_level_t;
 
@@ -100,9 +101,5 @@ typedef void (
 /// Set the callback used for recording log information.
 typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(
     sgx_ql_logging_function_t logger);
-
-/// Set the base URL for the certificate host service. This is typically done
-/// for testing.
-typedef sgx_plat_error_t (*sgx_ql_set_base_url_t)(const char* url);
 
 #endif // #ifndef PLATFORM_QUOTE_PROVIDER_H
