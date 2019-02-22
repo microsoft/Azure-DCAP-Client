@@ -23,6 +23,8 @@
 #include <winsock.h>
 #endif
 
+#define MAX_URL_LENGTH 2000
+
 // We need std::numeric_limits::max; ensure no macros are clobbering it.
 #ifdef max
 #undef max
@@ -83,6 +85,24 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
         message[sizeof(message) - 1] = 0;
 
         logger_callback(level, message);
+    }
+}
+
+static std::string get_base_url() {
+    const char * env_base_url = getenv("AZDCAP_BASE_CERT_URL"); 
+    if (env_base_url == NULL)
+    {
+        return cert_base_url;
+    }
+    else
+    {
+        if (strnlen(env_base_url, MAX_URL_LENGTH) == MAX_URL_LENGTH)
+        {
+            log(SGX_QL_LOG_ERROR, "URL specified in AZDCAP_BASE_CERT_URL is longer than its expected max length '%d'. Defaulting to %s", MAX_URL_LENGTH, cert_base_url);
+            return std::string(cert_base_url);
+        }
+        log(SGX_QL_LOG_WARNING, "Using AZDCAP_BASE_CERT_URL envvar for base cert URL, set to '%s'.", env_base_url);
+        return std::string(env_base_url);
     }
 }
 
@@ -279,7 +299,7 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
-    return cert_base_url + '/' + qe_id + '/' + cpu_svn + '/' + pce_svn + '/' +
+    return get_base_url() + '/' + qe_id + '/' + cpu_svn + '/' + pce_svn + '/' +
            pce_id + '?' + API_VERSION;
 }
 
@@ -448,7 +468,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     try
     {
-        *out = cert_base_url + "/pckcrl?uri=" + escaped + '&' + API_VERSION;
+        *out = get_base_url() + "/pckcrl?uri=" + escaped + '&' + API_VERSION;
         curl_free(escaped);
         return SGX_PLAT_ERROR_OK;
     }
@@ -465,7 +485,7 @@ static sgx_plat_error_t build_pck_crl_url(
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
-    return cert_base_url + "/tcb/" +
+    return get_base_url() + "/tcb/" +
            format_as_hex_string(params.fmspc, params.fmspc_size) + '?' +
            API_VERSION;
 }
@@ -786,13 +806,6 @@ extern "C" void sgx_ql_free_revocation_info(
     sgx_ql_revocation_info_t* p_revocation_info)
 {
     delete[] reinterpret_cast<uint8_t*>(p_revocation_info);
-}
-
-extern "C" sgx_plat_error_t sgx_ql_set_base_url(const char* url)
-{
-    cert_base_url = (url == nullptr) ? DEFAULT_CERT_URL : url;
-    log(SGX_QL_LOG_INFO, "Base URL set to '%s'.", cert_base_url.c_str());
-    return SGX_PLAT_ERROR_OK;
 }
 
 extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
