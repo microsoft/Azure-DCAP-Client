@@ -119,19 +119,23 @@ static std::string get_client_id()
     const char * env_client_id = getenv(ENV_AZDCAP_CLIENT_ID);
     if (env_client_id == NULL)
     {
-        return "";
+        return std::string();
     }
-    
-    if ((env_client_id != NULL) && (strnlen(env_client_id, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
+    else 
     {
-        log(SGX_QL_LOG_ERROR,
-            "Client id specified in AZDCAP_CLIENT_ID is longer than expected max length '%d'. Not consumed",
-            MAX_ENV_VAR_LENGTH);
-        
-        return "";
-    }
+        if ((strnlen(env_client_id, MAX_ENV_VAR_LENGTH) <= 0) ||
+                (strnlen(env_client_id, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Client id specified in AZDCAP_CLIENT_ID is either empty or expected max length '%d'. Not consumed",
+                MAX_ENV_VAR_LENGTH);
+            
+            return std::string();
+        }
 
-    return env_client_id;
+        log(SGX_QL_LOG_WARNING, "Using AZDCAP_CLIENT_ID envvar for client id, set to '%s'", env_client_id);
+        return env_client_id;
+    }
 }
 
 //
@@ -327,8 +331,19 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
-    return get_base_url() + '/' + qe_id + '/' + cpu_svn + '/' + pce_svn + '/' +
-           pce_id + '?' + "clientid=" + get_client_id() + '&' + API_VERSION;
+
+    std::string pck_cert_url = get_base_url() + '/' + qe_id + 
+                                '/' + cpu_svn + '/' + pce_svn +
+                                '/' + pce_id + '?';
+    
+    std::string client_id = get_client_id();
+
+    if (!client_id.empty())
+    {
+        pck_cert_url += "clientid=" + client_id + '&';
+    }
+
+    return pck_cert_url + API_VERSION;
 }
 
 //
@@ -479,6 +494,8 @@ static sgx_plat_error_t build_pck_crl_url(
     uint32_t crl_index,
     std::string* out)
 {
+    std::string client_id;
+
     std::string crl_url = params.crl_urls[crl_index];
     if (crl_url.empty())
     {
@@ -496,10 +513,16 @@ static sgx_plat_error_t build_pck_crl_url(
 
     try
     {
-        *out = get_base_url() +
-                "/pckcrl?uri=" + escaped + '&' +
-                "clientid=" + get_client_id() + '&' +
-                API_VERSION;
+        *out = get_base_url() + "/pckcrl?uri=" + escaped + '&';
+
+        client_id = get_client_id();
+        if (!client_id.empty())
+        {
+            *out += "clientid=" + client_id + '&';
+        }
+
+        *out += API_VERSION;
+
         curl_free(escaped);
         return SGX_PLAT_ERROR_OK;
     }
@@ -516,10 +539,17 @@ static sgx_plat_error_t build_pck_crl_url(
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
-    return get_base_url() + "/tcb/" +
-           format_as_hex_string(params.fmspc, params.fmspc_size) + '?' +
-           "clientid=" + get_client_id() + '&' +
-           API_VERSION;
+    std::string tcb_info_url = get_base_url() + "/tcb/" +
+           format_as_hex_string(params.fmspc, params.fmspc_size) + '?';
+
+    std::string client_id = get_client_id();
+
+    if (!client_id.empty())
+    {
+        tcb_info_url += "clientid=" + client_id + '&';
+    }
+
+    return tcb_info_url + API_VERSION;
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
