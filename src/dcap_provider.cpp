@@ -23,6 +23,11 @@
 #include <winsock.h>
 #endif
 
+// NOTE:
+//  The environment variables below are mostly meant to be modified
+//  by the OE Jenkins environment to support CI/CD testing. Do not
+//  modify or override these values as they can cause regressions in
+//  caching service behavior.
 #define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
 #define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
 #define MAX_ENV_VAR_LENGTH 2000
