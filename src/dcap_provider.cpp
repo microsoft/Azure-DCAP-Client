@@ -95,52 +95,57 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     }
 }
 
-static std::string get_base_url()
+static std::string get_env_variable(std::string env_variable)
 {
-    const char * env_base_url = getenv(ENV_AZDCAP_BASE_URL); 
-    if (env_base_url == NULL)
-    {
-        return cert_base_url;
-    }
-    else
-    {
-        if (strnlen(env_base_url, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "URL specified in AZDCAP_BASE_CERT_URL is longer than its expected max length '%d'. Defaulting to %s",
-                MAX_ENV_VAR_LENGTH,
-                cert_base_url);
-            
-            return std::string(cert_base_url);
-        }
+    const char * env_value = getenv(env_variable.c_str());
 
-        log(SGX_QL_LOG_WARNING, "Using AZDCAP_BASE_CERT_URL envvar for base cert URL, set to '%s'.", env_base_url);
-        return std::string(env_base_url);
-    }
-}
-
-static std::string get_client_id()
-{
-    const char * env_client_id = getenv(ENV_AZDCAP_CLIENT_ID);
-    if (env_client_id == NULL)
+    if (env_value == NULL)
     {
         return std::string();
     }
-    else 
+    else
     {
-        if ((strnlen(env_client_id, MAX_ENV_VAR_LENGTH) <= 0) ||
-                (strnlen(env_client_id, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
+        if ((strnlen(env_value, MAX_ENV_VAR_LENGTH) <= 0) ||
+            (strnlen(env_value, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
         {
             log(SGX_QL_LOG_ERROR,
-                "Client id specified in AZDCAP_CLIENT_ID is either empty or expected max length '%d'. Not consumed",
+                "Value specified in environment variable %s is either empty or expected max length '%d'.",
+                env_variable.c_str(),
                 MAX_ENV_VAR_LENGTH);
             
             return std::string();
         }
 
-        log(SGX_QL_LOG_WARNING, "Using AZDCAP_CLIENT_ID envvar for client id, set to '%s'", env_client_id);
-        return env_client_id;
+        return std::string(env_value);
     }
+}
+
+static std::string get_base_url()
+{
+    std::string env_base_url = get_env_variable(ENV_AZDCAP_BASE_URL);
+
+    if (env_base_url.empty())
+    {
+        log(SGX_QL_LOG_ERROR, "Using default base cert URL '%s'.", cert_base_url.c_str());
+        return cert_base_url;
+    }
+    
+    log(SGX_QL_LOG_WARNING, "Using %s envvar for base cert URL, set to '%s'.", ENV_AZDCAP_BASE_URL, env_base_url.c_str());
+    return env_base_url;
+}
+
+static std::string get_client_id()
+{
+    std::string env_client_id = get_env_variable(ENV_AZDCAP_CLIENT_ID);
+
+    if (env_client_id.empty())
+    {
+        log(SGX_QL_LOG_ERROR, "Client id not set.");
+        return std::string();
+    }
+    
+    log(SGX_QL_LOG_WARNING, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
+    return env_client_id;
 }
 
 //
