@@ -23,7 +23,14 @@
 #include <winsock.h>
 #endif
 
-#define MAX_URL_LENGTH 2000
+// NOTE:
+//  The environment variables below are mostly meant to be modified
+//  by the OE Jenkins environment to support CI/CD testing. Do not
+//  modify or override these values as they can cause regressions in
+//  caching service behavior.
+#define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
+#define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
+#define MAX_ENV_VAR_LENGTH 2000
 
 // We need std::numeric_limits::max; ensure no macros are clobbering it.
 #ifdef max
@@ -88,22 +95,57 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     }
 }
 
-static std::string get_base_url() {
-    const char * env_base_url = getenv("AZDCAP_BASE_CERT_URL"); 
-    if (env_base_url == NULL)
+static std::string get_env_variable(std::string env_variable)
+{
+    const char * env_value = getenv(env_variable.c_str());
+
+    if (env_value == NULL)
     {
-        return cert_base_url;
+        return std::string();
     }
     else
     {
-        if (strnlen(env_base_url, MAX_URL_LENGTH) == MAX_URL_LENGTH)
+        if ((strnlen(env_value, MAX_ENV_VAR_LENGTH) <= 0) ||
+            (strnlen(env_value, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
         {
-            log(SGX_QL_LOG_ERROR, "URL specified in AZDCAP_BASE_CERT_URL is longer than its expected max length '%d'. Defaulting to %s", MAX_URL_LENGTH, cert_base_url);
-            return std::string(cert_base_url);
+            log(SGX_QL_LOG_ERROR,
+                "Value specified in environment variable %s is either empty or expected max length '%d'.",
+                env_variable.c_str(),
+                MAX_ENV_VAR_LENGTH);
+            
+            return std::string();
         }
-        log(SGX_QL_LOG_WARNING, "Using AZDCAP_BASE_CERT_URL envvar for base cert URL, set to '%s'.", env_base_url);
-        return std::string(env_base_url);
+
+        return std::string(env_value);
     }
+}
+
+static std::string get_base_url()
+{
+    std::string env_base_url = get_env_variable(ENV_AZDCAP_BASE_URL);
+
+    if (env_base_url.empty())
+    {
+        log(SGX_QL_LOG_ERROR, "Using default base cert URL '%s'.", cert_base_url.c_str());
+        return cert_base_url;
+    }
+    
+    log(SGX_QL_LOG_WARNING, "Using %s envvar for base cert URL, set to '%s'.", ENV_AZDCAP_BASE_URL, env_base_url.c_str());
+    return env_base_url;
+}
+
+static std::string get_client_id()
+{
+    std::string env_client_id = get_env_variable(ENV_AZDCAP_CLIENT_ID);
+
+    if (env_client_id.empty())
+    {
+        log(SGX_QL_LOG_ERROR, "Client id not set.");
+        return std::string();
+    }
+    
+    log(SGX_QL_LOG_WARNING, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
+    return env_client_id;
 }
 
 //
@@ -299,8 +341,19 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
-    return get_base_url() + '/' + qe_id + '/' + cpu_svn + '/' + pce_svn + '/' +
-           pce_id + '?' + API_VERSION;
+
+    std::string pck_cert_url = get_base_url() + '/' + qe_id + 
+                                '/' + cpu_svn + '/' + pce_svn +
+                                '/' + pce_id + '?';
+    
+    std::string client_id = get_client_id();
+
+    if (!client_id.empty())
+    {
+        pck_cert_url += "clientid=" + client_id + '&';
+    }
+
+    return pck_cert_url + API_VERSION;
 }
 
 //
@@ -451,6 +504,8 @@ static sgx_plat_error_t build_pck_crl_url(
     uint32_t crl_index,
     std::string* out)
 {
+    std::string client_id;
+
     std::string crl_url = params.crl_urls[crl_index];
     if (crl_url.empty())
     {
@@ -468,7 +523,16 @@ static sgx_plat_error_t build_pck_crl_url(
 
     try
     {
-        *out = get_base_url() + "/pckcrl?uri=" + escaped + '&' + API_VERSION;
+        *out = get_base_url() + "/pckcrl?uri=" + escaped + '&';
+
+        client_id = get_client_id();
+        if (!client_id.empty())
+        {
+            *out += "clientid=" + client_id + '&';
+        }
+
+        *out += API_VERSION;
+
         curl_free(escaped);
         return SGX_PLAT_ERROR_OK;
     }
@@ -485,9 +549,17 @@ static sgx_plat_error_t build_pck_crl_url(
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
-    return get_base_url() + "/tcb/" +
-           format_as_hex_string(params.fmspc, params.fmspc_size) + '?' +
-           API_VERSION;
+    std::string tcb_info_url = get_base_url() + "/tcb/" +
+           format_as_hex_string(params.fmspc, params.fmspc_size) + '?';
+
+    std::string client_id = get_client_id();
+
+    if (!client_id.empty())
+    {
+        tcb_info_url += "clientid=" + client_id + '&';
+    }
+
+    return tcb_info_url + API_VERSION;
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
