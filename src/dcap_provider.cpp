@@ -58,11 +58,6 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
-// Before Azure PCK service supports caching qe identity, fetch directly from
-// Intel server for now
-static char QE_IDENTITY_URL[] =
-    "https://api.trustedservices.intel.com/sgx/certification/v1/qe/identity";
-
 #if 0 // Flip this to true for easy local debugging
 static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
 {
@@ -126,11 +121,11 @@ static std::string get_base_url()
 
     if (env_base_url.empty())
     {
-        log(SGX_QL_LOG_ERROR, "Using default base cert URL '%s'.", cert_base_url.c_str());
+        log(SGX_QL_LOG_WARNING, "Using default base cert URL '%s'.", cert_base_url.c_str());
         return cert_base_url;
     }
     
-    log(SGX_QL_LOG_WARNING, "Using %s envvar for base cert URL, set to '%s'.", ENV_AZDCAP_BASE_URL, env_base_url.c_str());
+    log(SGX_QL_LOG_INFO, "Using %s envvar for base cert URL, set to '%s'.", ENV_AZDCAP_BASE_URL, env_base_url.c_str());
     return env_base_url;
 }
 
@@ -140,11 +135,11 @@ static std::string get_client_id()
 
     if (env_client_id.empty())
     {
-        log(SGX_QL_LOG_ERROR, "Client id not set.");
+        log(SGX_QL_LOG_WARNING, "Client id not set.");
         return std::string();
     }
     
-    log(SGX_QL_LOG_WARNING, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
+    log(SGX_QL_LOG_INFO, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
     return env_client_id;
 }
 
@@ -544,7 +539,7 @@ static sgx_plat_error_t build_pck_crl_url(
 }
 
 //
-// The the expected URL for a given TCB.
+// The expected URL for a given TCB.
 //
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
@@ -560,6 +555,23 @@ static std::string build_tcb_info_url(
     }
 
     return tcb_info_url + API_VERSION;
+}
+
+//
+// The expected URL for QeID
+//
+static std::string build_qe_id_url()
+{
+    std::string qe_id_url = get_base_url() + "/qeid?";
+
+    std::string client_id = get_client_id();
+
+    if (!client_id.empty())
+    {
+        qe_id_url += "clientid=" + client_id + '&';
+    }
+
+    return qe_id_url + API_VERSION;
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
@@ -906,19 +918,17 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         std::string issuer_chain;
         std::string request_id;
         size_t total_buffer_size = 0;
-        const auto curl = curl_easy::create(QE_IDENTITY_URL);
+        std::string qe_id_url = build_qe_id_url();
+
+        const auto curl = curl_easy::create(qe_id_url);
         log(SGX_QL_LOG_INFO,
             "Fetching QE Identity from remote server: '%s'.",
-            QE_IDENTITY_URL);
+            qe_id_url);
         curl->perform();
 
         // issuer chain
         result =
             get_unescape_header(*curl, headers::QE_ISSUER_CHAIN, &issuer_chain);
-        if (result != SGX_PLAT_ERROR_OK)
-            return result;
-
-        result = get_unescape_header(*curl, headers::REQUEST_ID, &request_id);
         if (result != SGX_PLAT_ERROR_OK)
             return result;
 
