@@ -923,7 +923,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         const auto curl = curl_easy::create(qe_id_url);
         log(SGX_QL_LOG_INFO,
             "Fetching QE Identity from remote server: '%s'.",
-            qe_id_url);
+            qe_id_url.c_str());
         curl->perform();
 
         // issuer chain
