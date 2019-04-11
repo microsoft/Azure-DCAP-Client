@@ -141,8 +141,8 @@ def ACCTestOeRelease(String label, String version) {
             */
             def oetoolsImage = docker.build("oetools-test-${version}", "${buildArgs} -f openenclave/.jenkins/Dockerfile ./openenclave")
             /*
-            This is build from oetoolsImage, musb be built without cache so it actually installs
-            the current build of az-dcap-client from the .deb we just built 
+            This is build from oetoolsImage, must be built without cache so it actually installs
+            the current build of az-dcap-client from the .deb we just built
             and installs open-enclave release candidate
             */
             buildArgs += dockerBuildArgs("oeinstall=true")
@@ -150,9 +150,13 @@ def ACCTestOeRelease(String label, String version) {
             testImage.inside('--device /dev/sgx:/dev/sgx') {
                 dir('samples') {
                     timeout(5) {
-                        sh 'cp -r /opt/openenclave/share/openenclave/samples/* .'
-                        // this needs to be replaced with the documentation path of after the new oe release (
-                        sh '. /opt/openenclave/share/openenclaverc && make world'
+                        sh '''. /opt/openenclave/share/openenclave/openenclaverc
+                            cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
+                            for DIR in $(find ~/samples/* -maxdepth 0 -type d); do
+                              cd $DIR
+                              make build
+                              make run
+                            done'''
                     }
                 }
             }
@@ -174,4 +178,5 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
          "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
          "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
-         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') }
+         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') }
