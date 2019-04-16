@@ -24,6 +24,13 @@ See [src/Linux/README.MD](src/Linux/README.MD).
 
 See [src/Windows/README.MD](src/Windows/README.MD).
 
+# Configuration
+
+The Azure-DCAP-Client library uses the following environment variables if set:
+
+* `AZDCAP_CACHE` - Represents the base directory where the library cache directory `.az-dcap-client` is created. The default value is `$HOME`.
+* `AZDCAP_BASE_CERT_URL` and `AZDCAP_CLIENT_ID` - Used in conjunction to explicitly overwrite the default values for the PCK caching service. These should be used only for development purposes and they **must** not be used in any production environment.
+
 # See Also
 
 1. [Open Enclave](https://github.com/Microsoft/openenclave), a cross-platform library for authoring
