@@ -22,8 +22,10 @@ def buildDockerImages() {
             docker.withRegistry(OETOOLS_REPO, OETOOLS_REPO_CREDENTIAL_ID) {
                 azDcapTools1604.push()
                 azDcapTools1804.push()
-                azDcapTools1604.push('latest')
-                azDcapTools1804.push('latest')
+                if(TAG_LATEST == "true") {
+                    azDcapTools1604.push('latest')
+                    azDcapTools1804.push('latest')
+                }
             }
         }
     }
