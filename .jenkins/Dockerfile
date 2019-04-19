@@ -3,15 +3,11 @@
 
 ARG ubuntu_version=18.04
 
-FROM ubuntu:${ubuntu_version}
+FROM oejenkinscidockerregistry.azurecr.io/oetools-full-${ubuntu_version}
 
 ARG UNAME=jenkins
-ARG GNAME=jenkins
-ARG UID=1001
-ARG GID=1001
 
-RUN apt-get update && \
-    apt-get install -y build-essential curl debhelper libcurl4-openssl-dev \
-                       libssl-dev pkg-config wget && \
-    groupadd --gid ${GID} ${GNAME} && \
-    useradd --create-home --uid ${UID} --gid ${GID} --shell /bin/bash ${UNAME}
+RUN apt-get purge az-dcap-client -y && \
+    apt-get update && \
+    apt-get install sudo libcurl4-openssl-dev wget -y && \
+    echo "${UNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
