@@ -148,7 +148,7 @@ static std::string get_client_id()
 // determines the maximum age in local cache
 //
 sgx_plat_error_t get_cache_max_age(
-    const curl_easy& curl,
+    const curl_easy& ,
     time_t* max_age)
 {
     if (max_age == nullptr)
@@ -165,8 +165,6 @@ sgx_plat_error_t get_cache_max_age(
     *max_age = mktime(max_age_s);
 
     return SGX_PLAT_ERROR_OK;
-
-    curl;
 }
 
 //
