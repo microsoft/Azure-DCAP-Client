@@ -1,4 +1,5 @@
 // Licensed under the MIT License.
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "dcap_provider.h"
 #include "curl_easy.h"
@@ -164,6 +165,8 @@ sgx_plat_error_t get_cache_max_age(
     *max_age = mktime(max_age_s);
 
     return SGX_PLAT_ERROR_OK;
+
+    curl;
 }
 
 //

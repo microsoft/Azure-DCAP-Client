@@ -19,3 +19,5 @@ fetch_from_intel_github -path SGXDataCenterAttestationPrimitives/c27fe49f499104e
 fetch_from_intel_github -path linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_report.h
 fetch_from_intel_github -path linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_key.h
 fetch_from_intel_github -path linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_attributes.h
+
+Invoke-WebRequest -OutFile curl-ca-bundle.crt -Uri https://curl.haxx.se/ca/cacert.pem

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.props" Condition="Exists('$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.props')" />
+  <Import Project="$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props" Condition="Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -47,16 +47,16 @@
       <AdditionalIncludeDirectories>$(PkgCurl)\inc</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..;$(MSBuildProjectDirectory)\ext;$(NugetMachineInstallRoot)\Json11.1.0.1\build</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..;$(MSBuildProjectDirectory)\ext;$(SolutionDir)\packages\Json11.1.0.1\build</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>dcap_provider.def</ModuleDefinitionFile>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>Ws2_32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(PkgCurl)\lib\win\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalLibraryDirectories>$(NugetMachineInstallRoot)\curl.7.30.0.2\build\native\lib\v110\x64\Release\dynamic;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\packages\curl.7.30.0.2\build\native\lib\v110\x64\Release\dynamic;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -92,16 +92,19 @@
     <Content Include="$(PkgCurl)\lib\win\x64\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NugetMachineInstallRoot)\curl.redist.7.30.0.2\build\native\bin\v110\x64\Release\dynamic\*.dll">
+    <Content Include="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\bin\v110\x64\Release\dynamic\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NugetMachineInstallRoot)\libssh2.redist.1.4.3.1\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
+    <Content Include="$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NugetMachineInstallRoot)\openssl.redist.1.0.1.25\build\native\bin\v110\x64\Release\dynamic\*.dll">
+    <Content Include="$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\bin\v110\x64\Release\dynamic\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NugetMachineInstallRoot)\zlib.redist.1.2.8.1\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
+    <Content Include="$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildProjectDirectory)\curl-ca-bundle.crt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -114,29 +117,29 @@
     <ClInclude Include="ext\intel\sgx_attributes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(NugetMachineInstallRoot)\curl.redist.7.30.0.2\build\native\curl.redist.targets" Condition="Exists('$(NugetMachineInstallRoot)\curl.redist.7.30.0.2\build\native\curl.redist.targets')" />
+  <Import Project="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets" Condition="Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" />
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
-    <Exec Command="powershell .\get-prereqs.ps1"/>
+    <Exec Command="powershell .\get-prereqs.ps1" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\curl.redist.7.30.0.2\build\native\curl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\curl.redist.7.30.0.2\build\native\curl.redist.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\libssh2.redist.1.4.3.1\build\native\libssh2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\libssh2.redist.1.4.3.1\build\native\libssh2.redist.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\openssl.redist.1.0.1.25\build\native\openssl.redist.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\zlib.redist.1.2.8.1\build\native\zlib.redist.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\zlib.1.2.8.1\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\zlib.1.2.8.1\build\native\zlib.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.props'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\libssh2.1.4.3.1\build\native\libssh2.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\libssh2.1.4.3.1\build\native\libssh2.targets'))" />
-    <Error Condition="!Exists('$(NugetMachineInstallRoot)\curl.7.30.0.2\build\native\curl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NugetMachineInstallRoot)\curl.7.30.0.2\build\native\curl.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets'))" />
   </Target>
-  <Import Project="$(NugetMachineInstallRoot)\libssh2.redist.1.4.3.1\build\native\libssh2.redist.targets" Condition="Exists('$(NugetMachineInstallRoot)\libssh2.redist.1.4.3.1\build\native\libssh2.redist.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\openssl.redist.1.0.1.25\build\native\openssl.redist.targets" Condition="Exists('$(NugetMachineInstallRoot)\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\zlib.redist.1.2.8.1\build\native\zlib.redist.targets" Condition="Exists('$(NugetMachineInstallRoot)\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\zlib.1.2.8.1\build\native\zlib.targets" Condition="Exists('$(NugetMachineInstallRoot)\zlib.1.2.8.1\build\native\zlib.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.targets" Condition="Exists('$(NugetMachineInstallRoot)\openssl.1.0.1.21\build\native\openssl.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\libssh2.1.4.3.1\build\native\libssh2.targets" Condition="Exists('$(NugetMachineInstallRoot)\libssh2.1.4.3.1\build\native\libssh2.targets')" />
-  <Import Project="$(NugetMachineInstallRoot)\curl.7.30.0.2\build\native\curl.targets" Condition="Exists('$(NugetMachineInstallRoot)\curl.7.30.0.2\build\native\curl.targets')" />
+  <Import Project="$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets" Condition="Exists('$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" />
+  <Import Project="$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets" Condition="Exists('$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" />
+  <Import Project="$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets" Condition="Exists('$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets')" />
+  <Import Project="$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets" Condition="Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets')" />
+  <Import Project="$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets" Condition="Exists('$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets')" />
+  <Import Project="$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets" Condition="Exists('$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets')" />
+  <Import Project="$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets" Condition="Exists('$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets')" />
 </Project>

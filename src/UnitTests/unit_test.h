@@ -8,7 +8,7 @@
 #undef NDEBUG // ensure that asserts are never compiled out
 #include <cassert>
 
-#define TEST_START() printf("---------\n%s\n", __PRETTY_FUNCTION__)
+#define TEST_START() printf("---------\n%s\n", __FUNCTION__)
 #define TEST_PASSED() printf("%s Passed\n", __FUNCTION__);
 
 #endif

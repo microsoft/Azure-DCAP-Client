@@ -1,0 +1,6 @@
+# Files copied from intel SDK
+ext/intel/
+
+# Files copied from libCURL.
+curl-ca-bundle.crt
+
