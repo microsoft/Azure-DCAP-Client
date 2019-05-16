@@ -765,7 +765,12 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         std::string tcb_issuer_chain;
         if (params->fmspc_size > 0)
         {
-            const auto tcb_info_operation = curl_easy::create(build_tcb_info_url(*params));
+            std::string tcb_info_url = build_tcb_info_url(*params);
+
+            const auto tcb_info_operation = curl_easy::create(tcb_info_url);
+            log(SGX_QL_LOG_INFO,
+                "Fetching TCB Info from remote server: '%s'.",
+                tcb_info_url.c_str());
             tcb_info_operation->perform();
 
             tcb_info = tcb_info_operation->get_body();
