@@ -59,6 +59,10 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
+static char DEFAULT_CLIENT_ID[] =
+    "production_client";
+static std::string prod_client_id = DEFAULT_CLIENT_ID;
+
 #if 0 // Flip this to true for easy local debugging
 static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
 {
@@ -136,8 +140,8 @@ static std::string get_client_id()
 
     if (env_client_id.empty())
     {
-        log(SGX_QL_LOG_WARNING, "Client id not set.");
-        return std::string();
+        log(SGX_QL_LOG_WARNING, "Using default client id '%s'.", prod_client_id.c_str());
+        return prod_client_id;
     }
     
     log(SGX_QL_LOG_INFO, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
