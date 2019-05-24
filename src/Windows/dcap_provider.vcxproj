@@ -15,7 +15,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AAA37DF8-87A5-40E9-B0DF-8919D5E92533}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <!-- The library name is dicatated by Intel. They look, specifically, for a dll
          with the following name. We must match it. -->
     <TargetName>dcap_quoteprov</TargetName>
@@ -44,7 +44,6 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PkgCurl)\inc</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..;$(MSBuildProjectDirectory)\ext;$(SolutionDir)\packages\Json11.1.0.1\build</AdditionalIncludeDirectories>
@@ -55,7 +54,6 @@
       <ModuleDefinitionFile>dcap_provider.def</ModuleDefinitionFile>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(PkgCurl)\lib\win\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories>$(SolutionDir)\packages\curl.7.30.0.2\build\native\lib\v110\x64\Release\dynamic;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -89,9 +87,6 @@
     <None Include="dcap_provider.def" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(PkgCurl)\lib\win\x64\*.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\bin\v110\x64\Release\dynamic\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
