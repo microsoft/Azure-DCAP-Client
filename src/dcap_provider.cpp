@@ -1,4 +1,5 @@
 // Licensed under the MIT License.
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "dcap_provider.h"
 #include "curl_easy.h"
@@ -147,7 +148,7 @@ static std::string get_client_id()
 // determines the maximum age in local cache
 //
 sgx_plat_error_t get_cache_max_age(
-    const curl_easy& curl,
+    const curl_easy& ,
     time_t* max_age)
 {
     if (max_age == nullptr)

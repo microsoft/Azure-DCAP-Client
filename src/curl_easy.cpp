@@ -14,6 +14,10 @@
 #ifdef __LINUX__
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#else
+#include <PathCch.h>
+#include <shlwapi.h>
+#include <strsafe.h>
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,6 +88,27 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
     easy->set_opt_or_throw(CURLOPT_HEADERFUNCTION, &header_callback);
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
+#if !defined(__LINUX__)
+    // The version of LibCURL we were built with was built with OpenSSL, not WinSSL. As a result, we need to
+    // inform LibCURL where to find the trusted list of root CAs. We assume it is in a file named "curl-ca-bundle.crt"
+    // in the directory which holds the dcap provider DLL.
+    extern HINSTANCE moduleHandle;
+    char fileNameBuffer[MAX_PATH];
+    if (GetModuleFileNameA(moduleHandle, fileNameBuffer, _countof(fileNameBuffer)) == 0)
+    {
+        throw std::exception("Unable to retrieve module name.");
+    }
+    if (!PathRemoveFileSpecA(fileNameBuffer))
+    {
+        throw std::exception("Unable to remove filename from buffer.");
+    }
+    if (FAILED(StringCchCatA(fileNameBuffer, _countof(fileNameBuffer), "\\curl-ca-bundle.crt")))
+    {
+        throw std::exception("Unable to append CA bundle name");
+    }
+
+    easy->set_opt_or_throw(CURLOPT_CAINFO, fileNameBuffer);
+#endif
 
     return easy;
 }
