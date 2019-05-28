@@ -1,13 +1,14 @@
 # Build
 1. Install Visual Studio 2017
 1. Open `src/Windows/dcap_provider.vcxproj`
-1. Build
+1. Save solution and Build in Debug X64 Configuration Mode
+1. Switch Configuration Mode to Release X64 mode and then Build
 
 # Packaging
 Run `nuget pack` in this directory. If you need to bump the version number
 or any other info, update the *.nuspec file.
 
-Note: You the output package includes:
+Note: Your output package includes:
   libcurl.dll
   libeay32.dll
   libssh2.dll
