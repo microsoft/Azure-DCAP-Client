@@ -98,7 +98,7 @@ def DCAPBuildTest(String label, String build_type) {
             bat """
                 vcvars64.bat x64 && \
                 cd ${WORKSPACE}\\src\\Windows && \
-                powershell.exe -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; .\\get-prereqs.ps1\" && \
+                powershell.exe -ExecutionPolicy Bypass -Command \".\\get-prereqs.ps1\" && \
                 powershell.exe -ExecutionPolicy Bypass -Command \"Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\" && \
                 nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
                 MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64
