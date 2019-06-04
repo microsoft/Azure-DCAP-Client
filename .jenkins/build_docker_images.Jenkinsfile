@@ -19,7 +19,7 @@ def buildDockerImages() {
             stage("Build Ubuntu 18.04 Docker Image") {
                 azDcapTools1804 = oe.dockerImage("az-dcap-tools-18.04:${DOCKER_TAG}",
                                                  ".jenkins/Dockerfile",
-                                                 "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=16.04")
+                                                 "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
             }
             stage("Push to OE Docker Registry") {
                 azDcapTools1604.push()
