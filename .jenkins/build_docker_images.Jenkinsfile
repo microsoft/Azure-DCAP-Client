@@ -1,5 +1,7 @@
 @Library("OpenEnclaveCommon") _
 oe = new jenkins.common.Openenclave()
+
+// The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
 OETOOLS_REPO = "https://oejenkinscidockerregistry.azurecr.io"
