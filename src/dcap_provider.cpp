@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "intel/sgx_ql_lib_common.h"
+#include "sgx_ql_lib_common.h"
 
 #ifdef __LINUX__
 #include <arpa/inet.h>
