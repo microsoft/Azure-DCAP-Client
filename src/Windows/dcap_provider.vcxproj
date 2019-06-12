@@ -89,19 +89,26 @@
     <None Include="dcap_provider.def" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include=".\UnitTest\dcap_provider_ut_example.vcxproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="$(PkgCurl)\lib\win\x64\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\bin\v110\x64\Release\dynamic\*.dll">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\bin\v110\x64\Release\dynamic\*.dll">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildProjectDirectory)\curl-ca-bundle.crt">
@@ -120,6 +127,9 @@
   <Import Project="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets" Condition="Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" />
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell .\get-prereqs.ps1" />
+  </Target>
+  <Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
+    <Exec Command="$(OutDir)\dcap_provider_ut_example.exe" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
