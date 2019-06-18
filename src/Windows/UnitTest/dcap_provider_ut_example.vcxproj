@@ -72,8 +72,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\dcap_provider.h" />
-    <ClInclude Include="$(SolutionDir)\..\UnitTests\unit_test.h" />
+    <ClInclude Include="$(SolutionDir)\..\..\dcap_provider.h" />
+    <ClInclude Include="$(SolutionDir)\..\..\UnitTests\unit_test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\UnitTests\test_quote_prov.cpp" />
