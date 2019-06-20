@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+src/Linux/ext/intel/*
+*.o
+
 # User-specific files
 *.suo
 *.user

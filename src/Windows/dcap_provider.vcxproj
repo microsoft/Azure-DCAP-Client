@@ -47,7 +47,12 @@
       <AdditionalIncludeDirectories>$(PkgCurl)\inc</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..;$(MSBuildProjectDirectory)\ext;$(SolutionDir)\packages\Json11.1.0.1\build</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+        $(MSBuildProjectDirectory);
+        $(MSBuildProjectDirectory)\..;
+        $(SolutionDir)\ext\intel;
+        $(SolutionDir)\packages\Json11.1.0.1\build
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,7 +94,7 @@
     <None Include="dcap_provider.def" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include=".\UnitTest\dcap_provider_ut_example.vcxproj" />
+    <ProjectReference Include=".\UnitTest\dcap_provider_ut.vcxproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(PkgCurl)\lib\win\x64\*.dll">
@@ -129,7 +134,7 @@
     <Exec Command="powershell .\get-prereqs.ps1" />
   </Target>
   <Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
-    <Exec Command="$(OutDir)\dcap_provider_ut_example.exe" />
+    <Exec Command="$(OutDir)\dcap_provider_ut.exe" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

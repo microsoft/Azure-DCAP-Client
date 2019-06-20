@@ -3,7 +3,7 @@
 
 #include "unit_test.h"
 #include "dcap_provider.h"
-#include "ext\intel\sgx_ql_lib_common.h"
+#include "sgx_ql_lib_common.h"
 #include "local_cache.h"
 
 #include <cstdio>
@@ -60,7 +60,6 @@ static void* LoadFunctions()
     // if this assert fails, be sure libdcap_quoteprov.so is in your LD_LIBRARY_PATH
 
     void* library = dlopen("libdcap_quoteprov.so", RTLD_NOW);
-    printf(dlerror());
     if (library == nullptr)
     {
         Log(SGX_QL_LOG_ERROR, dlerror());
