@@ -46,7 +46,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>
         $(MSBuildProjectDirectory)\..\;
-        $(MSBuildProjectDirectory)\..\dll\ext\intel;
+        $(SolutionDir)\..\dll\ext\intel;
+        $(SolutionDir)\..\UnitTest\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
         $(SolutionDir)\packages\Json11.1.0.1\build
       </AdditionalIncludeDirectories>
@@ -84,7 +85,7 @@
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\test_quote_prov.cpp" />
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\main.cpp" />
   </ItemGroup>
-  <Target Name="GetPrerequisitesFromIntel" BeforeTargets="BeforeResolveReference">
+  <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

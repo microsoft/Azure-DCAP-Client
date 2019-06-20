@@ -51,7 +51,8 @@
         $(MSBuildProjectDirectory);
         $(MSBuildProjectDirectory)\..\;
         $(MSBuildProjectDirectory)\..\..\;
-        $(SolutionDir)\ext\intel;
+        $(SolutionDir)\..\dll\ext\intel;
+        $(SolutionDir)\..\UnitTest\ext\intel;
         $(SolutionDir)\packages\Json11.1.0.1\build
       </AdditionalIncludeDirectories>
     </ClCompile>
@@ -132,7 +133,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets" Condition="Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" />
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
-    <Exec Command="powershell .\get-prereqs.ps1" />
+    <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
   <Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
     <Exec Command="$(OutDir)\dcap_provider_ut.exe" />
