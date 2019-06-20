@@ -136,6 +136,7 @@
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
   <Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
+    <Exec ContinueOnError="True" Command="xcopy /y ..\UnitTest\$(Platform)\$(Configuration)\dcap_provider_ut.exe $(OutDir)"/>
     <Exec Command="$(OutDir)\dcap_provider_ut.exe" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
