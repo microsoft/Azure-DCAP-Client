@@ -135,10 +135,10 @@
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
-  <Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
+  <!--Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
     <Exec ContinueOnError="True" Command="xcopy /y ..\UnitTest\$(Platform)\$(Configuration)\dcap_provider_ut.exe $(OutDir)"/>
     <Exec Command="$(OutDir)\dcap_provider_ut.exe" />
-  </Target>
+  </Target-->
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
