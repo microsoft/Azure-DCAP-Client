@@ -1,7 +1,0 @@
-LIBRARY dcap_quoteprov
-EXPORTS
-    sgx_ql_get_quote_config
-    sgx_ql_free_quote_config
-    sgx_ql_get_revocation_info
-    sgx_ql_free_revocation_info
-    sgx_ql_set_logging_function
