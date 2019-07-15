@@ -48,8 +48,6 @@ static void Log(sgx_ql_log_level_t level, const char* message)
         case SGX_QL_LOG_INFO:
             levelText = "INFO";
             break;
-        default:
-            levelText = "ERROR";
     }
     printf("[%s]: %s\n", levelText, message);
 }

@@ -4,7 +4,10 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 src/Linux/ext/intel/*
+src/Windows/dll/ext/intel/*
+src/Windows/UnitTest/ext/intel/*
 *.o
+*.obj
 
 # User-specific files
 *.suo
