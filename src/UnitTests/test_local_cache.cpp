@@ -66,8 +66,7 @@ static void VerifyClearCache()
 
     assert(nullptr != local_cache_get(__FUNCTION__));
     local_cache_clear();
-
-	assert(nullptr == local_cache_get(__FUNCTION__));
+    assert(nullptr == local_cache_get(__FUNCTION__));
 
     TEST_PASSED();
 }
@@ -91,9 +90,9 @@ static void VerifyExpiryWorks()
     // wait for expiry, after which the data should be gone
 
 #if defined(__LINUX__)
-	sleep(expiry_seconds);
+    sleep(expiry_seconds);
 #else
-	Sleep(expiry_seconds * 1000);
+    Sleep(expiry_seconds * 1000);
 #endif
 
     assert(nullptr == local_cache_get(__FUNCTION__));
@@ -145,37 +144,37 @@ static void InvalidParams()
 //
 static void ThreadSafetyTest()
 {
-	TEST_START();
+    TEST_START();
 
-	// Pre-fill a data vector that's of sufficient size that we
-	// are likely to get conflicts between threads.
-	std::vector<uint8_t> data(64 * 1024);
-	for (size_t i = 0; i < data.size(); ++i)
-	{
-		data[i] = i & 0xff;
-	}
-	
+    // Pre-fill a data vector that's of sufficient size that we
+    // are likely to get conflicts between threads.
+    std::vector<uint8_t> data(64 * 1024);
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+        data[i] = i & 0xff;
+    }
+
     constexpr unsigned THREAD_LOOP_COUNT = 128;
-	const std::string ID = "data identifier";
+    const std::string ID = "data identifier";
 
-	auto cache_writer = [&](void) {
-		for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
-		{
-			local_cache_add(ID, now() + 60, data.size(), data.data());
-		}
-	};
+    auto cache_writer = [&](int id) {
+        for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
+        {
+            local_cache_add(ID, now() + 60, data.size(), data.data());
+        }
+    };
 
-	auto cache_reader = [&](void) {
-		for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
-		{
-			auto retrieved = local_cache_get(ID);
-			assert(retrieved != nullptr);
-			assert(*retrieved == data);
-		}
-	};
+    auto cache_reader = [&](int id) {
+        for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
+        {
+            auto retrieved = local_cache_get(ID);
+            assert(retrieved != nullptr);
+            assert(*retrieved == data);
+        }
+    };
 
-	// prime the cache entry first (in case a read thread runs first)
-	local_cache_add(ID, now() + 60, data.size(), data.data());
+    // prime the cache entry first (in case a read thread runs first)
+    local_cache_add(ID, now() + 60, data.size(), data.data());
 
 #if defined(__LINUX__)
     std::array<std::thread, 8> threads;
@@ -183,26 +182,24 @@ static void ThreadSafetyTest()
 	std::thread threads[8];
 #endif
 
-	int temp = sizeof(threads) / sizeof(*threads);
-	for (size_t i = 0; i < temp; ++i)
-	{
-		if (i & 1)
-		{
-			threads[i] = std::thread(cache_writer);
-		}
-		else
-		{
-			threads[i] = std::thread(cache_reader);
-		}
-	}
-	
+    for (size_t i = 0; i < sizeof(threads) / sizeof(*threads); ++i)
+    {
+        if (i & 1)
+        {
+            threads[i] = std::thread(cache_writer, i);
+        }
+        else
+        {
+            threads[i] = std::thread(cache_reader, i);
+        }
+    }
 
-	for(auto& t : threads)
-	{
-		t.join();
-	}
+    for(auto& t : threads)
+    {
+        t.join();
+    }
 
-	TEST_PASSED();
+    TEST_PASSED();
 }
 
 extern void LocalCacheTests()

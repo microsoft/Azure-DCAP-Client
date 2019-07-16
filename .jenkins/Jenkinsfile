@@ -113,7 +113,6 @@ def DCAPBuildTest(String label, String build_type) {
                     MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_ut.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    set PATH=%PATH%;C:\\Program Files (x86)\\Windows Kits\\10\\App Certification Kit && \
                     dcap_provider_ut.exe
                 """
             }
