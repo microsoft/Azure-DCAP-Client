@@ -178,11 +178,11 @@ static void ThreadSafetyTest()
 
 #if defined(__LINUX__)
     std::array<std::thread, 8> threads;
+    for (size_t i = 0; i < threads.size(); ++i)
 #else
     std::thread threads[8];
-#endif
-
     for (size_t i = 0; i < sizeof(threads) / sizeof(*threads); ++i)
+#endif
     {
         if (i & 1)
         {
