@@ -157,14 +157,14 @@ static void ThreadSafetyTest()
     constexpr unsigned THREAD_LOOP_COUNT = 128;
     const std::string ID = "data identifier";
 
-    auto cache_writer = [&](int id) {
+    auto cache_writer = [&](void) {
         for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
         {
             local_cache_add(ID, now() + 60, data.size(), data.data());
         }
     };
 
-    auto cache_reader = [&](int id) {
+    auto cache_reader = [&](void) {
         for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
         {
             auto retrieved = local_cache_get(ID);
@@ -179,18 +179,18 @@ static void ThreadSafetyTest()
 #if defined(__LINUX__)
     std::array<std::thread, 8> threads;
 #else
-	std::thread threads[8];
+    std::thread threads[8];
 #endif
 
     for (size_t i = 0; i < sizeof(threads) / sizeof(*threads); ++i)
     {
         if (i & 1)
         {
-            threads[i] = std::thread(cache_writer, i);
+            threads[i] = std::thread(cache_writer);
         }
         else
         {
-            threads[i] = std::thread(cache_reader, i);
+            threads[i] = std::thread(cache_reader);
         }
     }
 

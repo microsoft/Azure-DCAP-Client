@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 #include <algorithm>
 #include <cstring>
 #include <mutex>
@@ -125,6 +127,7 @@ static std::string sha256(size_t data_size, const void* data)
     BCRYPT_ALG_HANDLE hAlg = NULL;
     BCRYPT_HASH_HANDLE hHash = NULL;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
+    std::string errorString;
     DWORD cbData = 0;
     DWORD cbHash = 0;
     DWORD cbHashObject = 0;
@@ -139,7 +142,7 @@ static std::string sha256(size_t data_size, const void* data)
         NULL,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptOpenAlgorithmProvider\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptOpenAlgorithmProvider\n";
         goto Cleanup;
     }
 
@@ -151,14 +154,15 @@ static std::string sha256(size_t data_size, const void* data)
         &cbData,
         0)))
     {
-        wprintf(L"*** ERROR 0x%X returned by BCryptGetProperty 1\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptGetProperty\n";
         goto Cleanup;
     }
 
     pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHashObject);
     if (pbHashObject == NULL)
     {
-        wprintf(L"*** memory allocation failed\n");
+        errorString = "Memory allocation failed\n";
+        status = STATUS_NO_MEMORY;
         goto Cleanup;
     }
 
@@ -171,7 +175,7 @@ static std::string sha256(size_t data_size, const void* data)
         &cbData,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptGetProperty 2\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptGetProperty\n";
         goto Cleanup;
     }
 
@@ -179,7 +183,8 @@ static std::string sha256(size_t data_size, const void* data)
     pbHash = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHash);
     if (NULL == pbHash)
     {
-        wprintf(L"**** memory allocation failed\n");
+        errorString = "Memory allocation failed\n";
+        status = STATUS_NO_MEMORY;
         goto Cleanup;
     }
 
@@ -193,7 +198,7 @@ static std::string sha256(size_t data_size, const void* data)
         0,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptCreateHash\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptCreateHash\n";
         goto Cleanup;
     }
 
@@ -205,7 +210,7 @@ static std::string sha256(size_t data_size, const void* data)
         (ULONG)data_size,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptHashData\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptHashData\n";
         goto Cleanup;
     }
 
@@ -216,7 +221,7 @@ static std::string sha256(size_t data_size, const void* data)
         cbHash,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptFinishHash\n", status);
+        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptFinishHash\n";
         goto Cleanup;
     }
 
@@ -249,6 +254,8 @@ Cleanup:
     {
         HeapFree(GetProcessHeap(), 0, pbHash);
     }
+
+    throw_if(!NT_SUCCESS(status), errorString);
 
     return retval;
 }
