@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#define NOMINMAX // tell windows NOT to define "min" and "max" macros
-#define _CRT_SECURE_NO_WARNINGS // no strncpy_s on Linux, allow use of strcpy
-
 #include "curl_easy.h"
 #include <cassert>
 #include <cstring>
@@ -42,7 +39,7 @@ curl_easy::error::error(DWORD c, const char* f) : code(c)
         f = "<unknown function>";
     }
 
-    strncpy(function, f, sizeof(function));
+    strncpy_s(function, f, sizeof(function));
     function[sizeof(function) - 1] = 0;
 }
 
