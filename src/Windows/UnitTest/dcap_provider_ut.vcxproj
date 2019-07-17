@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\test_quote_prov.cpp" />
+    <ClCompile Include="$(SolutionDir)\..\..\UnitTests\test_local_cache.cpp" />
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\main.cpp" />
   </ItemGroup>
   <ItemGroup>
