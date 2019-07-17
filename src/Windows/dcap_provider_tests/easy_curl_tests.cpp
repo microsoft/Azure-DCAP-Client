@@ -27,16 +27,16 @@ TEST_MODULE_INITIALIZE(InitializeModule)
 }
 
 namespace dcap_provider_tests
-{		
-	TEST_CLASS(Curl_EasyTests)
-	{
-	public:
-		
-		TEST_METHOD(TestCreateCurlEasy)
-		{
+{
+    TEST_CLASS(Curl_EasyTests)
+    {
+    public:
+        
+        TEST_METHOD(TestCreateCurlEasy)
+        {
             auto curl = curl_easy::create("http://www.microsoft.com");
             Assert::IsTrue(static_cast<bool>(curl), L"Create curl_easy object.");
-		}
+        }
 
         TEST_METHOD(TestSimpleNetworkExchanges)
         {
@@ -86,5 +86,5 @@ namespace dcap_provider_tests
 
         }
 
-	};
+    };
 }
