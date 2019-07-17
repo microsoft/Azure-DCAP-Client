@@ -181,7 +181,7 @@ static void ThreadSafetyTest()
     for (size_t i = 0; i < threads.size(); ++i)
 #else
     std::thread threads[8];
-    for (size_t i = 0; i < sizeof(threads) / sizeof(*threads); ++i)
+    for (size_t i = 0; i < _countof(threads); ++i)
 #endif
     {
         if (i & 1)

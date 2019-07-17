@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cstring>
 #include <mutex>
-#include <locale>
 #include <windows.h>
 #include <wincrypt.h>
 #include <bcrypt.h>
@@ -26,9 +25,7 @@
 
 constexpr uint16_t CACHE_V1 = 1;
 
-constexpr _locale_t NULL_LOCALE = reinterpret_cast<_locale_t>(0);
-
-static std::string g_cache_dirname;
+static std::wstring g_cache_dirname;
 
 static void throw_if(bool should_throw, const std::string& error)
 {
@@ -38,76 +35,63 @@ static void throw_if(bool should_throw, const std::string& error)
     }
 }
 
-static void throw_errno(const std::string& description, int err)
+static void throw_if(bool should_throw, const std::string& error, HANDLE file)
 {
-
-    _locale_t locale = _create_locale(LC_ALL, "POSIX");
-    if (locale == NULL_LOCALE)
-    {
-        throw std::runtime_error("Unable to allocate locale: " + std::to_string(errno));
-    }
-    std::string errno_string = strerror(err);
-    _free_locale(locale);
-
-    throw std::runtime_error(description + ": " + errno_string);
+	if (should_throw)
+	{
+		CloseHandle(file);
+		throw std::runtime_error(error);
+	}
 }
 
-static void throw_errno(const std::string& description)
+static void fthrow_if(bool should_throw, const std::string& error, HANDLE file)
 {
-    throw_errno(description, errno);
+	if (should_throw)
+	{
+		FindClose(file);
+		throw std::runtime_error(error);
+	}
 }
+
 
 struct CacheEntryHeaderV1 {
     uint16_t version;   // The version of the cache header
     time_t expiry;      // expiration time of this cache item
 };
 
-static void make_dir(const std::string& dirname)
+static void make_dir(const std::wstring& dirname)
 {
-    struct _stat buf {};
-    int rc = _stat(dirname.c_str(), &buf);
-
-    if (rc == 0)
-    {
-        if ((buf.st_mode & _S_IFDIR) > 0)
-        {
-            return;
-        }
-
-        throw std::runtime_error(dirname + " already exists, and is not a directory.");
-    }
-
-    wchar_t dirName[64];
-    std::mbstowcs(dirName, dirname.c_str(), strlen(dirname.c_str()) + 1);//Plus null
-
-    rc = CreateDirectory(dirName, NULL);
-    if (rc != 0)
-    {
-        throw_errno("Error creating directory '" + dirname + "'");
-    }
+	CreateDirectory(dirname.c_str(), NULL);
+	throw_if(GetLastError() == ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_ALREADY_EXISTS, "Path not found");
 }
 
 static void init_callback()
 {
-    const char * env_home = ::getenv("APPDATA");
-    const char * env_azdcap_cache = ::getenv("AZDCAP_CACHE");
-    const std::string application_name("\\.az-dcap-client");
+	const DWORD buffSize = 65535;
+	
+	LPTSTR env_home = new TCHAR[buffSize];
+	GetEnvironmentVariable(L"LOCALAPPDATA", env_home, buffSize);
+	std::wstring wenv_home(env_home);
 
-    std::string dirname;
+	LPTSTR env_azdcap_cache = new TCHAR[buffSize];
+	GetEnvironmentVariable(L"AZDCAP_CACHE", env_azdcap_cache, buffSize);
 
-    if (env_azdcap_cache != 0 && (strcmp(env_azdcap_cache, "") != 0))
+    const std::wstring application_name(L"\\.az-dcap-client");
+
+    std::wstring dirname;
+
+    if (env_home != 0 && env_home[0] != 0 )
     {
-        dirname = env_azdcap_cache;
-    }
-    else if (env_home != 0 && (strcmp(env_home, "") != 0))
-    {
-        dirname = std::string(env_home);
-    }
-    else
+		dirname = env_home;
+    } else if (env_azdcap_cache != 0 && env_azdcap_cache[0] != 0)
+	{
+		dirname = env_azdcap_cache;
+	}
+	else
     {
         // Throwing exception if the expected HOME
         // environment variable is not defined.
-        throw std::runtime_error("HOME and AZDCAPCACHE environment variables not defined");
+        throw std::runtime_error("LOCALAPPDATA and AZDCAPCACHE environment variables not defined");
     }
 
     dirname += application_name;
@@ -122,7 +106,7 @@ static void init()
     std::call_once(init_flag, init_callback);
 }
 
-static std::string sha256(size_t data_size, const void* data)
+static std::wstring sha256(size_t data_size, const void* data)
 {
     BCRYPT_ALG_HANDLE hAlg = NULL;
     BCRYPT_HASH_HANDLE hHash = NULL;
@@ -257,20 +241,22 @@ Cleanup:
 
     throw_if(!NT_SUCCESS(status), errorString);
 
-    return retval;
+	std::wstring wretval(retval.begin(), retval.end());
+    return wretval;
 }
 
-static std::string sha256(const std::string& input)
+static std::wstring sha256(const std::string& input)
 {
     return sha256(input.length(), input.data());
 }
 
-static std::string get_file_name(const std::string& id)
+static std::wstring get_file_name(const std::string& id)
 {
-    return g_cache_dirname + "\\" + sha256(id);
+    return g_cache_dirname + L"\\" + sha256(id);
 }
 
-void local_cache_clear() {
+void local_cache_clear()
+{
     init();
 
     WIN32_FIND_DATA data;
@@ -283,12 +269,12 @@ void local_cache_clear() {
     {
         do {
             std::wstring fileName(data.cFileName);
-            if (fileName.compare(L".") != 0 && fileName.compare(L"..") != 0)
+            if (fileName.compare(L".") && fileName.compare(L".."))
             {
                 std::wstring fullFileName = baseDir + L"\\" + fileName;
 
-                throw_if(!DeleteFileW(fullFileName.c_str()),
-                    "Deleting file failed, error code " + GetLastError());
+                fthrow_if(!DeleteFileW(fullFileName.c_str()),
+                    "Deleting file failed, error code " + GetLastError(), hFind);
             }
         } while (FindNextFile(hFind, &data));
         FindClose(hFind);
@@ -305,12 +291,10 @@ HANDLE OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, 
     do {
         file = CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-        
+            
         Sleep(SLEEP_RETRY_MS);
         i++;
-    } while ((file == INVALID_HANDLE_VALUE) &&
-        (GetLastError() == 32) &&
-        (i < MAX_RETRY));
+    } while ((file == INVALID_HANDLE_VALUE) && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY));
 
     return file;
 }
@@ -327,28 +311,20 @@ void local_cache_add(const std::string& id, time_t expiry, size_t data_size, con
     header.version = CACHE_V1;
     header.expiry = expiry;
 
-    std::string filename = get_file_name(id);
-    std::wstring wfilename(filename.begin(), filename.end());
+    std::wstring filename = get_file_name(id);
+    //std::wstring wfilename(filename.begin(), filename.end());
 
-    HANDLE file = OpenHandle(wfilename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    throw_if(file == INVALID_HANDLE_VALUE, "Open handle failed");
-
-    OVERLAPPED overlapvar = { 0 };
-
-    throw_if(!LockFileEx(file, LOCKFILE_EXCLUSIVE_LOCK, 0, MAXDWORD, MAXDWORD, &overlapvar),
-        "Exclusive write lock operation failed");
+    HANDLE file = OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    throw_if(file == INVALID_HANDLE_VALUE, "Create file failed", file);
 
     DWORD headerwritten;
     DWORD datawritten;
 
-    throw_if(!WriteFile(file, &header, sizeof(header), &headerwritten, NULL),
-        "Header write to local cache failed");
+    throw_if(!WriteFile(file, &header, sizeof(header), &headerwritten, nullptr),
+        "Header write to local cache failed", file);
 
-    throw_if(!WriteFile(file, data, (DWORD)data_size, &datawritten, NULL),
-        "Data write to local cache failed");
-
-    throw_if(!UnlockFileEx(file, 0, MAXDWORD, MAXDWORD, &overlapvar),
-        "Exclusive write unlock operation failed");
+    throw_if(!WriteFile(file, data, (DWORD)data_size, &datawritten, nullptr),
+        "Data write to local cache failed", file);
 
     CloseHandle(file);
 }
@@ -359,52 +335,41 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
     init();
 
-    std::string filename = get_file_name(id);
-    std::wstring wfilename(filename.begin(), filename.end());
+    std::wstring filename = get_file_name(id);
+    //std::wstring wfilename(filename.begin(), filename.end());
     
-    HANDLE file = OpenHandle(wfilename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE file = OpenHandle(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE)
     {
         return nullptr;
     }
 
-    OVERLAPPED overlapvar = { 0 };
-
-    throw_if(!LockFileEx(file, 0, 0, MAXDWORD, MAXDWORD, &overlapvar),
-        "Shared read lock operation failed");
-
     CacheEntryHeaderV1 *header;
     char buf[sizeof(CacheEntryHeaderV1)] = { 0 };
-    LPDWORD headerread = 0;
+    DWORD headerread = 0;
 
-    throw_if(!ReadFile(file, &buf, sizeof(CacheEntryHeaderV1), headerread, NULL),
-        "Header read from local cache failed");
+	ReadFile(file, &buf, sizeof(CacheEntryHeaderV1), &headerread, nullptr);
+	throw_if(GetLastError(), "Header read from local cache failed", file);
 
     header = (CacheEntryHeaderV1*)buf;
 
     if (header->expiry <= time(nullptr))
     {
-        throw_if(!UnlockFileEx(file, 0, MAXDWORD, MAXDWORD, &overlapvar),
-            "Shared read unlock operation failed");
-
         CloseHandle(file);
-        DeleteFileW(wfilename.c_str());
+        DeleteFileW(filename.c_str());
         // Even if unlink fails, we can just return null. Thus, the return
         // value is intentionally ignored here.
         return nullptr;
     }
 
-    DWORD size = GetFileSize(file, NULL);
+    DWORD size = GetFileSize(file, nullptr);
     int datasize = size - sizeof(CacheEntryHeaderV1);
     auto cache_entry = std::make_unique<std::vector<uint8_t>>(datasize);
 
-    LPDWORD dataread = 0;
-    
-    throw_if(!ReadFile(file, cache_entry->data(), size, dataread, NULL),
-        "Data read from local cache failed");
-
-    throw_if(!UnlockFileEx(file, 0, MAXDWORD, MAXDWORD, &overlapvar),
-        "Shared read unlock operation failed");
+    DWORD dataread = 0;
+	ReadFile(file, cache_entry->data(), size, &dataread, nullptr);
+	throw_if(GetLastError(), "Data read from local cache failed", file);
+	throw_if(dataread != datasize, "Something wrong with data", file);
 
     CloseHandle(file);
 
