@@ -6,7 +6,7 @@ prefix = /usr/local
 INCLUDES = -I##CURLINC## -I. -I.. -Iext
 CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
 
-PROVIDER_SRC = ../dcap_provider.cpp ../curl_easy.cpp local_cache.cpp init.cpp
+PROVIDER_SRC = ../dcap_provider.cpp ../logging.cpp curl_easy.cpp local_cache.cpp init.cpp
 PROVIDER_OBJ = $(PROVIDER_SRC:.cpp=.o)
 PROVIDER_LIB = libdcap_quoteprov.so # this name is dictated by Intel
 PROVIDER_LDFLAGS = -shared $(shell curl-config --libs) `pkg-config --libs openssl`

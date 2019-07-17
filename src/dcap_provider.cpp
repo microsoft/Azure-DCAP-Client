@@ -2,8 +2,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "dcap_provider.h"
-#include "curl_easy.h"
+#include <curl_easy.h>
 #include "local_cache.h"
+#include "private.h"
 
 #include <cassert>
 #include <cstdarg>
@@ -51,7 +52,7 @@ constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
-};
+}; // namespace headers
 
 constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
 
@@ -59,45 +60,12 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
-static char DEFAULT_CLIENT_ID[] =
-    "production_client";
+static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
-
-#if 0 // Flip this to true for easy local debugging
-static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
-{
-    printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
-}
-
-static sgx_ql_logging_function_t logger_callback = DefaultLogCallback;
-#else
-static sgx_ql_logging_function_t logger_callback = nullptr;
-#endif
-
-//
-// Global logging function.
-//
-void log(sgx_ql_log_level_t level, const char* fmt, ...)
-{
-    if (logger_callback)
-    {
-        char message[512];
-        va_list args;
-        va_start(args, fmt);
-#pragma warning(suppress : 25141) // all fmt buffers come from static strings
-        vsnprintf(message, sizeof(message), fmt, args);
-        va_end(args);
-
-        // ensure buf is always null-terminated
-        message[sizeof(message) - 1] = 0;
-
-        logger_callback(level, message);
-    }
-}
 
 static std::string get_env_variable(std::string env_variable)
 {
-    const char * env_value = getenv(env_variable.c_str());
+    const char* env_value = getenv(env_variable.c_str());
 
     if (env_value == NULL)
     {
@@ -109,10 +77,11 @@ static std::string get_env_variable(std::string env_variable)
             (strnlen(env_value, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
         {
             log(SGX_QL_LOG_ERROR,
-                "Value specified in environment variable %s is either empty or expected max length '%d'.",
+                "Value specified in environment variable %s is either empty or "
+                "expected max length '%d'.",
                 env_variable.c_str(),
                 MAX_ENV_VAR_LENGTH);
-            
+
             return std::string();
         }
 
@@ -126,11 +95,16 @@ static std::string get_base_url()
 
     if (env_base_url.empty())
     {
-        log(SGX_QL_LOG_WARNING, "Using default base cert URL '%s'.", cert_base_url.c_str());
+        log(SGX_QL_LOG_WARNING,
+            "Using default base cert URL '%s'.",
+            cert_base_url.c_str());
         return cert_base_url;
     }
-    
-    log(SGX_QL_LOG_INFO, "Using %s envvar for base cert URL, set to '%s'.", ENV_AZDCAP_BASE_URL, env_base_url.c_str());
+
+    log(SGX_QL_LOG_INFO,
+        "Using %s envvar for base cert URL, set to '%s'.",
+        ENV_AZDCAP_BASE_URL,
+        env_base_url.c_str());
     return env_base_url;
 }
 
@@ -140,20 +114,23 @@ static std::string get_client_id()
 
     if (env_client_id.empty())
     {
-        log(SGX_QL_LOG_WARNING, "Using default client id '%s'.", prod_client_id.c_str());
+        log(SGX_QL_LOG_WARNING,
+            "Using default client id '%s'.",
+            prod_client_id.c_str());
         return prod_client_id;
     }
-    
-    log(SGX_QL_LOG_INFO, "Using %s envvar for client id, set to '%s'.", ENV_AZDCAP_CLIENT_ID, env_client_id.c_str());
+
+    log(SGX_QL_LOG_INFO,
+        "Using %s envvar for client id, set to '%s'.",
+        ENV_AZDCAP_CLIENT_ID,
+        env_client_id.c_str());
     return env_client_id;
 }
 
 //
 // determines the maximum age in local cache
 //
-sgx_plat_error_t get_cache_max_age(
-    const curl_easy& ,
-    time_t* max_age)
+sgx_plat_error_t get_cache_max_age(const curl_easy&, time_t* max_age)
 {
     if (max_age == nullptr)
     {
@@ -164,7 +141,7 @@ sgx_plat_error_t get_cache_max_age(
     // currently set to persist all cached
     // certs for exactly 1 day.
     //
-    tm * max_age_s = localtime(max_age);
+    tm* max_age_s = localtime(max_age);
     max_age_s->tm_mday += 1;
     *max_age = mktime(max_age_s);
 
@@ -341,11 +318,9 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
+    std::string pck_cert_url = get_base_url() + '/' + qe_id + '/' + cpu_svn +
+                               '/' + pce_svn + '/' + pce_id + '?';
 
-    std::string pck_cert_url = get_base_url() + '/' + qe_id + 
-                                '/' + cpu_svn + '/' + pce_svn +
-                                '/' + pce_id + '?';
-    
     std::string client_id = get_client_id();
 
     if (!client_id.empty())
@@ -515,11 +490,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    char* escaped = curl_escape(crl_url.data(), crl_size);
-    if (!escaped)
-    {
-        throw std::bad_alloc();
-    }
+    std::string escaped = curl_easy::escape(crl_url.data(), crl_size);
 
     try
     {
@@ -533,12 +504,10 @@ static sgx_plat_error_t build_pck_crl_url(
 
         *out += API_VERSION;
 
-        curl_free(escaped);
         return SGX_PLAT_ERROR_OK;
     }
     catch (...)
     {
-        curl_free(escaped);
         throw;
     }
 }
@@ -549,8 +518,9 @@ static sgx_plat_error_t build_pck_crl_url(
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
-    std::string tcb_info_url = get_base_url() + "/tcb/" +
-           format_as_hex_string(params.fmspc, params.fmspc_size) + '?';
+    std::string tcb_info_url =
+        get_base_url() + "/tcb/" +
+        format_as_hex_string(params.fmspc, params.fmspc_size) + '?';
 
     std::string client_id = get_client_id();
 
@@ -591,13 +561,14 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         if (auto cache_hit = local_cache_get(cert_url))
         {
-            *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
+            *pp_quote_config =
+                (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
             memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
 
             // re-aligning the p_cert_data pointer
-            (*pp_quote_config)->p_cert_data = (uint8_t *)(*pp_quote_config) +
-                sizeof(sgx_ql_config_t);
-            
+            (*pp_quote_config)->p_cert_data =
+                (uint8_t*)(*pp_quote_config) + sizeof(sgx_ql_config_t);
+
             return SGX_QL_SUCCESS;
         }
 
@@ -658,7 +629,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         (*pp_quote_config)->version = SGX_QL_CONFIG_VERSION_1;
         (*pp_quote_config)->p_cert_data = buf;
         (*pp_quote_config)->cert_data_size = cert_data_size;
-        memcpy((*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
+        memcpy(
+            (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
         buf += cert_data_size;
         assert(buf == buf_end);
 

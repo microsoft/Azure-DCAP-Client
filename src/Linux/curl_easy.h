@@ -6,7 +6,6 @@
 #define CURL_EASY_H
 
 #define _CRT_SECURE_NO_WARNINGS // Use strncpy for portability.
-#include <curl/curl.h>
 #include <cassert>
 #include <cstddef>
 #include <exception>
