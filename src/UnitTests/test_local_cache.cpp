@@ -6,7 +6,12 @@
 #include <cstdio>
 #include <cstring>
 #include <thread>
+#if defined(__LINUX__)
 #include <unistd.h>
+#else
+#include <windows.h>
+#endif
+
 
 #include "local_cache.h"
 #include "UnitTests/unit_test.h"
@@ -83,7 +88,13 @@ static void VerifyExpiryWorks()
     assert(nullptr != local_cache_get(__FUNCTION__));
 
     // wait for expiry, after which the data should be gone
+
+#if defined(__LINUX__)
     sleep(expiry_seconds);
+#else
+    Sleep(expiry_seconds * 1000);
+#endif
+
     assert(nullptr == local_cache_get(__FUNCTION__));
 
     TEST_PASSED();
@@ -146,14 +157,14 @@ static void ThreadSafetyTest()
     constexpr unsigned THREAD_LOOP_COUNT = 128;
     const std::string ID = "data identifier";
 
-    auto cache_writer = [&](int id) {
+    auto cache_writer = [&](void) {
         for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
         {
             local_cache_add(ID, now() + 60, data.size(), data.data());
         }
     };
 
-    auto cache_reader = [&](int id) {
+    auto cache_reader = [&](void) {
         for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
         {
             auto retrieved = local_cache_get(ID);
@@ -165,16 +176,21 @@ static void ThreadSafetyTest()
     // prime the cache entry first (in case a read thread runs first)
     local_cache_add(ID, now() + 60, data.size(), data.data());
 
+#if defined(__LINUX__)
     std::array<std::thread, 8> threads;
     for (size_t i = 0; i < threads.size(); ++i)
+#else
+    std::thread threads[8];
+    for (size_t i = 0; i < _countof(threads); ++i)
+#endif
     {
         if (i & 1)
         {
-            threads[i] = std::thread(cache_writer, i);
+            threads[i] = std::thread(cache_writer);
         }
         else
         {
-            threads[i] = std::thread(cache_reader, i);
+            threads[i] = std::thread(cache_reader);
         }
     }
 

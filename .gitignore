@@ -334,3 +334,16 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+src/Windows/UnitTest/ext/intel/sgx_ql_lib_common.h
+src/Windows/UnitTest/ext/intel/sgx_attributes.h
+src/Windows/UnitTest/ext/intel/sgx_key.h
+src/Windows/UnitTest/ext/intel/sgx_report.h
+src/Windows/dll/ext/intel/sgx_ql_lib_common.h
+src/Windows/dll/ext/intel/sgx_attributes.h
+src/Windows/dll/ext/intel/sgx_key.h
+src/Windows/dll/ext/intel/sgx_report.h
+src/Linux/libdcap_quoteprov.so
+src/Linux/.vscode/settings.json
+.vscode/settings.json
+src/Linux/tests
+src/Linux/Makefile

@@ -63,14 +63,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>
         $(MSBuildProjectDirectory)\..\;
         $(SolutionDir)\..\dll\ext\intel;
         $(SolutionDir)\..\UnitTest\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
         $(SolutionDir)\packages\Json11.1.0.1\build
       </AdditionalIncludeDirectories>
-    </ClCompile>
+          </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -82,6 +82,9 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -94,6 +97,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -102,7 +106,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\test_quote_prov.cpp" />
+    <ClCompile Include="$(SolutionDir)\..\..\UnitTests\test_local_cache.cpp" />
     <ClCompile Include="$(SolutionDir)\..\..\UnitTests\main.cpp" />
+    <ClCompile Include="..\dll\local_cache.cpp" />
   </ItemGroup>
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />

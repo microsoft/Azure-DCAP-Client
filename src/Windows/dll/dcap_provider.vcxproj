@@ -61,7 +61,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>dcap_provider.def</ModuleDefinitionFile>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;libcurl.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(PkgCurl)\lib\win\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories>$(SolutionDir)\packages\curl.7.30.0.2\build\native\lib\v110\x64\Release\dynamic;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
