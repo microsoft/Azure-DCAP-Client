@@ -78,7 +78,7 @@ static void VerifyExpiryWorks()
 {
     TEST_START();
 
-    int expiry_seconds = 5;
+    int expiry_seconds = 2;
 
     // add an entry with expiry shortly in the future
     static const uint8_t data[] = "stuff goes here";

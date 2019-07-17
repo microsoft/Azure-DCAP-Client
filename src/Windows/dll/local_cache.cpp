@@ -67,26 +67,29 @@ static void make_dir(const std::wstring& dirname)
 
 static void init_callback()
 {
-	const DWORD buffSize = 65535;
+	const DWORD buffSize = MAX_PATH;
 	
-	LPTSTR env_home = new TCHAR[buffSize];
-	GetEnvironmentVariable(L"LOCALAPPDATA", env_home, buffSize);
-	std::wstring wenv_home(env_home);
+	auto env_home = std::make_unique<LPWSTR>(new TCHAR[buffSize]);
+	memset(*env_home.get(), 0, buffSize);
+	GetEnvironmentVariable(L"LOCALAPPDATA", *env_home.get(), buffSize);
+	std::wstring wenv_home(*env_home.get());
 
-	LPTSTR env_azdcap_cache = new TCHAR[buffSize];
-	GetEnvironmentVariable(L"AZDCAP_CACHE", env_azdcap_cache, buffSize);
+	auto env_azdcap_cache = std::make_unique<LPWSTR>(new TCHAR[buffSize]);
+	memset(*env_azdcap_cache.get(), 0, buffSize);
+	GetEnvironmentVariable(L"AZDCAP_CACHE", *env_azdcap_cache.get(), buffSize);
+	std::wstring wenv_azdcap_cache(*env_azdcap_cache.get());
 
     const std::wstring application_name(L"\\.az-dcap-client");
-
     std::wstring dirname;
 
-    if (env_home != 0 && env_home[0] != 0 )
-    {
-		dirname = env_home;
-    } else if (env_azdcap_cache != 0 && env_azdcap_cache[0] != 0)
+    if (wenv_azdcap_cache != L"" && wenv_azdcap_cache[0] != 0)
 	{
-		dirname = env_azdcap_cache;
-	}
+		dirname = wenv_azdcap_cache;
+	} 
+	else if (wenv_home != L"" && wenv_home[0] != 0)
+	{
+		dirname = wenv_home;
+	} 
 	else
     {
         // Throwing exception if the expected HOME
@@ -115,8 +118,9 @@ static std::wstring sha256(size_t data_size, const void* data)
     DWORD cbData = 0;
     DWORD cbHash = 0;
     DWORD cbHashObject = 0;
-    PBYTE pbHashObject = NULL;
-    PBYTE pbHash = NULL;
+	std::vector<BYTE> pbHashObject;
+	std::vector<BYTE> pbHash;
+	PBYTE pHashItr = NULL;
     std::string retval;
 
     //open an algorithm handle
@@ -142,13 +146,7 @@ static std::wstring sha256(size_t data_size, const void* data)
         goto Cleanup;
     }
 
-    pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHashObject);
-    if (pbHashObject == NULL)
-    {
-        errorString = "Memory allocation failed\n";
-        status = STATUS_NO_MEMORY;
-        goto Cleanup;
-    }
+	pbHashObject = std::vector<BYTE>(cbHashObject);
 
     //calculate the length of the hash
     if (!NT_SUCCESS(status = BCryptGetProperty(
@@ -164,19 +162,13 @@ static std::wstring sha256(size_t data_size, const void* data)
     }
 
     //allocate the hash buffer on the heap
-    pbHash = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHash);
-    if (NULL == pbHash)
-    {
-        errorString = "Memory allocation failed\n";
-        status = STATUS_NO_MEMORY;
-        goto Cleanup;
-    }
+	pbHash = std::vector<BYTE>(cbHash);
 
     //create a hash
     if (!NT_SUCCESS(status = BCryptCreateHash(
         hAlg,
         &hHash,
-        pbHashObject,
+        pbHashObject.data(),
         cbHashObject,
         NULL,
         0,
@@ -185,7 +177,6 @@ static std::wstring sha256(size_t data_size, const void* data)
         errorString = "Error 0x" + std::to_string(status) + "returned by BCryptCreateHash\n";
         goto Cleanup;
     }
-
 
     //hash some data
     if (!NT_SUCCESS(status = BCryptHashData(
@@ -201,7 +192,7 @@ static std::wstring sha256(size_t data_size, const void* data)
     //close the hash
     if (!NT_SUCCESS(status = BCryptFinishHash(
         hHash,
-        pbHash,
+        pbHash.data(),
         cbHash,
         0)))
     {
@@ -209,11 +200,12 @@ static std::wstring sha256(size_t data_size, const void* data)
         goto Cleanup;
     }
 
+	pHashItr = pbHash.data();
     retval.reserve(2 * cbHash + 1);
     for (size_t i = 0; i < cbHash; i++)
     {
         char buf[3];
-        snprintf(buf, sizeof(buf), "%02x", pbHash[i]);
+        snprintf(buf, sizeof(buf), "%02x", pHashItr[i]);
         retval += buf;
     }
 
@@ -229,25 +221,17 @@ Cleanup:
         BCryptDestroyHash(hHash);
     }
 
-    if (pbHashObject)
-    {
-        HeapFree(GetProcessHeap(), 0, pbHashObject);
-    }
-
-    if (pbHash)
-    {
-        HeapFree(GetProcessHeap(), 0, pbHash);
-    }
-
     throw_if(!NT_SUCCESS(status), errorString);
 
 	std::wstring wretval(retval.begin(), retval.end());
+
     return wretval;
 }
 
 static std::wstring sha256(const std::string& input)
 {
-    return sha256(input.length(), input.data());
+    std::wstring retVal = sha256(input.length(), input.data());
+	return retVal;
 }
 
 static std::wstring get_file_name(const std::string& id)
@@ -269,7 +253,7 @@ void local_cache_clear()
     {
         do {
             std::wstring fileName(data.cFileName);
-            if (fileName.compare(L".") && fileName.compare(L".."))
+            if ((fileName != L".") && (fileName != L".."))
             {
                 std::wstring fullFileName = baseDir + L"\\" + fileName;
 
@@ -291,7 +275,6 @@ HANDLE OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, 
     do {
         file = CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-            
         Sleep(SLEEP_RETRY_MS);
         i++;
     } while ((file == INVALID_HANDLE_VALUE) && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY));
@@ -312,7 +295,6 @@ void local_cache_add(const std::string& id, time_t expiry, size_t data_size, con
     header.expiry = expiry;
 
     std::wstring filename = get_file_name(id);
-    //std::wstring wfilename(filename.begin(), filename.end());
 
     HANDLE file = OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     throw_if(file == INVALID_HANDLE_VALUE, "Create file failed", file);
@@ -336,7 +318,6 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     init();
 
     std::wstring filename = get_file_name(id);
-    //std::wstring wfilename(filename.begin(), filename.end());
     
     HANDLE file = OpenHandle(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE)
@@ -363,7 +344,7 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     }
 
     DWORD size = GetFileSize(file, nullptr);
-    int datasize = size - sizeof(CacheEntryHeaderV1);
+    DWORD datasize = size - sizeof(CacheEntryHeaderV1);
     auto cache_entry = std::make_unique<std::vector<uint8_t>>(datasize);
 
     DWORD dataread = 0;
