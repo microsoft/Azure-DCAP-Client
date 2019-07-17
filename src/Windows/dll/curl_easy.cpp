@@ -311,8 +311,8 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
         auto insertedHeader = headers.emplace(header, Utf8StringFromUnicodeString(buffer.get()));
         return &insertedHeader.first->second;
     }
-    return nullptr;
 
+    return nullptr;
 }
 
 int8_t Int8FromHexAscii(char ch)
