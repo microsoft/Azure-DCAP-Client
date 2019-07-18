@@ -85,6 +85,11 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 {
     std::wstring unicodeString;
 
+    if (ansiString.empty())
+    {
+        return L"";
+    }
+
     auto wideCharSize = MultiByteToWideChar(
         CP_UTF8, MB_PRECOMPOSED, ansiString.c_str(), -1, nullptr, 0);
     if (wideCharSize == 0)
