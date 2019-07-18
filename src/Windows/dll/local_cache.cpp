@@ -15,6 +15,7 @@
 #include <iostream>
 #include <cstdio>
 #include <filesystem>
+#include <wil\resource.h>
 
 #define NT_SUCCESS(Status)          (((NTSTATUS)(Status)) >= 0)
 
@@ -35,25 +36,6 @@ static void throw_if(bool should_throw, const std::string& error)
     }
 }
 
-static void throw_if(bool should_throw, const std::string& error, HANDLE file)
-{
-	if (should_throw)
-	{
-		CloseHandle(file);
-		throw std::runtime_error(error);
-	}
-}
-
-static void fthrow_if(bool should_throw, const std::string& error, HANDLE file)
-{
-	if (should_throw)
-	{
-		FindClose(file);
-		throw std::runtime_error(error);
-	}
-}
-
-
 struct CacheEntryHeaderV1 {
     uint16_t version;   // The version of the cache header
     time_t expiry;      // expiration time of this cache item
@@ -61,8 +43,8 @@ struct CacheEntryHeaderV1 {
 
 static void make_dir(const std::wstring& dirname)
 {
-	CreateDirectory(dirname.c_str(), NULL);
-	throw_if(GetLastError() == ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_ALREADY_EXISTS, "Path not found");
+    CreateDirectory(dirname.c_str(), NULL);
+    throw_if(GetLastError() == ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_ALREADY_EXISTS, "Path not found");
 }
 
 static void init_callback()
@@ -111,46 +93,31 @@ static void init()
 
 static std::wstring sha256(size_t data_size, const void* data)
 {
-    BCRYPT_ALG_HANDLE hAlg = NULL;
-    BCRYPT_HASH_HANDLE hHash = NULL;
+    wil::unique_bcrypt_algorithm hAlg;
+    wil::unique_bcrypt_hash hHash;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
     std::string errorString;
     DWORD cbData = 0;
     DWORD cbHash = 0;
-    DWORD cbHashObject = 0;
-	std::vector<BYTE> pbHashObject;
 	std::vector<BYTE> pbHash;
-	PBYTE pHashItr = NULL;
+	PBYTE pHashItr = nullptr;
     std::string retval;
 
     //open an algorithm handle
     if (!NT_SUCCESS(status = BCryptOpenAlgorithmProvider(
-        &hAlg,
+        hAlg.addressof(),
         BCRYPT_SHA256_ALGORITHM,
-        NULL,
+        nullptr,
         0)))
     {
         errorString = "Error 0x" + std::to_string(status) + "returned by BCryptOpenAlgorithmProvider\n";
         goto Cleanup;
     }
 
-    if (!NT_SUCCESS(status == BCryptGetProperty(
-        hAlg,
-        BCRYPT_OBJECT_LENGTH,
-        (PBYTE)&cbHashObject,
-        sizeof(DWORD),
-        &cbData,
-        0)))
-    {
-        errorString = "Error 0x" + std::to_string(status) + "returned by BCryptGetProperty\n";
-        goto Cleanup;
-    }
-
-	pbHashObject = std::vector<BYTE>(cbHashObject);
 
     //calculate the length of the hash
     if (!NT_SUCCESS(status = BCryptGetProperty(
-        hAlg,
+        hAlg.get(),
         BCRYPT_HASH_LENGTH,
         (PBYTE)&cbHash,
         sizeof(DWORD),
@@ -166,11 +133,11 @@ static std::wstring sha256(size_t data_size, const void* data)
 
     //create a hash
     if (!NT_SUCCESS(status = BCryptCreateHash(
-        hAlg,
-        &hHash,
-        pbHashObject.data(),
-        cbHashObject,
-        NULL,
+        hAlg.get(),
+        hHash.addressof(),
+        nullptr,
+        0,
+        nullptr,
         0,
         0)))
     {
@@ -180,7 +147,7 @@ static std::wstring sha256(size_t data_size, const void* data)
 
     //hash some data
     if (!NT_SUCCESS(status = BCryptHashData(
-        hHash,
+        hHash.get(),
         (PBYTE)data,
         (ULONG)data_size,
         0)))
@@ -191,7 +158,7 @@ static std::wstring sha256(size_t data_size, const void* data)
 
     //close the hash
     if (!NT_SUCCESS(status = BCryptFinishHash(
-        hHash,
+        hHash.get(),
         pbHash.data(),
         cbHash,
         0)))
@@ -210,17 +177,6 @@ static std::wstring sha256(size_t data_size, const void* data)
     }
 
 Cleanup:
-
-    if (hAlg)
-    {
-        BCryptCloseAlgorithmProvider(hAlg, 0);
-    }
-
-    if (hHash)
-    {
-        BCryptDestroyHash(hHash);
-    }
-
     throw_if(!NT_SUCCESS(status), errorString);
 
 	std::wstring wretval(retval.begin(), retval.end());
@@ -247,39 +203,36 @@ void local_cache_clear()
     std::wstring baseDir(g_cache_dirname.begin(), g_cache_dirname.end());
     std::wstring searchPattern = baseDir + L"\\*";
 
-    HANDLE hFind = FindFirstFile(searchPattern.c_str(), &data);
-
-    if (hFind != INVALID_HANDLE_VALUE)
+    wil::unique_hfind hFind(FindFirstFile(searchPattern.c_str(), &data));
+    if (hFind)
     {
         do {
             std::wstring fileName(data.cFileName);
             if ((fileName != L".") && (fileName != L".."))
             {
                 std::wstring fullFileName = baseDir + L"\\" + fileName;
-
-                fthrow_if(!DeleteFileW(fullFileName.c_str()),
-                    "Deleting file failed, error code " + GetLastError(), hFind);
+                throw_if(!DeleteFileW(fullFileName.c_str()),
+                    "Deleting file failed, error code " + GetLastError());
             }
-        } while (FindNextFile(hFind, &data));
-        FindClose(hFind);
+        } while (FindNextFile(hFind.get(), &data));
     }
 
     return;
 };
 
-HANDLE OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
     DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
     
-    HANDLE file;
+    wil::unique_hfile file;
     int i = 0;
     do {
-        file = CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
-            dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+        file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+            dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile));
         Sleep(SLEEP_RETRY_MS);
         i++;
-    } while ((file == INVALID_HANDLE_VALUE) && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY));
+    } while (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY));
 
-    return file;
+    return std::move(file);
 }
 
 
@@ -296,19 +249,18 @@ void local_cache_add(const std::string& id, time_t expiry, size_t data_size, con
 
     std::wstring filename = get_file_name(id);
 
-    HANDLE file = OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    throw_if(file == INVALID_HANDLE_VALUE, "Create file failed", file);
+    wil::unique_hfile file(OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+    throw_if(!file, "Create file failed");
 
     DWORD headerwritten;
     DWORD datawritten;
 
-    throw_if(!WriteFile(file, &header, sizeof(header), &headerwritten, nullptr),
-        "Header write to local cache failed", file);
+    throw_if(!WriteFile(file.get(), &header, sizeof(header), &headerwritten, nullptr),
+        "Header write to local cache failed");
 
-    throw_if(!WriteFile(file, data, (DWORD)data_size, &datawritten, nullptr),
-        "Data write to local cache failed", file);
+    throw_if(!WriteFile(file.get(), data, (DWORD)data_size, &datawritten, nullptr),
+        "Data write to local cache failed");
 
-    CloseHandle(file);
 }
 
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
@@ -319,8 +271,8 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 
     std::wstring filename = get_file_name(id);
     
-    HANDLE file = OpenHandle(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE)
+    auto file = OpenHandle(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (!file)
     {
         return nullptr;
     }
@@ -329,30 +281,30 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     char buf[sizeof(CacheEntryHeaderV1)] = { 0 };
     DWORD headerread = 0;
 
-	ReadFile(file, &buf, sizeof(CacheEntryHeaderV1), &headerread, nullptr);
-	throw_if(GetLastError(), "Header read from local cache failed", file);
+    throw_if(!ReadFile(file.get(), &buf, sizeof(CacheEntryHeaderV1), &headerread, nullptr), "Header read from local cache failed");
+
+    throw_if(
+        headerread != sizeof(CacheEntryHeaderV1),
+        "Incomplete read of cache header");
 
     header = (CacheEntryHeaderV1*)buf;
 
     if (header->expiry <= time(nullptr))
     {
-        CloseHandle(file);
+        file.reset();
         DeleteFileW(filename.c_str());
         // Even if unlink fails, we can just return null. Thus, the return
         // value is intentionally ignored here.
         return nullptr;
     }
 
-    DWORD size = GetFileSize(file, nullptr);
+    DWORD size = GetFileSize(file.get(), nullptr);
     DWORD datasize = size - sizeof(CacheEntryHeaderV1);
     auto cache_entry = std::make_unique<std::vector<uint8_t>>(datasize);
 
     DWORD dataread = 0;
-	ReadFile(file, cache_entry->data(), size, &dataread, nullptr);
-	throw_if(GetLastError(), "Data read from local cache failed", file);
-	throw_if(dataread != datasize, "Something wrong with data", file);
-
-    CloseHandle(file);
+	throw_if(!ReadFile(file.get(), cache_entry->data(), datasize, &dataread, nullptr), "Error reading cached file data");
+	throw_if(dataread != datasize, "Read returned fewer bytes than expected.");
 
     return cache_entry;
 }

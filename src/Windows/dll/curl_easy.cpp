@@ -91,18 +91,18 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
     }
 
     auto wideCharSize = MultiByteToWideChar(
-        CP_UTF8, MB_PRECOMPOSED, ansiString.c_str(), -1, nullptr, 0);
+        CP_UTF8, MB_ERR_INVALID_CHARS, ansiString.c_str(), -1, nullptr, 0);
     if (wideCharSize == 0)
     {
         throw curl_easy::error(
-            0UL, "Unable to convert string to unicode (sizing)");
+            GetLastError(), "Unable to convert string to unicode (sizing)");
     }
     unicodeString.reserve(wideCharSize);
     unicodeString.resize(wideCharSize - 1);
 
     wideCharSize = MultiByteToWideChar(
         CP_UTF8,
-        MB_PRECOMPOSED,
+        MB_ERR_INVALID_CHARS,
         ansiString.c_str(),
         -1,
         &unicodeString[0],

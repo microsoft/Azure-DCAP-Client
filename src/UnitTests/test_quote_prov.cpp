@@ -138,9 +138,9 @@ static void GetCertsTest()
 
     // Get the cert data
     sgx_ql_config_t* config;
-    Log(SGX_QL_LOG_ERROR , "Calling sgx_ql_get_quote_config");
+    Log(SGX_QL_LOG_INFO , "Calling sgx_ql_get_quote_config");
     assert(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
-    Log(SGX_QL_LOG_ERROR , "sgx_ql_get_quote_config reeturned");
+    Log(SGX_QL_LOG_INFO , "sgx_ql_get_quote_config returned");
     assert(nullptr != config);
 
     // Just sanity check a few fields. Parsing the certs would require a big
