@@ -68,7 +68,6 @@
         $(SolutionDir)\..\dll\ext\intel;
         $(SolutionDir)\..\UnitTest\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
-        $(SolutionDir)\packages\Json11.1.0.1\build
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

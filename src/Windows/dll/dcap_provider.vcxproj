@@ -11,7 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">$(SolutionDir)\packages\</NuGetPackageRoot>
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AAA37DF8-87A5-40E9-B0DF-8919D5E92533}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -52,7 +51,6 @@
         $(MSBuildProjectDirectory)\..\..\;
         $(SolutionDir)\..\dll\ext\intel;
         $(SolutionDir)\..\UnitTest\ext\intel;
-        $(NuGetPackageRoot)\\Json11.1.0.1\build
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -119,7 +117,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(NuGetPackageRoot)\\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
   </Target>
-  <Import Project="$(NuGetPackageRoot)\\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(NuGetPackageRoot)\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+  <Import Project="$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 </Project>
