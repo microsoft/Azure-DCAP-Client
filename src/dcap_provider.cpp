@@ -642,13 +642,20 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     }
     catch (std::bad_alloc&)
     {
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (curl_easy::error& error)
     {
+        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_QL_NO_PLATFORM_CERT_DATA
                    : SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        return SGX_QL_ERROR_UNEXPECTED;
     }
 
     return SGX_QL_SUCCESS;
@@ -860,11 +867,16 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
     }
     catch (curl_easy::error& error)
     {
+        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
-
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
     return SGX_PLAT_ERROR_OK;
 }
 
@@ -973,9 +985,15 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
     }
     catch (curl_easy::error& error)
     {
+        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
 
     return SGX_PLAT_ERROR_OK;

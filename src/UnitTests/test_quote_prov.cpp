@@ -12,7 +12,7 @@
 #include <memory>
 
 #if defined(__LINUX__)
-#include <tgmath.h>
+#include <tgmath.h>]
 #include <dlfcn.h>
 #else
 #include <iostream>
@@ -243,6 +243,7 @@ extern void QuoteProvTests()
     // First pass: Get the data from the service, no cache allowed
     //
     _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
 
     GetCertsTest();
     GetCrlTest();
