@@ -215,13 +215,15 @@ void curl_easy::perform() const
             0,
             0))
     {
+        log(SGX_QL_LOG_INFO, "WinHttpSendRequest returned false: 0x%x", GetLastError());
         throw_on_error(GetLastError(), "curl_easy::perform/WinHttpSendRequest");
     }
 
     //  Wait for the response from the server.
     if (!WinHttpReceiveResponse(request.get(), nullptr))
     {
-        throw_on_error(GetLastError(), "curl_easy::perform/WinHttpSendRequest");
+        log(SGX_QL_LOG_INFO, "WinHttpReceiveResponse returned false: 0x%x", GetLastError());
+        throw_on_error(GetLastError(), "curl_easy::perform/WinHttpReceiveRequest");
     }
 }
 

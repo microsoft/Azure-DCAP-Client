@@ -12,7 +12,7 @@
 #include <memory>
 
 #if defined(__LINUX__)
-#include <tgmath.h>]
+#include <tgmath.h>
 #include <dlfcn.h>
 #else
 #include <iostream>
@@ -138,7 +138,9 @@ static void GetCertsTest()
 
     // Get the cert data
     sgx_ql_config_t* config;
+    Log(SGX_QL_LOG_ERROR , "Calling sgx_ql_get_quote_config");
     assert(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
+    Log(SGX_QL_LOG_ERROR , "sgx_ql_get_quote_config reeturned");
     assert(nullptr != config);
 
     // Just sanity check a few fields. Parsing the certs would require a big
