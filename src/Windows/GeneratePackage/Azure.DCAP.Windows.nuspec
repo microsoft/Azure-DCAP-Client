@@ -18,14 +18,8 @@
 
     <!-- A readme.txt to display when the package is installed -->
     <files>
-        <file src="..\dll\x64\Release\dcap_quoteprov.dll" target="dll" />
-        <file src="..\dll\x64\Release\dcap_quoteprov.pdb" target="dll" />
-        <file src="..\dll\x64\Release\libcurl.dll" target="dll" />
-        <file src="..\dll\x64\Release\libeay32.dll" target="dll" />
-        <file src="..\dll\x64\Release\libssh2.dll" target="dll" />
-        <file src="..\dll\x64\Release\ssleay32.dll" target="dll" />
-        <file src="..\dll\x64\Release\zlib.dll" target="dll" />
-        <file src="..\dll\x64\Release\curl-ca-bundle.crt" target="crt" />
+        <file src="..\x64\Release\dcap_quoteprov.dll" target="dll" />
+        <file src="..\x64\Release\dcap_quoteprov.pdb" target="dll" />
         <file src=".\InstallAzureDCAP.ps1" target="script" />
         <file src=".\README.txt" target="" />
     </files>
