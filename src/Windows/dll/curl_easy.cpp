@@ -316,8 +316,11 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
                 GetLastError(), "curl_easy::get_header/WinHttpQueryHeaders");
         }
         log(SGX_QL_LOG_INFO, " curl_easy::header %s has value %S", header.c_str(), buffer.get());
+        std::string headerAsUtf8(Utf8StringFromUnicodeString(buffer.get()));
 
-        auto insertedHeader = headers.emplace(header, Utf8StringFromUnicodeString(buffer.get()));
+        log(SGX_QL_LOG_INFO, " curl_easy::UTF8 version of header value is: %s", headerAsUtf8.c_str());
+
+        auto insertedHeader = headers.emplace(header, headerAsUtf8);
         const std::string* returnValue = &insertedHeader.first->second;
 #if 1
         {
