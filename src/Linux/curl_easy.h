@@ -6,7 +6,6 @@
 #define CURL_EASY_H
 
 #define _CRT_SECURE_NO_WARNINGS // Use strncpy for portability.
-#include <curl/curl.h>
 #include <cassert>
 #include <cstddef>
 #include <exception>
@@ -14,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <curl/curl.h>
 
 //
 // RAII wrapper around Curl to make resource management exception-safe. This
@@ -52,7 +52,7 @@ class curl_easy
     const std::string* get_header(const std::string& field_name) const;
 
     std::string unescape(const std::string& encoded) const;
-
+    static std::string escape(const char *buffer, int len);
   private:
     curl_easy() = default;
 

@@ -138,7 +138,9 @@ static void GetCertsTest()
 
     // Get the cert data
     sgx_ql_config_t* config;
+    Log(SGX_QL_LOG_INFO , "Calling sgx_ql_get_quote_config");
     assert(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
+    Log(SGX_QL_LOG_INFO , "sgx_ql_get_quote_config returned");
     assert(nullptr != config);
 
     // Just sanity check a few fields. Parsing the certs would require a big
@@ -243,6 +245,7 @@ extern void QuoteProvTests()
     // First pass: Get the data from the service, no cache allowed
     //
     _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
 
     GetCertsTest();
     GetCrlTest();

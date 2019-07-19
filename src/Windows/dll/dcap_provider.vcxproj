@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props" Condition="Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -15,7 +14,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AAA37DF8-87A5-40E9-B0DF-8919D5E92533}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <!-- The library name is dicatated by Intel. They look, specifically, for a dll
          with the following name. We must match it. -->
     <TargetName>dcap_quoteprov</TargetName>
@@ -44,16 +43,13 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PkgCurl)\inc</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>
         $(MSBuildProjectDirectory);
         $(MSBuildProjectDirectory)\..\;
         $(MSBuildProjectDirectory)\..\..\;
-        $(SolutionDir)\..\dll\ext\intel;
-        $(SolutionDir)\..\UnitTest\ext\intel;
-        $(SolutionDir)\packages\Json11.1.0.1\build
+        $(MsBuildProjectDirectory)\ext\intel;
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -61,9 +57,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>dcap_provider.def</ModuleDefinitionFile>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;libcurl.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(PkgCurl)\lib\win\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalLibraryDirectories>$(SolutionDir)\packages\curl.7.30.0.2\build\native\lib\v110\x64\Release\dynamic;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>shlwapi.lib;Ws2_32.lib;winhttp.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -79,6 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -86,52 +81,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="$(MsBuildProjectDirectory)\..\..\logging.cpp" />
+    <ClCompile Include="curl_easy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="local_cache.cpp" />
-    <ClCompile Include="$(SolutionDir)\..\..\curl_easy.cpp" />
-    <ClCompile Include="$(SolutionDir)\..\..\dcap_provider.cpp" />
+    <ClCompile Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="dcap_provider.def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\UnitTest\dcap_provider_ut.vcxproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(PkgCurl)\lib\win\x64\*.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\bin\v110\x64\Release\dynamic\*.dll">
-      <Link>%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
-      <Link>%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\bin\v110\x64\Release\dynamic\*.dll">
-      <Link>%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\bin\v110\x64\Release\dynamic\cdecl\*.dll">
-      <Link>%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(MSBuildProjectDirectory)\curl-ca-bundle.crt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\curl_easy.h" />
     <ClInclude Include="..\dcap_provider.h" />
     <ClInclude Include="..\private.h" />
+    <ClInclude Include="curl_easy.h" />
     <ClInclude Include="ext\intel\sgx_ql_lib_common.h" />
     <ClInclude Include="ext\intel\sgx_key.h" />
     <ClInclude Include="ext\intel\sgx_attributes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets" Condition="Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" />
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
@@ -143,21 +111,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\curl.redist.7.30.0.2\build\native\curl.redist.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.props'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
   </Target>
-  <Import Project="$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets" Condition="Exists('$(SolutionDir)\packages\openssl.redist.1.0.1.25\build\native\openssl.redist.targets')" />
-  <Import Project="$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets" Condition="Exists('$(SolutionDir)\packages\zlib.redist.1.2.8.1\build\native\zlib.redist.targets')" />
-  <Import Project="$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets" Condition="Exists('$(SolutionDir)\packages\zlib.1.2.8.1\build\native\zlib.targets')" />
-  <Import Project="$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets" Condition="Exists('$(SolutionDir)\packages\openssl.1.0.1.21\build\native\openssl.targets')" />
-  <Import Project="$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets" Condition="Exists('$(SolutionDir)\packages\curl.7.30.0.2\build\native\curl.targets')" />
-  <Import Project="$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets" Condition="Exists('$(SolutionDir)\packages\libssh2.redist.1.4.3.3\build\native\libssh2.redist.targets')" />
-  <Import Project="$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets" Condition="Exists('$(SolutionDir)\packages\libssh2.1.4.3.3\build\native\libssh2.targets')" />
+  <Import Project="$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 </Project>

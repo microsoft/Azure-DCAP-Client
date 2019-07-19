@@ -149,6 +149,18 @@ std::string curl_easy::unescape(const std::string& encoded) const
     return decoded_str;
 }
 
+std::string curl_easy::escape(const char *unescaped, int length)
+{
+    char* escaped = curl_escape(unescaped, length);
+    if (!escaped)
+    {
+        throw std::bad_alloc();
+    }
+    std::string escaped_str(escaped);
+    curl_free(escaped);
+    return escaped_str;
+}
+
 #pragma warning(suppress : 25033) // CURL defines input buffers as non-const
 size_t curl_easy::write_callback(
     char* ptr,

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include <Windows.h>
-#include <curl/curl.h>
 
 HINSTANCE moduleHandle;
 
@@ -15,7 +14,6 @@ extern "C" BOOL WINAPI DllMain(
     if (reason == DLL_PROCESS_ATTACH)
     {
         moduleHandle = dll; 
-        curl_global_init(CURL_GLOBAL_DEFAULT);
     }
 
     return true;
