@@ -54,7 +54,7 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
 
     auto ansiCharSize = WideCharToMultiByte(
         CP_UTF8,
-        MB_ERR_INVALID_CHARS,
+        0,
         unicodeString.c_str(),
         -1,
         nullptr,
@@ -70,7 +70,7 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
 
     ansiCharSize = WideCharToMultiByte(
         CP_UTF8,
-        MB_ERR_INVALID_CHARS,
+        0,
         unicodeString.c_str(),
         -1,
         &ansiString[0],
