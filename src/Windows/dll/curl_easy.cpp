@@ -54,7 +54,7 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
 
     auto ansiCharSize = WideCharToMultiByte(
         CP_UTF8,
-        WC_NO_BEST_FIT_CHARS,
+        MB_ERR_INVALID_CHARS,
         unicodeString.c_str(),
         -1,
         nullptr,
@@ -63,20 +63,24 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
         nullptr);
     if (ansiCharSize == 0)
     {
-        return "";
+        throw curl_easy::error(GetLastError(), "Unable to convert string to Utf8 (sizing)");
     }
     ansiString.reserve(ansiCharSize);
     ansiString.resize(ansiCharSize - 1);
 
     ansiCharSize = WideCharToMultiByte(
         CP_UTF8,
-        WC_NO_BEST_FIT_CHARS,
+        MB_ERR_INVALID_CHARS,
         unicodeString.c_str(),
         -1,
         &ansiString[0],
         ansiCharSize,
         nullptr,
         nullptr);
+    if (ansiCharSize == 0)
+    {
+        throw curl_easy::error(GetLastError(), "Unable to convert string to Utf8 (conversion)");
+    }
 
     return ansiString;
 }
@@ -107,6 +111,10 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
         -1,
         &unicodeString[0],
         wideCharSize);
+    if (wideCharSize == 0)
+    {
+        throw curl_easy::error(GetLastError(), "Unable to convert string to unicode (conversion)");
+    }
 
     return unicodeString;
 }
