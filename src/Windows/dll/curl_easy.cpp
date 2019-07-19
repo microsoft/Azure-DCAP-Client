@@ -282,13 +282,13 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
 {
     DWORD bufferLength = 0;
 
-    log(SGX_QL_LOG_INFO, " curl_easy::get_header: %s", field_name.c_str());
+    log(SGX_QL_LOG_INFO, " curl_easy(%p)::get_header: %s", this, field_name.c_str());
     std::string header = to_lower(field_name);
-    log(SGX_QL_LOG_INFO, " curl_easy::look up header: %s", header.c_str());
+    log(SGX_QL_LOG_INFO, " curl_easy(%p)::look up header: %s", this, header.c_str());
     auto result = headers.find(header);
     if (result != headers.end())
     {
-        log(SGX_QL_LOG_INFO, " curl_easy::header %s found: %s", header.c_str(), result->second.c_str());
+        log(SGX_QL_LOG_INFO, " curl_easy(%p)::header %s found: %s", this, header.c_str(), result->second.c_str());
         return &result->second;
     }
     else if (!WinHttpQueryHeaders(
@@ -300,7 +300,7 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
             WINHTTP_NO_HEADER_INDEX) && 
         (GetLastError() == ERROR_INSUFFICIENT_BUFFER))
     {
-        log(SGX_QL_LOG_INFO, " curl_easy::header %s is present in response", header.c_str());
+        log(SGX_QL_LOG_INFO, " curl_easy(%p)::header %s is present in response", this, header.c_str());
         auto buffer = std::make_unique<wchar_t[]>(bufferLength + 1);
         ZeroMemory(buffer.get(), bufferLength);
 
@@ -321,10 +321,16 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
         const std::string* returnValue = &insertedHeader.first->second;
 #if 1
         {
+            for (auto &results : headers)
+            {
+                log(SGX_QL_LOG_INFO, "curl_easy::Headers now contain: %s: %s", results.first.c_str(), results.second.c_str());
+            }
             auto searchResult = headers.find(header);
             assert(searchResult != headers.end());
 
             log(SGX_QL_LOG_INFO, "curl_easy::search for header %s after insertion found: %s", header.c_str(), searchResult->second.c_str());
+            log(SGX_QL_LOG_INFO, "curl_easy:: return value: %s, search result: %s", returnValue->c_str(), searchResult->second.c_str());
+            log(SGX_QL_LOG_INFO, "curl_easy:: return value: %p, search result: %p", returnValue, &searchResult->second);
             assert(*returnValue == searchResult->second);
             assert(returnValue == &searchResult->second);
         }
