@@ -111,6 +111,7 @@ def DCAPBuildTest(String label, String build_type) {
                     powershell.exe -ExecutionPolicy Bypass -Command \"Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\" && \
                     nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
+                    MSBuild.exe ..\UnitTest\dcap_provider_ut.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_ut.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     dcap_provider_ut.exe
