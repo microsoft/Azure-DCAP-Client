@@ -319,14 +319,14 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
 
         auto insertedHeader = headers.emplace(header, Utf8StringFromUnicodeString(buffer.get()));
         const std::string* returnValue = &insertedHeader.first->second;
-#if DBG
+#if 1
         {
-            auto result = headers.find(header);
-            assert(result != headers.end());
+            auto searchResult = headers.find(header);
+            assert(searchResult != headers.end());
 
-            log(SGX_QL_LOG_INFO, "curl_easy::search for header %s after insertion found: %s", header.c_str(), result->second.c_str());
-            assert(*returnValue == result->second);
-            assert(returnValue == &result->second);
+            log(SGX_QL_LOG_INFO, "curl_easy::search for header %s after insertion found: %s", header.c_str(), searchResult->second.c_str());
+            assert(*returnValue == searchResult->second);
+            assert(returnValue == &searchResult->second);
         }
 #endif
         return returnValue;
