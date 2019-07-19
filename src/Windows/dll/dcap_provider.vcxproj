@@ -49,8 +49,7 @@
         $(MSBuildProjectDirectory);
         $(MSBuildProjectDirectory)\..\;
         $(MSBuildProjectDirectory)\..\..\;
-        $(SolutionDir)\..\dll\ext\intel;
-        $(SolutionDir)\..\UnitTest\ext\intel;
+        $(MsBuildProjectDirectory)\ext\intel;
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -82,20 +81,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\logging.cpp" />
+    <ClCompile Include="$(MsBuildProjectDirectory)\..\..\logging.cpp" />
     <ClCompile Include="curl_easy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="local_cache.cpp" />
-    <ClCompile Include="$(SolutionDir)\..\..\dcap_provider.cpp" />
+    <ClCompile Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dcap_provider.def" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\UnitTest\dcap_provider_ut.vcxproj" />
-  </ItemGroup>
-  <ItemGroup>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\dcap_provider.h" />
