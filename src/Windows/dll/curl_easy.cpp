@@ -318,7 +318,18 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
         log(SGX_QL_LOG_INFO, " curl_easy::header %s has value %S", header.c_str(), buffer.get());
 
         auto insertedHeader = headers.emplace(header, Utf8StringFromUnicodeString(buffer.get()));
-        return &insertedHeader.first->second;
+        const std::string* returnValue = &insertedHeader.first->second;
+#if DBG
+        {
+            auto result = headers.find(header);
+            assert(result != headers.end());
+
+            log(SGX_QL_LOG_INFO, "curl_easy::search for header %s after insertion found: %s", header.c_str(), result->second.c_str());
+            assert(*returnValue == result->second);
+            assert(returnValue == &result->second);
+        }
+#endif
+        return returnValue;
     }
     log(SGX_QL_LOG_INFO, " curl_easy::header %s is not found in the network response", header.c_str());
     return nullptr;
