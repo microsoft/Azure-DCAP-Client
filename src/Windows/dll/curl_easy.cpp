@@ -26,7 +26,7 @@ static std::string to_lower(const std::string& inout)
         c = std::tolower(c, loc);
     }
 
-    return inout;
+    return retval;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -282,10 +282,13 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
 {
     DWORD bufferLength = 0;
 
+    log(SGX_QL_LOG_INFO, " curl_easy::get_header: %s", field_name.c_str());
     std::string header = to_lower(field_name);
+    log(SGX_QL_LOG_INFO, " curl_easy::look up header: %s", header.c_str());
     auto result = headers.find(header);
     if (result != headers.end())
     {
+        log(SGX_QL_LOG_INFO, " curl_easy::header %s found: %s", header.c_str(), result->second.c_str());
         return &result->second;
     }
     else if (!WinHttpQueryHeaders(
@@ -297,6 +300,7 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
             WINHTTP_NO_HEADER_INDEX) && 
         (GetLastError() == ERROR_INSUFFICIENT_BUFFER))
     {
+        log(SGX_QL_LOG_INFO, " curl_easy::header %s is present in response", header.c_str());
         auto buffer = std::make_unique<wchar_t[]>(bufferLength + 1);
         ZeroMemory(buffer.get(), bufferLength);
 
@@ -311,11 +315,12 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
             throw_on_error(
                 GetLastError(), "curl_easy::get_header/WinHttpQueryHeaders");
         }
+        log(SGX_QL_LOG_INFO, " curl_easy::header %s has value %S", header.c_str(), buffer.get());
 
         auto insertedHeader = headers.emplace(header, Utf8StringFromUnicodeString(buffer.get()));
         return &insertedHeader.first->second;
     }
-
+    log(SGX_QL_LOG_INFO, " curl_easy::header %s is not found in the network response", header.c_str());
     return nullptr;
 }
 
