@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
-#include "..\dll\curl_easy.h"
+#include "curl_easy.h"
 #include <private.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;

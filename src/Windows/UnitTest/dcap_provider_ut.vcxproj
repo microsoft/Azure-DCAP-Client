@@ -101,13 +101,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildProjectDirectory)\..\..\dcap_provider.h" />
-    <ClInclude Include="$(MSBuildProjectDirectory)\..\UnitTests\unit_test.h" />
+    <ClInclude Include="$(MSBuildProjectDirectory)\..\..\UnitTests\unit_test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildProjectDirectory)\..\..\UnitTests\test_quote_prov.cpp" />
     <ClCompile Include="$(MSBuildProjectDirectory)\..\..\UnitTests\test_local_cache.cpp" />
     <ClCompile Include="$(MSBuildProjectDirectory)\..\..\UnitTests\main.cpp" />
-    <ClCompile Include="..\dll\local_cache.cpp" />
+    <ClCompile Include="..\local_cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

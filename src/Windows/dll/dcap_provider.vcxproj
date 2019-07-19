@@ -82,19 +82,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(MsBuildProjectDirectory)\..\..\logging.cpp" />
-    <ClCompile Include="curl_easy.cpp" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="local_cache.cpp" />
     <ClCompile Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.cpp" />
+    <ClCompile Include="..\curl_easy.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="..\local_cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dcap_provider.def" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\dcap_provider.h" />
-    <ClInclude Include="..\private.h" />
-    <ClInclude Include="curl_easy.h" />
+    <ClInclude Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.h" />
+    <ClInclude Include="$(MsBuildProjectDirectory)\..\..\private.h" />
+    <ClInclude Include="..\curl_easy.h" />
     <ClInclude Include="ext\intel\sgx_ql_lib_common.h" />
     <ClInclude Include="ext\intel\sgx_key.h" />
     <ClInclude Include="ext\intel\sgx_attributes.h" />
