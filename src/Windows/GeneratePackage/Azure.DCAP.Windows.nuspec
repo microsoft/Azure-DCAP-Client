@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <id>Azure.DCAP.Windows</id>
+        <version>0.0.0.1</version>
+        <!-- Authors contain text that appears directly on the gallery -->
+        <authors>Srujan Jonnadula, Johnathan Chow, Larry Osterman</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <releaseNotes>Initial Release of Azure DCAP for Windows</releaseNotes>
+        <description>Azure DCAP for Windows</description>
+        <projectUrl>https://github.com/Microsoft/Azure-DCAP-Client/</projectUrl>
+        <copyright>Copyright (c) Microsoft Corporation</copyright>
+        <!-- Dependencies are automatically installed when the package is installed -->
+        <dependencies>
+            <dependency id="Newtonsoft.Json" version="9.0" />
+        </dependencies>
+    </metadata>
+
+    <!-- A readme.txt to display when the package is installed -->
+    <files>
+        <file src="..\dll\x64\Release\dcap_quoteprov.dll" target="dll" />
+        <file src="..\dll\x64\Release\dcap_quoteprov.pdb" target="dll" />
+        <file src="..\dll\x64\Release\libcurl.dll" target="dll" />
+        <file src="..\dll\x64\Release\libeay32.dll" target="dll" />
+        <file src="..\dll\x64\Release\libssh2.dll" target="dll" />
+        <file src="..\dll\x64\Release\ssleay32.dll" target="dll" />
+        <file src="..\dll\x64\Release\zlib.dll" target="dll" />
+        <file src="..\dll\x64\Release\curl-ca-bundle.crt" target="crt" />
+        <file src=".\InstallAzureDCAP.ps1" target="script" />
+        <file src=".\README.txt" target="" />
+    </files>
+</package>
