@@ -117,7 +117,7 @@ def DCAPBuildTest(String label, String build_type) {
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     dcap_provider_ut.exe \
                     cd ${WORKSPACE}\\src\\Windows\\dll && \
-                    vstest.console.exe --Platform:x64 x64\${build_type}\dcap_provider_tests.dll
+                    vstest.console.exe --Platform:x64 x64\\${build_type}\\dcap_provider_tests.dll
                 """
             }
         }
