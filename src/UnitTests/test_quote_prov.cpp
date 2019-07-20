@@ -195,13 +195,25 @@ static void GetCrlTest()
     TEST_PASSED();
 }
 
+// The Windows tolerance is 40ms while the Linux is about 2ms. That's for two reasons:
+// 1) The windows system timer runs at a 10ms cadence, meaning that you're not going to see 1ms or 2ms intervals.
+// 2) The windows console is synchronous and quite slow relative to the linux console.
 #if defined __LINUX__
+constexpr auto CURL_TOLERANCE = 0.002;
+#else
+constexpr auto CURL_TOLERANCE = 0.04;
+#endif
+
 extern void QuoteProvTests()
 {
     std::clock_t start;
     double duration_curl;
     double duration_local;
+#if defined __LINUX__
     void* library = LoadFunctions();
+#else
+    HINSTANCE library = LoadFunctions();
+#endif
 
     assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
 
@@ -209,7 +221,14 @@ extern void QuoteProvTests()
     // First pass: Get the data from the service, no cache allowed
     //
 
+#if defined __LINUX__
     setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+#else
+    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
+#endif
+
     local_cache_clear();
 
     start = std::clock();
@@ -230,26 +249,12 @@ extern void QuoteProvTests()
     // Ensure that there is a signficiant enough difference between the cert
     // fetch to the end point and cert fetch to local cache and that local cache
     // call is fast enough
-    assert(fabs(duration_curl - duration_local) > 0.0001 && duration_local < 0.001);
+    assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
+    assert(duration_local < CURL_TOLERANCE);
 
+#if defined __LINUX__
     dlclose(library);
-}
 #else
-extern void QuoteProvTests()
-{
-    HINSTANCE library = LoadFunctions();
-
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // First pass: Get the data from the service, no cache allowed
-    //
-    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
-    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
-
-    GetCertsTest();
-    GetCrlTest();
-
     FreeLibrary(library);
-}
 #endif
+}

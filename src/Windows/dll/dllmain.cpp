@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 HINSTANCE moduleHandle;
+extern void uninit();
 
 extern "C" BOOL WINAPI DllMain(
     _In_ HINSTANCE dll,
@@ -13,8 +14,8 @@ extern "C" BOOL WINAPI DllMain(
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+        DisableThreadLibraryCalls(dll);
         moduleHandle = dll; 
     }
-
     return true;
 }

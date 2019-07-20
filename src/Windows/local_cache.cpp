@@ -51,28 +51,28 @@ static void init_callback()
 {
 	const DWORD buffSize = MAX_PATH;
 	
-	auto env_home = std::make_unique<LPWSTR>(new TCHAR[buffSize]);
-	memset(*env_home.get(), 0, buffSize);
-	GetEnvironmentVariable(L"LOCALAPPDATA", *env_home.get(), buffSize);
-	std::wstring wenv_home(*env_home.get());
+	auto env_home = std::make_unique<wchar_t[]>(buffSize);
+	memset(env_home.get(), 0, buffSize);
+	GetEnvironmentVariable(L"LOCALAPPDATA", env_home.get(), buffSize);
+	std::wstring wenv_home(env_home.get());
 
-	auto env_azdcap_cache = std::make_unique<LPWSTR>(new TCHAR[buffSize]);
-	memset(*env_azdcap_cache.get(), 0, buffSize);
-	GetEnvironmentVariable(L"AZDCAP_CACHE", *env_azdcap_cache.get(), buffSize);
-	std::wstring wenv_azdcap_cache(*env_azdcap_cache.get());
+	auto env_azdcap_cache = std::make_unique<wchar_t[]>(buffSize);
+	memset(env_azdcap_cache.get(), 0, buffSize);
+	GetEnvironmentVariable(L"AZDCAP_CACHE", env_azdcap_cache.get(), buffSize);
+	std::wstring wenv_azdcap_cache(env_azdcap_cache.get());
 
     const std::wstring application_name(L"\\.az-dcap-client");
     std::wstring dirname;
 
     if (wenv_azdcap_cache != L"" && wenv_azdcap_cache[0] != 0)
-	{
-		dirname = wenv_azdcap_cache;
-	} 
-	else if (wenv_home != L"" && wenv_home[0] != 0)
-	{
-		dirname = wenv_home;
-	} 
-	else
+    {
+        dirname = wenv_azdcap_cache;
+    } 
+    else if (wenv_home != L"" && wenv_home[0] != 0)
+    {
+        dirname = wenv_home;
+    } 
+    else
     {
         // Throwing exception if the expected HOME
         // environment variable is not defined.
@@ -83,7 +83,6 @@ static void init_callback()
     make_dir(dirname);
     g_cache_dirname = dirname;
 }
-
 
 static void init()
 {
