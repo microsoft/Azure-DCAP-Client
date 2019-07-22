@@ -228,14 +228,12 @@ void curl_easy::perform() const
             0,
             0))
     {
-        log(SGX_QL_LOG_INFO, "WinHttpSendRequest returned false: 0x%x", GetLastError());
         throw_on_error(GetLastError(), "curl_easy::perform/WinHttpSendRequest");
     }
 
     //  Wait for the response from the server.
     if (!WinHttpReceiveResponse(request.get(), nullptr))
     {
-        log(SGX_QL_LOG_INFO, "WinHttpReceiveResponse returned false: 0x%x", GetLastError());
         throw_on_error(GetLastError(), "curl_easy::perform/WinHttpReceiveRequest");
     }
 }
@@ -251,9 +249,7 @@ const std::vector<uint8_t>& curl_easy::get_body() const
 
             if (!WinHttpQueryDataAvailable(request.get(), &sizeAvailable))
             {
-                throw_on_error(
-                    GetLastError(),
-                    "curl_easy::get_body/WinHttpQueryDataAvailable");
+                throw_on_error(GetLastError(), "curl_easy::get_body/WinHttpQueryDataAvailable");
             }
             if (sizeAvailable == 0)
             {
@@ -264,11 +260,9 @@ const std::vector<uint8_t>& curl_easy::get_body() const
             ZeroMemory(buffer.get(), sizeAvailable + 1);
 
             DWORD bytesRead;
-            if (!WinHttpReadData(
-                    request.get(), buffer.get(), sizeAvailable, &bytesRead))
+            if (!WinHttpReadData(request.get(), buffer.get(), sizeAvailable, &bytesRead))
             {
-                throw_on_error(
-                    GetLastError(), "curl_easy::get_body/WinHttpReadData");
+                throw_on_error(GetLastError(), "curl_easy::get_body/WinHttpReadData");
             }
 
             resultData.reserve(bytesRead + resultData.size());
@@ -360,8 +354,7 @@ std::string curl_easy::unescape(const std::string& encoded) const
             ++it;
             if (it == encoded.end())
             {
-                throw_on_error(
-                    EBADMSG, "Malformed URL encoding in header " + encoded);
+                throw_on_error(EBADMSG, "Malformed URL encoding in header " + encoded);
             }
             char ch = *it;
             int8_t hexValue = Int8FromHexAscii(ch);

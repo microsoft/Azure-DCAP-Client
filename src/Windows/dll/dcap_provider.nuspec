@@ -21,6 +21,6 @@
     <file src="x64\Debug\dcap_quoteprov.pdb" target="lib\debug" />
     <file src="x64\Release\dcap_quoteprov.dll" target="lib\release" />
     <file src="x64\Release\dcap_quoteprov.pdb" target="lib\release" />
-    <file src="..\dcap_provider.h" target="inc" />
+    <file src="..\..\dcap_provider.h" target="inc" />
   </files>
 </package>
