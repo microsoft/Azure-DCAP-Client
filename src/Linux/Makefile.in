@@ -3,7 +3,7 @@
 
 prefix = /usr/local
 
-INCLUDES = -I##CURLINC## -I. -I.. -Iext
+INCLUDES = -I##CURLINC## -I. -I.. -Iext/intel
 CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
 
 PROVIDER_SRC = ../dcap_provider.cpp ../logging.cpp curl_easy.cpp local_cache.cpp init.cpp
