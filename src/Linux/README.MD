@@ -1,9 +1,12 @@
 # Build
 
 ## Prerequisites
-This library requires libcurl built with OpenSSL support.
+This library requires libcurl built with OpenSSL support and package config.
 
-* On Ubuntu/Debian: `sudo apt install libcurl-openssl-dev`
+* `sudo apt-get install libssl-dev`
+* `sudo apt install libcurl4-openssl-dev`
+* `sudo apt-get install pkg-config`
+
 
 ## Quick Start
 ```
@@ -25,7 +28,8 @@ make install
 
 ## Debian
 To build a Debian package, you'll need an Ubuntu/Debian system with the
-build-essential package installed. (`sudo apt install build-essential`).
+build-essential package (`sudo apt install build-essential`) and dh-virtualenv 
+(`sudo apt-get install debhelper dh-virtualenv`) installed. 
 
 1. Update `src/Linux/debian/changelog` with a description of the changes which
    require a new package to be published.
