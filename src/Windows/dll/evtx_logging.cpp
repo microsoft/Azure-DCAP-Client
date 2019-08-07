@@ -31,7 +31,6 @@ DWORD check_install_event_log_source()
         if (last_error == ERROR_SUCCESS)
         {
             BYTE dll_path[] = DCAP_DLL;
-            DWORD last_error;
             const DWORD types_supported = EVENTLOG_ERROR_TYPE |
                                           EVENTLOG_WARNING_TYPE |
                                           EVENTLOG_INFORMATION_TYPE;
