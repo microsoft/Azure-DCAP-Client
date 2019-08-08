@@ -91,6 +91,9 @@
   <ItemGroup>
     <None Include="dcap_provider.def" />
     <None Include="packages.config" />
+    <None Include="resources\default1.bin" />
+    <None Include="resources\event_log.mc" />
+    <None Include="resources\event_log_MSG00000.bin" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.h" />
@@ -100,6 +103,11 @@
     <ClInclude Include="ext\intel\sgx_ql_lib_common.h" />
     <ClInclude Include="ext\intel\sgx_key.h" />
     <ClInclude Include="ext\intel\sgx_attributes.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resources\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="dcap_provider.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
