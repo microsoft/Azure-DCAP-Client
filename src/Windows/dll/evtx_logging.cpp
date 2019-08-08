@@ -6,14 +6,14 @@
 DWORD check_install_event_log_source()
 {
     const std::string key_path(DCAP_EVTX_KEY);
-    HKEY key;
+	wil::unique_hkey key;
 
     DWORD last_error = RegOpenKeyExA(
         HKEY_LOCAL_MACHINE,
         key_path.c_str(),
         0,
         KEY_READ,
-        &key);
+        key.addressof());
 
     if (last_error != ERROR_SUCCESS)
     {
@@ -25,7 +25,7 @@ DWORD check_install_event_log_source()
             REG_OPTION_NON_VOLATILE,
             KEY_SET_VALUE,
             NULL,
-            &key,
+            key.addressof(),
             NULL);
 
         if (last_error == ERROR_SUCCESS)
@@ -36,12 +36,16 @@ DWORD check_install_event_log_source()
                                           EVENTLOG_INFORMATION_TYPE;
 
             last_error = RegSetValueExA(
-                key, "EventMessageFile", 0, REG_SZ, dll_path, sizeof(dll_path));
+                key.get(),
+				"EventMessageFile",
+				0, REG_SZ,
+				dll_path,
+				sizeof(dll_path));
 
             if (last_error == ERROR_SUCCESS)
             {
                 last_error = RegSetValueExA(
-                    key,
+                    key.get(),
                     "TypesSupported",
                     0,
                     REG_DWORD,
@@ -49,7 +53,7 @@ DWORD check_install_event_log_source()
                     sizeof(types_supported));
             }
 
-            RegCloseKey(key);
+            RegCloseKey(key.get());
         }
     }
 

@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include <string>
+#include <wil/resource.h>
 //
 //  Values are 32 bit values laid out as follows:
 //
