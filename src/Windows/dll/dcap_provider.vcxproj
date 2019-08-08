@@ -92,8 +92,6 @@
     <None Include="dcap_provider.def" />
     <None Include="packages.config" />
     <None Include="resources\default1.bin" />
-    <None Include="resources\event_log.mc" />
-    <None Include="resources\event_log_MSG00000.bin" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.h" />

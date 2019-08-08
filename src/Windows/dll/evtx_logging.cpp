@@ -1,7 +1,19 @@
 #include "evtx_logging.h"
 
 #define DCAP_EVTX_KEY "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\dcap_quoteprov"
-#define DCAP_DLL "dcap_quoteprov.dll"
+#define DCAP_DLL_NAME "dcap_quoteprov"
+#define MAX_PATH 2048
+
+extern HINSTANCE moduleHandle;
+
+std::string GetModuleFullName()
+{
+    char buffer[MAX_PATH];
+
+	DWORD copied = GetModuleFileNameA(moduleHandle, buffer, MAX_PATH);
+
+	return std::string(buffer);
+}
 
 DWORD check_install_event_log_source()
 {
@@ -30,7 +42,7 @@ DWORD check_install_event_log_source()
 
         if (last_error == ERROR_SUCCESS)
         {
-            BYTE dll_path[] = DCAP_DLL;
+            std::string fullPath = GetModuleFullName();
             const DWORD types_supported = EVENTLOG_ERROR_TYPE |
                                           EVENTLOG_WARNING_TYPE |
                                           EVENTLOG_INFORMATION_TYPE;
@@ -39,8 +51,8 @@ DWORD check_install_event_log_source()
                 key.get(),
 				"EventMessageFile",
 				0, REG_SZ,
-				dll_path,
-				sizeof(dll_path));
+				(BYTE*)fullPath.c_str(),
+				fullPath.length());
 
             if (last_error == ERROR_SUCCESS)
             {
@@ -72,7 +84,7 @@ bool log_event_log_message(
     const WORD a_type)
 {
     DWORD event_id;
-    const std::string a_name(DCAP_DLL);
+    const std::string a_name(DCAP_DLL_NAME);
     bool success = false;
 
     switch (a_type)
