@@ -2,13 +2,18 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Azure.DCAP.Windows</id>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes>Initial Release of Azure DCAP for Windows</releaseNotes>
-        <description>Azure DCAP for Windows</description>
+        <description>
+            This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
+            This provider plugin is then used to fetch certain data files, such as platform certificates, TCB structures, and revocation lists.
+            The Azure DCAP Client fetches artifacts from an Azure-internal caching service. The purpose of this cache is to ensure that all Azure hosts always have the correct data available and local within the Azure cloud.
+            The data serviced by the Azure cache are all Intel-originating, and are rooted to Intel CAs. The cache serves simply to ensure that there are no external dependencies on Intel for workloads running on Azure infrastructure.
+        </description>
         <projectUrl>https://github.com/Microsoft/Azure-DCAP-Client/</projectUrl>
         <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
         <license type="expression">MIT</license>
