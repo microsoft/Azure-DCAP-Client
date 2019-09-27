@@ -45,12 +45,7 @@
       <SDLCheck>true</SDLCheck>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>
-        $(MSBuildProjectDirectory);
-        $(MSBuildProjectDirectory)\..\;
-        $(MSBuildProjectDirectory)\..\..\;
-        $(MsBuildProjectDirectory)\ext\intel;
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\..\;$(MsBuildProjectDirectory)\ext\intel</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -90,7 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="dcap_provider.def" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="resources\default1.bin" />
   </ItemGroup>
   <ItemGroup>
