@@ -16,7 +16,7 @@
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <!-- The library name is dicatated by Intel. They look, specifically, for a dll
-         with the following name. We must match it. -->
+      with the following name. We must match it. -->
     <TargetName>dcap_quoteprov</TargetName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -45,12 +45,7 @@
       <SDLCheck>true</SDLCheck>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>
-        $(MSBuildProjectDirectory);
-        $(MSBuildProjectDirectory)\..\;
-        $(MSBuildProjectDirectory)\..\..\;
-        $(MsBuildProjectDirectory)\ext\intel;
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\..\;$(MsBuildProjectDirectory)\ext\intel</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -90,7 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="dcap_provider.def" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="resources\default1.bin" />
   </ItemGroup>
   <ItemGroup>
