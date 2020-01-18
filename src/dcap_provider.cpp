@@ -96,7 +96,7 @@ static std::string get_collateral_version()
     std::string collateral_version = get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
     if (!collateral_version.empty())
     {
-        if (collateral_version != "v1" || collateral_version != "v2")
+        if (!collateral_version.compare("v1") && !collateral_version.compare("v2"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. Acceptable values are empty, v1, or v2",
@@ -105,8 +105,11 @@ static std::string get_collateral_version()
 
             return std::string();
         }
+        log(SGX_QL_LOG_INFO,
+            "Using %s envvar for collateral version URL, set to '%s'.",
+            ENV_AZDCAP_COLLATERAL_VER,
+            collateral_version.c_str());
     }
-
     return collateral_version;
 }
 
@@ -550,7 +553,8 @@ static std::string build_tcb_info_url(
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
-    std::stringstream tcb_info_url(get_base_url());
+    std::stringstream tcb_info_url;
+    tcb_info_url << get_base_url();
     
     if (!version.empty())
     {
@@ -574,13 +578,14 @@ static std::string build_enclave_id_url(bool qve)
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
-    std::stringstream qe_id_url(get_base_url());
-
+    std::stringstream qe_id_url;
+    
+    qe_id_url << get_base_url();
     if (!version.empty())
     {
         qe_id_url << "/" << version;
     }
-     qe_id_url << "/" << (qve ? "qve" : "qe") << "?";
+     qe_id_url << "/" << (qve ? "qveid" : "qeid") << "?";
     
     if (!client_id.empty())
     {
