@@ -2,17 +2,25 @@
 
 #define DCAP_EVTX_KEY "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\dcap_quoteprov"
 #define DCAP_DLL_NAME "dcap_quoteprov"
+
+#ifndef MAX_PATH
 #define MAX_PATH 2048
+#endif
 
-extern HINSTANCE moduleHandle;
+extern HMODULE moduleHandle;
 
-std::string GetModuleFullName()
+DWORD GetModuleFullName(std::string &moduleName)
 {
     char buffer[MAX_PATH];
 
 	DWORD copied = GetModuleFileNameA(moduleHandle, buffer, MAX_PATH);
+	if (FAILED(copied))
+	{
+        return GetLastError();
+	}
 
-	return std::string(buffer);
+	moduleName = std::string(buffer);
+    return copied;
 }
 
 DWORD check_install_event_log_source()
@@ -27,7 +35,7 @@ DWORD check_install_event_log_source()
         KEY_READ,
         key.addressof());
 
-    if (last_error != ERROR_SUCCESS)
+    if (FAILED(last_error))
     {
         last_error = RegCreateKeyExA(
             HKEY_LOCAL_MACHINE,
@@ -40,34 +48,48 @@ DWORD check_install_event_log_source()
             key.addressof(),
             NULL);
 
-        if (last_error == ERROR_SUCCESS)
+        if (SUCCEEDED(last_error))
         {
-            std::string fullPath = GetModuleFullName();
-            const DWORD types_supported = EVENTLOG_ERROR_TYPE |
-                                          EVENTLOG_WARNING_TYPE |
-                                          EVENTLOG_INFORMATION_TYPE;
+            std::string fullPath;
+            DWORD result = GetModuleFullName(fullPath);
+            if (SUCCEEDED(result))
+			{
+				const DWORD types_supported = EVENTLOG_ERROR_TYPE |
+											  EVENTLOG_WARNING_TYPE |
+											  EVENTLOG_INFORMATION_TYPE;
+                if (fullPath.length() <= MAXDWORD)
+				{
+					last_error = RegSetValueExA(
+						key.get(),
+						"EventMessageFile",
+						0, REG_SZ,
+						(BYTE*)fullPath.c_str(),
+                        (DWORD) fullPath.length());
 
-            last_error = RegSetValueExA(
-                key.get(),
-				"EventMessageFile",
-				0, REG_SZ,
-				(BYTE*)fullPath.c_str(),
-				fullPath.length());
-
-            if (last_error == ERROR_SUCCESS)
-            {
-                last_error = RegSetValueExA(
-                    key.get(),
-                    "TypesSupported",
-                    0,
-                    REG_DWORD,
-                    (LPBYTE)&types_supported,
-                    sizeof(types_supported));
-            }
-
-            RegCloseKey(key.get());
+					if (last_error == ERROR_SUCCESS)
+					{
+						last_error = RegSetValueExA(
+							key.get(),
+							"TypesSupported",
+							0,
+							REG_DWORD,
+							(LPBYTE)&types_supported,
+							sizeof(types_supported));
+					}
+				}
+				else
+				{
+                    return ERROR_BAD_LENGTH;
+				}
+			}
         }
     }
+
+    DWORD status = RegCloseKey(key.get());
+	if (SUCCEEDED(last_error))
+	{
+        return status;
+	}
 
     return last_error;
 }

@@ -204,31 +204,11 @@ constexpr auto CURL_TOLERANCE = 0.002;
 constexpr auto CURL_TOLERANCE = 0.04;
 #endif
 
-extern void QuoteProvTests()
+void RunQuoteProviderTests()
 {
     std::clock_t start;
     double duration_curl;
     double duration_local;
-#if defined __LINUX__
-    void* library = LoadFunctions();
-#else
-    HINSTANCE library = LoadFunctions();
-#endif
-
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // First pass: Get the data from the service, no cache allowed
-    //
-
-#if defined __LINUX__
-    setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
-    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
-#else
-    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
-    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
-#endif
-
     local_cache_clear();
 
     start = std::clock();
@@ -251,8 +231,41 @@ extern void QuoteProvTests()
     // call is fast enough
     assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
     assert(duration_local < CURL_TOLERANCE);
+}
+
+extern void QuoteProvTests()
+{
+#if defined __LINUX__
+    void* library = LoadFunctions();
+#else
+    HINSTANCE library = LoadFunctions();
+#endif
+
+    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // First pass: Get the data from the service, no cache allowed
+    //
 
 #if defined __LINUX__
+    setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+#else
+    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
+#endif
+	RunQuoteProviderTests();
+    
+	#if defined __LINUX__
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+    setenv("AZDCAP_COLLATERAL_VERSION", "v2", 1);
+#else
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
+    _putenv("AZDCAP_COLLATERAL_VERSION=v2");
+#endif
+    RunQuoteProviderTests();
+
+    #if defined __LINUX__
     dlclose(library);
 #else
     FreeLibrary(library);

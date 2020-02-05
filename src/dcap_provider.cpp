@@ -52,6 +52,7 @@ constexpr char TCB_INFO_ISSUER_CHAIN[] = "SGX-TCB-Info-Issuer-Chain";
 constexpr char TCB_INFO[] = "SGX-TCBm";
 constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
+constexpr char ENCLAVE_ID_ISSUER_CHAIN[] = "SGX-Enclave-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 }; // namespace headers
@@ -574,16 +575,21 @@ static std::string build_tcb_info_url(
 //
 // The expected URL for QeID or QveID
 //
-static std::string build_enclave_id_url(bool qve)
+static std::string build_enclave_id_url(bool qve, std::string &expected_issuer_chain_header)
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
     std::stringstream qe_id_url;
-    
+    expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
+
     qe_id_url << get_base_url();
     if (!version.empty())
     {
         qe_id_url << "/" << version;
+        if (version != "v1")
+        {
+            expected_issuer_chain_header = headers::ENCLAVE_ID_ISSUER_CHAIN;
+        }
     }
      qe_id_url << "/" << (qve ? "qveid" : "qeid") << "?";
     
@@ -612,10 +618,11 @@ static sgx_plat_error_t sgx_get_enclave_identity_info(
     try
     {
         std::vector<uint8_t> identity_info;
+        std::string issuer_chain_header;
         std::string issuer_chain;
         std::string request_id;
         size_t total_buffer_size = 0;
-        std::string qe_id_url = build_enclave_id_url(is_qve);
+        std::string qe_id_url = build_enclave_id_url(is_qve, issuer_chain_header);
 
         const auto curl = curl_easy::create(qe_id_url);
         log(SGX_QL_LOG_INFO,
@@ -624,8 +631,7 @@ static sgx_plat_error_t sgx_get_enclave_identity_info(
         curl->perform();
 
         // issuer chain
-        result =
-            get_unescape_header(*curl, headers::QE_ISSUER_CHAIN, &issuer_chain);
+        result = get_unescape_header(*curl, issuer_chain_header, &issuer_chain);
         if (result != SGX_PLAT_ERROR_OK)
             return result;
 
@@ -1050,12 +1056,6 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
     sgx_qe_identity_info_t** pp_qe_identity_info)
 {
     return sgx_get_enclave_identity_info(false, pp_qe_identity_info);
-}
-
-extern "C" sgx_plat_error_t sgx_get_qve_identity(
-    sgx_qe_identity_info_t** pp_qe_identity_info)
-{
-    return sgx_get_enclave_identity_info(true, pp_qe_identity_info);
 }
 
 extern "C" void sgx_free_qe_identity_info(

@@ -347,3 +347,4 @@ src/Linux/.vscode/settings.json
 .vscode/settings.json
 src/Linux/tests
 src/Linux/Makefile
+/src/.vscode/settings.json
