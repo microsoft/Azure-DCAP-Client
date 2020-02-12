@@ -53,7 +53,8 @@ constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 }; // namespace headers
 
-constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
 
 static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
@@ -506,14 +507,14 @@ static quote3_error_t convert_to_intel_error(sgx_plat_error_t platformError)
     }
 }
 
-static std::string build_pck_crl_url(std::string crl_name, bool ignore_version)
+static std::string build_pck_crl_url(std::string crl_name, std::string api_version)
 {
     std::string version = get_collateral_version();
     std::stringstream url;
     std::string escaped = curl_easy::escape(crl_name.data(), (int) crl_name.size());
     std::string client_id = get_client_id();
     url << get_base_url();
-    if (!ignore_version && !version.empty())
+    if (!version.empty())
     {
         url << "/" << version;
     }
@@ -522,7 +523,7 @@ static std::string build_pck_crl_url(std::string crl_name, bool ignore_version)
     {
         url << "clientid=" << client_id << '&';
     }
-    url << API_VERSION;
+    url << api_version;
     return url.str();
 }
 
@@ -545,7 +546,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    *out = build_pck_crl_url(crl_url, true);
+    *out = build_pck_crl_url(crl_url, API_VERSION_LEGACY);
     return SGX_PLAT_ERROR_OK;
 }
 
@@ -1175,7 +1176,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     std::string qe_identity_issuer_chain;
 
     // Get PCK CRL
-    std::string pck_crl_url = build_pck_crl_url(requested_ca, false);
+    std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
     log(SGX_QL_LOG_INFO, 
         "Fetching PCK CRL from remote server: '%s'.",
         pck_crl_url.c_str());
@@ -1189,7 +1190,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     }
 
     // Get Root CA CRL
-    std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, false);
+    std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
     log(SGX_QL_LOG_INFO, 
         "Fetching Root CA CRL from remote server: '%s'.",
         root_ca_crl_url.c_str());
@@ -1357,7 +1358,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl (
         return SGX_QL_ERROR_INVALID_PARAMETER;
     }
 
-    std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, false);
+    std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
     std::vector<uint8_t> root_ca_crl;
     std::string root_ca_chain;
 
