@@ -348,3 +348,5 @@ src/Linux/.vscode/settings.json
 src/Linux/tests
 src/Linux/Makefile
 /src/.vscode/settings.json
+/src/Windows/dll/nuget.exe
+/src/Windows/dll/msbuild.err
