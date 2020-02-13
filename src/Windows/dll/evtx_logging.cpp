@@ -13,13 +13,13 @@ DWORD GetModuleFullName(std::string &moduleName)
 {
     char buffer[MAX_PATH];
 
-	DWORD copied = GetModuleFileNameA(moduleHandle, buffer, MAX_PATH);
-	if (FAILED(copied))
-	{
+    DWORD copied = GetModuleFileNameA(moduleHandle, buffer, MAX_PATH);
+    if (FAILED(copied))
+    {
         return GetLastError();
-	}
+    }
 
-	moduleName = std::string(buffer);
+    moduleName = std::string(buffer);
     return copied;
 }
 
@@ -53,43 +53,44 @@ DWORD check_install_event_log_source()
             std::string fullPath;
             DWORD result = GetModuleFullName(fullPath);
             if (SUCCEEDED(result))
-			{
-				const DWORD types_supported = EVENTLOG_ERROR_TYPE |
-											  EVENTLOG_WARNING_TYPE |
-											  EVENTLOG_INFORMATION_TYPE;
+            {
+                const DWORD types_supported = EVENTLOG_ERROR_TYPE |
+                                              EVENTLOG_WARNING_TYPE |
+                                              EVENTLOG_INFORMATION_TYPE;
                 if (fullPath.length() <= MAXDWORD)
-				{
-					last_error = RegSetValueExA(
-						key.get(),
-						"EventMessageFile",
-						0, REG_SZ,
-						(BYTE*)fullPath.c_str(),
-                        (DWORD) fullPath.length());
+                {
+                    last_error = RegSetValueExA(
+                        key.get(),
+                        "EventMessageFile",
+                        0,
+                        REG_SZ,
+                        (BYTE*)fullPath.c_str(),
+                        (DWORD)fullPath.length());
 
-					if (last_error == ERROR_SUCCESS)
-					{
-						last_error = RegSetValueExA(
-							key.get(),
-							"TypesSupported",
-							0,
-							REG_DWORD,
-							(LPBYTE)&types_supported,
-							sizeof(types_supported));
-					}
-				}
-				else
-				{
+                    if (last_error == ERROR_SUCCESS)
+                    {
+                        last_error = RegSetValueExA(
+                            key.get(),
+                            "TypesSupported",
+                            0,
+                            REG_DWORD,
+                            (LPBYTE)&types_supported,
+                            sizeof(types_supported));
+                    }
+                }
+                else
+                {
                     return ERROR_BAD_LENGTH;
-				}
-			}
+                }
+            }
         }
     }
 
     DWORD status = RegCloseKey(key.get());
-	if (SUCCEEDED(last_error))
-	{
+    if (SUCCEEDED(last_error))
+    {
         return status;
-	}
+    }
 
     return last_error;
 }

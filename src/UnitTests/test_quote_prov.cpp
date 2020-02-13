@@ -10,6 +10,7 @@
 #include <cstring>
 #include <ctime>
 #include <memory>
+#include <sstream>
 
 #if defined(__LINUX__)
 #include <tgmath.h>
@@ -233,6 +234,22 @@ void RunQuoteProviderTests()
     assert(duration_local < CURL_TOLERANCE);
 }
 
+void SetupEnvironment(std::string version)
+{
+#if defined __LINUX__
+    setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+    setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+#else
+    std::stringstream version_var;
+    version_var << "AZDCAP_COLLATERAL_VERSION=";
+    version_var << version;
+    _putenv("AZDCAP_BASE_CERT_URL=https://americas.test.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTestsWindows");
+    _putenv(version_var.str().c_str());
+#endif
+}
+
 extern void QuoteProvTests()
 {
 #if defined __LINUX__
@@ -246,26 +263,16 @@ extern void QuoteProvTests()
     //
     // First pass: Get the data from the service, no cache allowed
     //
-
-#if defined __LINUX__
-    setenv("AZDCAP_BASE_CERT_URL", "https://global.acccache.azure.net/sgx/certificates", 1);
-    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
-#else
-    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
-    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
-#endif
-	RunQuoteProviderTests();
-    
-	#if defined __LINUX__
-    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
-    setenv("AZDCAP_COLLATERAL_VERSION", "v2", 1);
-#else
-    _putenv("AZDCAP_CLIENT_ID=AzureDCAPTests");
-    _putenv("AZDCAP_COLLATERAL_VERSION=v2");
-#endif
+    SetupEnvironment("v1");
     RunQuoteProviderTests();
 
-    #if defined __LINUX__
+    //
+    // Second pass: Get the V2 data from the service
+    //
+    SetupEnvironment("v2");
+    RunQuoteProviderTests();
+  
+#if defined __LINUX__
     dlclose(library);
 #else
     FreeLibrary(library);
