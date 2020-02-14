@@ -153,6 +153,19 @@ static std::string get_client_id()
     return env_client_id;
 }
 
+static inline void fill_qpl_string_buffer(std::string content, char *buffer, uint32_t &bufferLength)
+{
+    bufferLength = (uint32_t) content.size() + 1;
+    memcpy(buffer, content.data(), bufferLength); 
+}
+
+static inline void fill_qpl_string_buffer(std::vector<uint8_t> content, char *buffer, uint32_t &bufferLength)
+{
+    content.push_back(0);
+    bufferLength = (uint32_t) content.size();
+    memcpy(buffer, content.data(), bufferLength); 
+}
+
 //
 // determines the maximum age in local cache
 //
@@ -637,10 +650,6 @@ static quote3_error_t get_collateral(
         body = crl_operation->get_body();
         auto get_header_operation =
             get_unescape_header(*crl_operation, header_name, &issuer_chain);
-        // Insert null characters
-        body.push_back(0);
-        char nullcharacter = '\0';
-        issuer_chain.append(1, nullcharacter);
         return convert_to_intel_error(get_header_operation);
     }
     catch (curl_easy::error& error)
@@ -1284,57 +1293,50 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         p_quote_collateral = *pp_quote_collateral;
         memset(p_quote_collateral, 0, buffer_size);
 
-        // Allocate memory for the structure fields
-        p_quote_collateral->pck_crl_issuer_chain =
-            new char[pck_issuer_chain.size()];
-        p_quote_collateral->root_ca_crl = new char[root_ca_crl.size()];
-        p_quote_collateral->pck_crl = new char[pck_crl.size()];
-        p_quote_collateral->tcb_info = new char[tcb_info.size()];
-        p_quote_collateral->tcb_info_issuer_chain =
-            new char[tcb_issuer_chain.size()];
-        p_quote_collateral->qe_identity_issuer_chain =
-            new char[qe_identity_issuer_chain.size()];
-        p_quote_collateral->qe_identity = new char[qe_identity.size()];
+        // Allocate memory for the structure fields +1 to include null character
+        p_quote_collateral->pck_crl_issuer_chain = new char[pck_issuer_chain.size() + 1];
+        p_quote_collateral->root_ca_crl = new char[root_ca_crl.size() + 1];
+        p_quote_collateral->pck_crl = new char[pck_crl.size() + 1];
+        p_quote_collateral->tcb_info = new char[tcb_info.size() + 1];
+        p_quote_collateral->tcb_info_issuer_chain = new char[tcb_issuer_chain.size() + 1];
+        p_quote_collateral->qe_identity_issuer_chain = new char[qe_identity_issuer_chain.size() + 1];
+        p_quote_collateral->qe_identity = new char[qe_identity.size() + 1];
 
         // Fill in the buffer contents
         p_quote_collateral->version = 1;
-        p_quote_collateral->pck_crl_issuer_chain_size = (int)pck_issuer_chain.size();
-        memcpy(
+        fill_qpl_string_buffer(pck_issuer_chain,
             p_quote_collateral->pck_crl_issuer_chain,
-            pck_issuer_chain.data(),
-            pck_issuer_chain.size());
+            p_quote_collateral->pck_crl_issuer_chain_size);
 
-        p_quote_collateral->root_ca_crl_size = (int)root_ca_crl.size();
-        memcpy(
+        fill_qpl_string_buffer(root_ca_crl,
             p_quote_collateral->root_ca_crl,
-            root_ca_crl.data(),
-            root_ca_crl.size());
+            p_quote_collateral->root_ca_crl_size
+        );
 
-        p_quote_collateral->pck_crl_size = (int)pck_crl.size();
-        memcpy(p_quote_collateral->pck_crl, pck_crl.data(), pck_crl.size());
+        fill_qpl_string_buffer(pck_crl,
+            p_quote_collateral->pck_crl,
+            p_quote_collateral->pck_crl_size
+        );
 
-        p_quote_collateral->tcb_info_issuer_chain_size =
-            (int)tcb_issuer_chain.size();
-        memcpy(
+        fill_qpl_string_buffer(tcb_issuer_chain,
             p_quote_collateral->tcb_info_issuer_chain,
-            tcb_issuer_chain.data(),
-            tcb_issuer_chain.size());
+            p_quote_collateral->tcb_info_issuer_chain_size
+        );
 
-        p_quote_collateral->tcb_info_size = (int)tcb_info.size();
-        memcpy(p_quote_collateral->tcb_info, tcb_info.data(), tcb_info.size());
+        fill_qpl_string_buffer(tcb_info,
+            p_quote_collateral->tcb_info,
+            p_quote_collateral->tcb_info_size
+        );
 
-        p_quote_collateral->qe_identity_issuer_chain_size =
-            (int)qe_identity_issuer_chain.size();
-        memcpy(
+        fill_qpl_string_buffer(qe_identity_issuer_chain,
             p_quote_collateral->qe_identity_issuer_chain,
-            qe_identity_issuer_chain.data(),
-            qe_identity_issuer_chain.size());
+            p_quote_collateral->qe_identity_issuer_chain_size
+        );
 
-        p_quote_collateral->qe_identity_size = (int)qe_identity.size();
-        memcpy(
+        fill_qpl_string_buffer(qe_identity,
             p_quote_collateral->qe_identity,
-            qe_identity.data(),
-            qe_identity.size());
+            p_quote_collateral->qe_identity_size
+        );
 
         return SGX_QL_SUCCESS;
     }
@@ -1406,17 +1408,20 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
 				operation_result);
 		}
 
-		// Set the out parameters
-		*p_qve_identity_size = (int)qve_identity.size();
-		*p_qve_identity_issuer_chain_size = (int)issuer_chain.size();
-		*pp_qve_identity = new char[qve_identity.size()];
-		*pp_qve_identity_issuer_chain = new char[issuer_chain.size()];
+		// Set the out parameters +1 for the null character
+		*pp_qve_identity = new char[qve_identity.size() + 1];
+		*pp_qve_identity_issuer_chain = new char[issuer_chain.size() + 1];
 
-		memcpy(*pp_qve_identity, qve_identity.data(), qve_identity.size());
-		memcpy(
-			*pp_qve_identity_issuer_chain,
-			issuer_chain.data(),
-			issuer_chain.size());
+        fill_qpl_string_buffer(
+            qve_identity, 
+            *pp_qve_identity, 
+            *p_qve_identity_size);
+
+        fill_qpl_string_buffer(
+            issuer_chain,
+            *pp_qve_identity_issuer_chain,
+            *p_qve_identity_issuer_chain_size);
+
 		return SGX_QL_SUCCESS;
 	}
 	catch (std::bad_alloc&)

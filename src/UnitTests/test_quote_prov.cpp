@@ -244,7 +244,7 @@ void SetupEnvironment(std::string version)
     std::stringstream version_var;
     version_var << "AZDCAP_COLLATERAL_VERSION=";
     version_var << version;
-    _putenv("AZDCAP_BASE_CERT_URL=https://americas.test.acccache.azure.net/sgx/certificates");
+    _putenv("AZDCAP_BASE_CERT_URL=https://global.acccache.azure.net/sgx/certificates");
     _putenv("AZDCAP_CLIENT_ID=AzureDCAPTestsWindows");
     _putenv(version_var.str().c_str());
 #endif
