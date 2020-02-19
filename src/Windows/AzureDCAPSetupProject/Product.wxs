@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  
+  <Product Id="*" Name="AzureDCAPClient" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft" UpgradeCode="8c473d43-cce9-448e-b3ad-3858f4fe6459">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<Feature Id="ProductFeature" Title="AzureDCAPClient" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="MyProgramDir"></ComponentRef>
+		</Feature>
+    <UIRef Id="WixUI_InstallDir" />
+    <DirectoryRef Id="TARGETDIR">
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="ManufactuerDir" Name="Microsoft">
+          <Directory Id="ProductDir" Name="AzureDCAPClient">
+            <Component Id="MyProgramDir" Guid="6248AA29-253C-4A3B-B6FE-796481422DB2">
+              <CreateFolder></CreateFolder>
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+    </DirectoryRef>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFiles64Folder">
+				<Directory Id="INSTALLFOLDER" Name="AzureDCAPClient" />
+			</Directory>
+		</Directory>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <UIRef Id="WixUI_InstallDir" />
+	</Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="ProductComponent">
+        <File Source="$(var.dcap_provider.TargetPath)" />
+        <Environment Id="AzDcapCache" Action="set" Name="AZDCAP_CACHE" Permanent="no" Value="[CommonAppDataFolder][Manufacturer]\[ProductName]"></Environment>
+        <Environment Id="AzDcapBaseUrl" Action="set" Name="AZDCAP_BASE_CERT_URL" Permanent="no" Value="https://global.acccache.azure.net/sgx/certificates"></Environment>
+        <Environment Id="AzDcapClientId" Action="set" Name="AZDCAP_CLIENT_ID" Permanent="no" Value="production_client"></Environment>
+        <Environment Id="AzDcapCollateralVersion" Action="set" Name="AZDCAP_COLLATERAL_VERSION" Permanent="no" Value="v1"></Environment>
+        <Environment Id="AzDcapAddPath" Action="set" Name="PATH" Permanent="no" Value="[INSTALLFOLDER]" System="yes" Part="last"></Environment>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <Media Id="1" Cabinet="cab1.cab" EmbedCab="yes" />
+  </Fragment>
+</Wix>
