@@ -26,7 +26,7 @@ DWORD GetModuleFullName(std::string &moduleName)
 DWORD check_install_event_log_source()
 {
     const std::string key_path(DCAP_EVTX_KEY);
-	wil::unique_hkey key;
+    wil::unique_hkey key;
 
     DWORD last_error = RegOpenKeyExA(
         HKEY_LOCAL_MACHINE,

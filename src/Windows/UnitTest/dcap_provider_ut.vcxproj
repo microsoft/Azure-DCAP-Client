@@ -63,7 +63,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\dll\ext\intel;$(MSBuildProjectDirectory)\ext\intel;$(MSBuildProjectDirectory)\..\..\;$(MSBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+        $(MSBuildProjectDirectory)\..\;
+        $(MSBuildProjectDirectory)\..\dll\ext\intel;
+        $(MSBuildProjectDirectory)\ext\intel;
+        $(MSBuildProjectDirectory)\..\..\;
+        $(MSBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -116,6 +122,6 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
   </Target>
-  <Import Project="$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
-  <Import Project="$(SolutionDir)\..\Dll\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\..\dll\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+  <Import Project="$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')"/>
+  <Import Project="$(SolutionDir)\..\Dll\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(SolutionDir)\..\dll\Packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\build\native\Microsoft.Windows.ImplementationLibrary.targets')"/>
 </Project>

@@ -343,10 +343,11 @@ src/Windows/dll/ext/intel/sgx_attributes.h
 src/Windows/dll/ext/intel/sgx_key.h
 src/Windows/dll/ext/intel/sgx_report.h
 src/Linux/libdcap_quoteprov.so
-src/Linux/.vscode/settings.json
-.vscode/settings.json
 src/Linux/tests
 src/Linux/Makefile
-/src/.vscode/settings.json
 /src/Windows/dll/nuget.exe
 /src/Windows/dll/msbuild.err
+
+# VSCode folders
+*.vscode/*
+/*/.vscode/*

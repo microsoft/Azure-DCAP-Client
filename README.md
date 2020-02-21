@@ -30,7 +30,7 @@ The Azure-DCAP-Client library uses the following environment variables if set:
 
 * `AZDCAP_CACHE` - Represents the base directory where the library cache directory `.az-dcap-client` is created. The default value is `$HOME`.
 * `AZDCAP_BASE_CERT_URL` and `AZDCAP_CLIENT_ID` - Used in conjunction to explicitly overwrite the default values for the PCK caching service. These should be used only for development purposes and they **must** not be used in any production environment.
-* `AZDCAP_COLLATERAL_VERSION` - Used to specify the collateral version requested from the PCK caching service.
+* `AZDCAP_COLLATERAL_VERSION` - Used to specify the collateral version requested from the PCK caching service. Must be either'v1' or 'v2' if specified and defaults to 'v1' if unspecified.
 
 # See Also
 
