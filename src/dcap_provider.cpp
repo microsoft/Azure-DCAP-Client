@@ -1202,6 +1202,13 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
+        if (pp_quote_collateral == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+				"Pointer to collateral pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
         if (*pp_quote_collateral != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1394,18 +1401,32 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
     try
     {
         log(SGX_QL_LOG_INFO, "Getting quote verification enclave identity");
+        if (pp_qve_identity == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+				"Pointer to qve identity pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
         if (*pp_qve_identity != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Collateral pointer is not null. This memory will be allocated by "
+				"Qve identity pointer is not null. This memory will be allocated by "
 				"this library");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (pp_qve_identity_issuer_chain == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+				"Pointer to issuer chain pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_qve_identity_issuer_chain != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Collateral pointer is not null. This memory will be allocated by "
+				"Issuer chain pointer is not null. This memory will be allocated by "
 				"this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
@@ -1474,10 +1495,17 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
     try
     {
         log(SGX_QL_LOG_INFO, "Getting root ca crl");
+        if (pp_root_ca_crl == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+				"Pointer to crl pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
         if (*pp_root_ca_crl != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Collateral pointer is not null. This memory will be allocated by "
+				"Crl pointer is not null. This memory will be allocated by "
 				"this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
