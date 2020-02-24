@@ -1205,15 +1205,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         if (pp_quote_collateral == nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Pointer to collateral pointer is null");
+                "Pointer to collateral pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_quote_collateral != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Collateral pointer is not null. This memory will be allocated by "
-				"this library");
+                "Collateral pointer is not null. This memory will be allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -1268,7 +1268,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             "Fetching Root CA CRL from remote server: '%s'.",
             root_ca_crl_url.c_str());
        operation_result = get_collateral(
-			root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1404,30 +1404,30 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         if (pp_qve_identity == nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Pointer to qve identity pointer is null");
+                "Pointer to qve identity pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_qve_identity != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Qve identity pointer is not null. This memory will be allocated by "
-				"this library");
+                "Qve identity pointer is not null. This memory will be allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (pp_qve_identity_issuer_chain == nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Pointer to issuer chain pointer is null");
+                "Pointer to issuer chain pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_qve_identity_issuer_chain != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Issuer chain pointer is not null. This memory will be allocated by "
-				"this library");
+                "Issuer chain pointer is not null. This memory will be allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -1498,15 +1498,15 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         if (pp_root_ca_crl == nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Pointer to crl pointer is null");
+                "Pointer to crl pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_root_ca_crl != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-				"Crl pointer is not null. This memory will be allocated by "
-				"this library");
+                "Crl pointer is not null. This memory will be allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -1518,7 +1518,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
             "Fetching Root CA CRL from remote server: '%s'.",
             root_ca_crl_url.c_str());
         auto operation_result = get_collateral(
-			root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
