@@ -28,8 +28,6 @@ constexpr uint16_t CACHE_V1 = 1;
 
 static std::wstring g_cache_dirname;
 
-static bool cache_enabled = true;
-
 static void throw_if(bool should_throw, const std::string& error)
 {
     if (should_throw)
@@ -76,8 +74,9 @@ static void init_callback()
     } 
     else
     {
-        // Disable caching if the user didn't specify a directory
-        cache_enabled = false;
+        // Throwing exception if the expected HOME
+        // environment variable is not defined.
+        throw std::runtime_error("LOCALAPPDATA and AZDCAPCACHE environment variables not defined");
     }
 
     dirname += application_name;
@@ -243,12 +242,6 @@ void local_cache_add(const std::string& id, time_t expiry, size_t data_size, con
     throw_if(data == nullptr, "Data pointer must not be NULL.");
 
     init();
-    
-    if (!cache_enabled)
-    {
-        return;
-    }
-
     CacheEntryHeaderV1 header{};
     header.version = CACHE_V1;
     header.expiry = expiry;
@@ -275,10 +268,6 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
     init();
 
-    if (!cache_enabled)
-    {
-        return nullptr;
-    }
     std::wstring filename = get_file_name(id);
     
     auto file = OpenHandle(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);

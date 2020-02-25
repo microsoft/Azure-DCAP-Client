@@ -23,8 +23,6 @@ constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 
 static std::string g_cache_dirname;
 
-static bool cache_enabled = true;
-
 //
 // Various exception helpers
 //
@@ -200,8 +198,10 @@ static void init_callback()
     }
     else
     {
-        // Disable cache since the location was not specified
-        cache_enabled = false;
+        // Throwing exception if the expected HOME
+        // environment variable is not defined.
+
+        throw std::runtime_error("HOME and AZDCAPCACHE environment variables not defined");
     }
 
     dirname += application_name;
@@ -308,11 +308,6 @@ void local_cache_add(
 
     init();
 
-    if (!cache_enabled)
-    {
-        return;
-    }
-    
     CacheEntryHeaderV1 header{};
     header.version = CACHE_V1;
     header.expiry = expiry;
@@ -331,11 +326,6 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
 
     init();
-
-    if (!cache_enabled)
-    {
-        return nullptr;
-    }
 
     const auto file_name = get_file_name(id);
     file cache_file;
