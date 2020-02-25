@@ -13,6 +13,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,12 +33,8 @@
 //  caching service behavior.
 #define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
 #define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
+#define ENV_AZDCAP_COLLATERAL_VER "AZDCAP_COLLATERAL_VERSION"
 #define MAX_ENV_VAR_LENGTH 2000
-
-// We need std::numeric_limits::max; ensure no macros are clobbering it.
-#ifdef max
-#undef max
-#endif
 
 // External function names are dictated by Intel
 // ReSharper disable CppInconsistentNaming
@@ -50,11 +47,13 @@ constexpr char TCB_INFO_ISSUER_CHAIN[] = "SGX-TCB-Info-Issuer-Chain";
 constexpr char TCB_INFO[] = "SGX-TCBm";
 constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
+constexpr char ENCLAVE_ID_ISSUER_CHAIN[] = "SGX-Enclave-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 }; // namespace headers
 
-constexpr char API_VERSION[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
 
 static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
@@ -62,6 +61,11 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
+
+static char CRL_CA_PROCESSOR[] = "processor";
+static char CRL_CA_PLATFORM[] = "platform";
+static char ROOT_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
+static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxpckprocessor.crl";
 
 static std::string get_env_variable(std::string env_variable)
 {
@@ -87,6 +91,28 @@ static std::string get_env_variable(std::string env_variable)
 
         return std::string(env_value);
     }
+}
+
+static std::string get_collateral_version()
+{
+    std::string collateral_version = get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
+    if (!collateral_version.empty())
+    {
+        if (!collateral_version.compare("v1") && !collateral_version.compare("v2"))
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Value specified in environment variable '%s' is invalid. Acceptable values are empty, v1, or v2",
+                collateral_version.c_str(),
+                MAX_ENV_VAR_LENGTH);
+
+            return std::string();
+        }
+        log(SGX_QL_LOG_INFO,
+            "Using %s envvar for collateral version URL, set to '%s'.",
+            ENV_AZDCAP_COLLATERAL_VER,
+            collateral_version.c_str());
+    }
+    return collateral_version;
 }
 
 static std::string get_base_url()
@@ -125,6 +151,39 @@ static std::string get_client_id()
         ENV_AZDCAP_CLIENT_ID,
         env_client_id.c_str());
     return env_client_id;
+}
+
+static inline quote3_error_t fill_qpl_string_buffer(
+    std::string content,
+    char*& buffer,
+    uint32_t& bufferLength)
+{
+    // Allocate memory for the structure fields +1 to include null character
+    bufferLength = (uint32_t)content.size() + 1;
+    buffer = new char[bufferLength];
+    if (buffer == nullptr)
+    {
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+
+    memcpy(buffer, content.data(), bufferLength);
+    return SGX_QL_SUCCESS;
+}
+
+static inline quote3_error_t fill_qpl_string_buffer(
+    std::vector<uint8_t> content,
+    char*& buffer,
+    uint32_t& bufferLength)
+{
+    content.push_back(0);
+    bufferLength = content.size();
+    buffer = new char[bufferLength];
+    if (!buffer)
+    {
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+    memcpy(buffer, content.data(), content.size());
+    return SGX_QL_SUCCESS;
 }
 
 //
@@ -292,7 +351,7 @@ static size_t safe_multiply(size_t first, size_t second)
 template <typename input_t, typename output_t>
 void safe_cast(input_t in, output_t* out)
 {
-    if (in > std::numeric_limits<output_t>::max())
+    if (in > (std::numeric_limits<output_t>::max)())
     {
         throw std::overflow_error("Integer cast overflow");
     }
@@ -318,17 +377,26 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
-    std::string pck_cert_url = get_base_url() + '/' + qe_id + '/' + cpu_svn +
-                               '/' + pce_svn + '/' + pce_id + '?';
+    std::string version = get_collateral_version();
+    std::stringstream pck_cert_url;
+    pck_cert_url << get_base_url();
+    if (!version.empty())
+    {
+        pck_cert_url << '/';
+        pck_cert_url << version;
+    }
+    pck_cert_url << '/' << qe_id;
+    pck_cert_url << '/' << cpu_svn;
+    pck_cert_url << '/' << pce_svn;
+    pck_cert_url << '/' << pce_id << '?';
 
     std::string client_id = get_client_id();
-
     if (!client_id.empty())
     {
-        pck_cert_url += "clientid=" + client_id + '&';
+        pck_cert_url << "clientid=" << client_id << '&';
     }
-
-    return pck_cert_url + API_VERSION;
+    pck_cert_url << API_VERSION_LEGACY;
+    return pck_cert_url.str();
 }
 
 //
@@ -471,6 +539,29 @@ static quote3_error_t convert_to_intel_error(sgx_plat_error_t platformError)
     }
 }
 
+static std::string build_pck_crl_url(
+    std::string crl_name,
+    std::string api_version)
+{
+    std::string version = get_collateral_version();
+    std::stringstream url;
+    std::string escaped =
+        curl_easy::escape(crl_name.data(), (int)crl_name.size());
+    std::string client_id = get_client_id();
+    url << get_base_url();
+    if (!version.empty())
+    {
+        url << "/" << version;
+    }
+    url << "/pckcrl?uri=" << escaped << "&";
+    if (!client_id.empty())
+    {
+        url << "clientid=" << client_id << '&';
+    }
+    url << api_version;
+    return url.str();
+}
+
 //
 // Get the expected URL for a given CRL.
 //
@@ -490,26 +581,30 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    std::string escaped = curl_easy::escape(crl_url.data(), crl_size);
+    *out = build_pck_crl_url(crl_url, API_VERSION_LEGACY);
+    return SGX_PLAT_ERROR_OK;
+}
 
-    try
+static std::string build_tcb_info_url(const std::string& fmspc)
+{
+    std::string version = get_collateral_version();
+    std::string client_id = get_client_id();
+    std::stringstream tcb_info_url;
+    tcb_info_url << get_base_url();
+
+    if (!version.empty())
     {
-        *out = get_base_url() + "/pckcrl?uri=" + escaped + '&';
-
-        client_id = get_client_id();
-        if (!client_id.empty())
-        {
-            *out += "clientid=" + client_id + '&';
-        }
-
-        *out += API_VERSION;
-
-        return SGX_PLAT_ERROR_OK;
+        tcb_info_url << "/" << version;
     }
-    catch (...)
+    tcb_info_url << "/tcb/";
+    tcb_info_url << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "?";
+
+    if (!client_id.empty())
     {
-        throw;
+        tcb_info_url << "clientid=" << client_id << "&";
     }
+    tcb_info_url << API_VERSION_LEGACY;
+    return tcb_info_url.str();
 }
 
 //
@@ -518,35 +613,75 @@ static sgx_plat_error_t build_pck_crl_url(
 static std::string build_tcb_info_url(
     const sgx_ql_get_revocation_info_params_t& params)
 {
-    std::string tcb_info_url =
-        get_base_url() + "/tcb/" +
-        format_as_hex_string(params.fmspc, params.fmspc_size) + '?';
-
-    std::string client_id = get_client_id();
-
-    if (!client_id.empty())
-    {
-        tcb_info_url += "clientid=" + client_id + '&';
-    }
-
-    return tcb_info_url + API_VERSION;
+    std::string fmspc((char*)params.fmspc, params.fmspc_size);
+    return build_tcb_info_url(fmspc);
 }
 
 //
-// The expected URL for QeID
+// The expected URL for QeID or QveID
 //
-static std::string build_qe_id_url()
+static std::string build_enclave_id_url(
+    bool qve,
+    std::string& expected_issuer_chain_header)
 {
-    std::string qe_id_url = get_base_url() + "/qeid?";
-
+    std::string version = get_collateral_version();
     std::string client_id = get_client_id();
+    std::stringstream qe_id_url;
+    expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
+
+    qe_id_url << get_base_url();
+
+    // Select the correct issuer header name
+    if (!version.empty())
+    {
+        qe_id_url << "/" << version;
+        if (version != "v1")
+        {
+            expected_issuer_chain_header = headers::ENCLAVE_ID_ISSUER_CHAIN;
+        }
+    }
+
+    // If QVE and V1 is specified, don't create a URL
+    if (qve && version != "v2")
+    {
+        return "";
+    }
+
+    qe_id_url << "/" << (qve ? "qveid" : "qeid") << "?";
 
     if (!client_id.empty())
     {
-        qe_id_url += "clientid=" + client_id + '&';
+        qe_id_url << "clientid=" << client_id << '&';
     }
+    qe_id_url << API_VERSION_LEGACY;
+    return qe_id_url.str();
+}
 
-    return qe_id_url + API_VERSION;
+static quote3_error_t get_collateral(
+    std::string url,
+    const char header_name[],
+    std::vector<uint8_t>& body,
+    std::string& issuer_chain)
+{
+    try
+    {
+        const auto crl_operation = curl_easy::create(url);
+        crl_operation->perform();
+        body = crl_operation->get_body();
+        auto get_header_operation =
+            get_unescape_header(*crl_operation, header_name, &issuer_chain);
+        return convert_to_intel_error(get_header_operation);
+    }
+    catch (curl_easy::error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "curl error thrown, error code: %x: %s",
+            error.code,
+            error.what());
+        return error.code == CURLE_HTTP_RETURNED_ERROR
+                   ? SGX_QL_NO_QUOTE_COLLATERAL_DATA
+                   : SGX_QL_NETWORK_ERROR;
+    }
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
@@ -909,10 +1044,12 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
     try
     {
         std::vector<uint8_t> identity_info;
+        std::string issuer_chain_header;
         std::string issuer_chain;
         std::string request_id;
         size_t total_buffer_size = 0;
-        std::string qe_id_url = build_qe_id_url();
+        std::string qe_id_url =
+            build_enclave_id_url(false, issuer_chain_header);
 
         const auto curl = curl_easy::create(qe_id_url);
         log(SGX_QL_LOG_INFO,
@@ -921,8 +1058,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         curl->perform();
 
         // issuer chain
-        result =
-            get_unescape_header(*curl, headers::QE_ISSUER_CHAIN, &issuer_chain);
+        result = get_unescape_header(*curl, issuer_chain_header, &issuer_chain);
         if (result != SGX_PLAT_ERROR_OK)
             return result;
 
@@ -1003,4 +1139,415 @@ extern "C" void sgx_free_qe_identity_info(
     sgx_qe_identity_info_t* p_qe_identity_info)
 {
     delete[] reinterpret_cast<uint8_t*>(p_qe_identity_info);
+}
+
+extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
+    sgx_ql_qve_collateral_t* p_quote_collateral)
+{
+    delete[] p_quote_collateral->pck_crl;
+    delete[] p_quote_collateral->root_ca_crl;
+    delete[] p_quote_collateral->tcb_info;
+    delete[] p_quote_collateral->tcb_info_issuer_chain;
+    delete[] p_quote_collateral->qe_identity;
+    delete[] p_quote_collateral->qe_identity_issuer_chain;
+    delete[] p_quote_collateral->pck_crl_issuer_chain;
+    delete[] p_quote_collateral;
+    p_quote_collateral = nullptr;
+    return SGX_QL_SUCCESS;
+}
+
+extern "C" quote3_error_t sgx_ql_free_qve_identity(
+    char* p_qve_identity,
+    char* p_qve_identity_issuer_chain)
+{
+    delete[] p_qve_identity;
+    delete[] p_qve_identity_issuer_chain;
+    p_qve_identity = nullptr;
+    p_qve_identity_issuer_chain = nullptr;
+    return SGX_QL_SUCCESS;
+}
+
+extern "C" quote3_error_t sgx_ql_free_root_ca_crl(char* p_root_ca_crl)
+{
+    delete[] p_root_ca_crl;
+    return SGX_QL_SUCCESS;
+}
+
+extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
+    const uint8_t* fmspc,
+    const uint16_t fmspc_size,
+    const char* pck_ca,
+    sgx_ql_qve_collateral_t** pp_quote_collateral)
+{
+    log(SGX_QL_LOG_INFO, "Getting quote verification collateral");
+    sgx_ql_qve_collateral_t* p_quote_collateral = nullptr;
+
+    try
+    {
+        if (fmspc == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR, "FMSPC is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (fmspc_size == 0)
+        {
+            log(SGX_QL_LOG_ERROR, "FMSPC buffer size is 0");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (pck_ca == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR, "PCK CA is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (pp_quote_collateral == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Pointer to collateral pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (*pp_quote_collateral != nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Collateral pointer is not null. This memory will be allocated by "
+                "this library");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        std::string requested_ca;
+        if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
+        {
+            requested_ca = PROCESSOR_CRL_NAME;
+        }
+
+        if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
+        {
+            log(SGX_QL_LOG_ERROR, "Platform CA CRL is not supported");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (requested_ca.empty())
+        {
+            log(SGX_QL_LOG_ERROR,
+                "PCK CA must be either %s or %s",
+                CRL_CA_PROCESSOR,
+                CRL_CA_PLATFORM);
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        std::string str_fmspc((char*)fmspc, fmspc_size);
+        quote3_error_t operation_result;
+        std::vector<uint8_t> pck_crl;
+        std::string pck_issuer_chain;
+        std::vector<uint8_t> root_ca_crl;
+        std::string root_ca_chain;
+        std::vector<uint8_t> tcb_info;
+        std::string tcb_issuer_chain;
+        std::vector<uint8_t> qe_identity;
+        std::string qe_identity_issuer_chain;
+
+        // Get PCK CRL
+        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
+        log(SGX_QL_LOG_INFO,
+            "Fetching PCK CRL from remote server: '%s'.",
+            pck_crl_url.c_str());
+        operation_result = get_collateral(
+            pck_crl_url, headers::CRL_ISSUER_CHAIN, pck_crl, pck_issuer_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR, "Error fetching PCK CRL: %d", operation_result);
+            return operation_result;
+        }
+
+        // Get Root CA CRL
+        std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+        log(SGX_QL_LOG_INFO,
+            "Fetching Root CA CRL from remote server: '%s'.",
+            root_ca_crl_url.c_str());
+       operation_result = get_collateral(
+            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching Root CA CRL: %d",
+                operation_result);
+            return operation_result;
+        }
+
+        // Get Tcb Info & Issuer Chain
+        std::string tcb_info_url = build_tcb_info_url(str_fmspc);
+        const auto tcb_info_operation = curl_easy::create(tcb_info_url);
+        log(SGX_QL_LOG_INFO,
+            "Fetching TCB Info from remote server: '%s'.",
+            tcb_info_url.c_str());
+        operation_result = get_collateral(
+            tcb_info_url,
+            headers::TCB_INFO_ISSUER_CHAIN,
+            tcb_info,
+            tcb_issuer_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR, "Error fetching TCB Info: %d", operation_result);
+            return operation_result;
+        }
+
+        // Get QE Identity
+        std::string header_name;
+        std::string qe_identity_url = build_enclave_id_url(false, header_name);
+        const auto qe_identity_operation = curl_easy::create(qe_identity_url);
+        log(SGX_QL_LOG_INFO,
+            "Fetching QE Identity from remote server: '%s'.",
+            tcb_info_url.c_str());
+        operation_result = get_collateral(
+            qe_identity_url,
+            header_name.c_str(),
+            qe_identity,
+            qe_identity_issuer_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching QE Identity: %d",
+                operation_result);
+            return operation_result;
+        }
+
+        // Allocate the memory for the structure
+        size_t buffer_size = sizeof(sgx_ql_qve_collateral_t);
+        *pp_quote_collateral = (sgx_ql_qve_collateral_t*)new char[buffer_size];
+        p_quote_collateral = *pp_quote_collateral;
+        memset(p_quote_collateral, 0, buffer_size);
+
+        // Fill in the buffer contents
+        p_quote_collateral->version = 1;
+        quote3_error_t result;
+        result = fill_qpl_string_buffer(
+            pck_issuer_chain,
+            p_quote_collateral->pck_crl_issuer_chain,
+            p_quote_collateral->pck_crl_issuer_chain_size);
+        if (result == SGX_QL_SUCCESS)
+        {
+            result = fill_qpl_string_buffer(
+                root_ca_crl,
+                p_quote_collateral->root_ca_crl,
+                p_quote_collateral->root_ca_crl_size);
+            if (result == SGX_QL_SUCCESS)
+            {
+                result = fill_qpl_string_buffer(
+                    pck_crl,
+                    p_quote_collateral->pck_crl,
+                    p_quote_collateral->pck_crl_size);
+                if (result == SGX_QL_SUCCESS)
+                {
+                    result = fill_qpl_string_buffer(
+                        tcb_issuer_chain,
+                        p_quote_collateral->tcb_info_issuer_chain,
+                        p_quote_collateral->tcb_info_issuer_chain_size);
+                }
+                if (result == SGX_QL_SUCCESS)
+                {
+                    result = fill_qpl_string_buffer(
+                        tcb_info,
+                        p_quote_collateral->tcb_info,
+                        p_quote_collateral->tcb_info_size);
+                    if (result == SGX_QL_SUCCESS)
+                    {
+                        result = fill_qpl_string_buffer(
+                            qe_identity_issuer_chain,
+                            p_quote_collateral->qe_identity_issuer_chain,
+                            p_quote_collateral->qe_identity_issuer_chain_size);
+                        if (result == SGX_QL_SUCCESS)
+                        {
+                            result = fill_qpl_string_buffer(
+                                qe_identity,
+                                p_quote_collateral->qe_identity,
+                                p_quote_collateral->qe_identity_size);
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+    catch (std::bad_alloc&)
+    {
+        sgx_ql_free_quote_verification_collateral(p_quote_collateral);
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+    catch (std::overflow_error& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
+        sgx_ql_free_quote_verification_collateral(p_quote_collateral);
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+}
+
+extern "C" quote3_error_t sgx_ql_get_qve_identity(
+    char** pp_qve_identity,
+    uint32_t* p_qve_identity_size,
+    char** pp_qve_identity_issuer_chain,
+    uint32_t* p_qve_identity_issuer_chain_size)
+{
+    try
+    {
+        log(SGX_QL_LOG_INFO, "Getting quote verification enclave identity");
+        if (pp_qve_identity == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Pointer to qve identity pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (*pp_qve_identity != nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Qve identity pointer is not null. This memory will be allocated by "
+                "this library");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (pp_qve_identity_issuer_chain == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Pointer to issuer chain pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (*pp_qve_identity_issuer_chain != nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Issuer chain pointer is not null. This memory will be allocated by "
+                "this library");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        std::vector<uint8_t> qve_identity;
+        std::string expected_issuer;
+        std::string issuer_chain;
+        std::string qve_url = build_enclave_id_url(true, expected_issuer);
+        if (qve_url.empty())
+        {
+            log(SGX_QL_LOG_ERROR, "V1 QVE is not supported");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        log(SGX_QL_LOG_INFO,
+            "Fetching QVE Identity from remote server: '%s'.",
+            qve_url.c_str());
+
+        quote3_error_t operation_result = get_collateral(
+            qve_url, expected_issuer.c_str(), qve_identity, issuer_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching QVE Identity: %d",
+                operation_result);
+        }
+
+        operation_result = fill_qpl_string_buffer(
+            qve_identity, *pp_qve_identity, *p_qve_identity_size);
+        if (operation_result == SGX_QL_SUCCESS)
+        {
+            operation_result = fill_qpl_string_buffer(
+                issuer_chain,
+                *pp_qve_identity_issuer_chain,
+                *p_qve_identity_issuer_chain_size);
+        }
+
+        return operation_result;
+    }
+    catch (std::bad_alloc&)
+    {
+        sgx_ql_free_qve_identity(
+            *pp_qve_identity, *pp_qve_identity_issuer_chain);
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+    catch (std::overflow_error& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
+        sgx_ql_free_qve_identity(
+            *pp_qve_identity, *pp_qve_identity_issuer_chain);
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+}
+
+extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
+    char** pp_root_ca_crl,
+    uint16_t* p_root_ca_crl_size)
+{
+    try
+    {
+        log(SGX_QL_LOG_INFO, "Getting root ca crl");
+        if (pp_root_ca_crl == nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Pointer to crl pointer is null");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        if (*pp_root_ca_crl != nullptr)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Crl pointer is not null. This memory will be allocated by "
+                "this library");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
+
+        std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+        std::vector<uint8_t> root_ca_crl;
+        std::string root_ca_chain;
+
+        log(SGX_QL_LOG_INFO,
+            "Fetching Root CA CRL from remote server: '%s'.",
+            root_ca_crl_url.c_str());
+        auto operation_result = get_collateral(
+            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching Root CA CRL: %d",
+                operation_result);
+            return operation_result;
+        }
+
+        // Set the out parameters
+        uint32_t bufferSize;
+        auto retval = fill_qpl_string_buffer(
+            root_ca_crl, *pp_root_ca_crl, bufferSize);
+        *p_root_ca_crl_size = bufferSize;
+        return retval;
+    }
+    catch (std::bad_alloc&)
+    {
+        sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+    catch (std::overflow_error& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
+        sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
 }
