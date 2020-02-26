@@ -69,12 +69,33 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.i
 
 static std::string get_env_variable(std::string env_variable)
 {
+#ifdef LINUX
     const char* env_value = getenv(env_variable.c_str());
-
     if (env_value == NULL)
     {
         return std::string();
     }
+#else
+    char* env_value = (char*)malloc(MAX_ENV_VAR_LENGTH);
+    if (env_value == nullptr)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Failed to retreive environment varible for '%s'",
+            env_variable.c_str(),
+            MAX_ENV_VAR_LENGTH);
+    }
+    DWORD status = GetEnvironmentVariableA(
+        env_variable.c_str(), env_value, MAX_ENV_VAR_LENGTH);
+    if (status == 0 )
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Failed to retreive environment varible for '%s'",
+            env_variable.c_str(),
+            MAX_ENV_VAR_LENGTH);
+        free(env_value);
+        return std::string();
+    }
+#endif
     else
     {
         if ((strnlen(env_value, MAX_ENV_VAR_LENGTH) <= 0) ||
@@ -85,11 +106,17 @@ static std::string get_env_variable(std::string env_variable)
                 "expected max length '%d'.",
                 env_variable.c_str(),
                 MAX_ENV_VAR_LENGTH);
-
+#ifndef LINUX
+            free(env_value);
+#endif
             return std::string();
         }
 
-        return std::string(env_value);
+        auto retval = std::string(env_value);
+#ifndef LINUX
+        free(env_value);
+#endif
+        return retval;
     }
 }
 
@@ -782,14 +809,19 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     }
     catch (curl_easy::error& error)
     {
-        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
+        log(SGX_QL_LOG_ERROR,
+            "error thrown, error code: %x: %s",
+            error.code,
+            error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_QL_NO_PLATFORM_CERT_DATA
                    : SGX_QL_ERROR_UNEXPECTED;
     }
     catch (std::exception& error)
     {
-        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
         return SGX_QL_ERROR_UNEXPECTED;
     }
 
@@ -1002,14 +1034,19 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
     }
     catch (curl_easy::error& error)
     {
-        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
+        log(SGX_QL_LOG_ERROR,
+            "error thrown, error code: %x: %s",
+            error.code,
+            error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     catch (std::exception& error)
     {
-        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
@@ -1121,14 +1158,19 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
     }
     catch (curl_easy::error& error)
     {
-        log(SGX_QL_LOG_ERROR, "error thrown, error code: %x: %s", error.code, error.what());
+        log(SGX_QL_LOG_ERROR,
+            "error thrown, error code: %x: %s",
+            error.code,
+            error.what());
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     catch (std::exception& error)
     {
-        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
 
@@ -1204,15 +1246,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         if (pp_quote_collateral == nullptr)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Pointer to collateral pointer is null");
+            log(SGX_QL_LOG_ERROR, "Pointer to collateral pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_quote_collateral != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Collateral pointer is not null. This memory will be allocated by "
+                "Collateral pointer is not null. This memory will be allocated "
+                "by "
                 "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
@@ -1258,17 +1300,23 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             pck_crl_url, headers::CRL_ISSUER_CHAIN, pck_crl, pck_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
-            log(SGX_QL_LOG_ERROR, "Error fetching PCK CRL: %d", operation_result);
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching PCK CRL: %d",
+                operation_result);
             return operation_result;
         }
 
         // Get Root CA CRL
-        std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+        std::string root_ca_crl_url =
+            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
         log(SGX_QL_LOG_INFO,
             "Fetching Root CA CRL from remote server: '%s'.",
             root_ca_crl_url.c_str());
-       operation_result = get_collateral(
-            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+        operation_result = get_collateral(
+            root_ca_crl_url,
+            headers::CRL_ISSUER_CHAIN,
+            root_ca_crl,
+            root_ca_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1290,7 +1338,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             tcb_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
-            log(SGX_QL_LOG_ERROR, "Error fetching TCB Info: %d", operation_result);
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching TCB Info: %d",
+                operation_result);
             return operation_result;
         }
 
@@ -1403,30 +1453,30 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         log(SGX_QL_LOG_INFO, "Getting quote verification enclave identity");
         if (pp_qve_identity == nullptr)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Pointer to qve identity pointer is null");
+            log(SGX_QL_LOG_ERROR, "Pointer to qve identity pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_qve_identity != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Qve identity pointer is not null. This memory will be allocated by "
+                "Qve identity pointer is not null. This memory will be "
+                "allocated by "
                 "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (pp_qve_identity_issuer_chain == nullptr)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Pointer to issuer chain pointer is null");
+            log(SGX_QL_LOG_ERROR, "Pointer to issuer chain pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         if (*pp_qve_identity_issuer_chain != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Issuer chain pointer is not null. This memory will be allocated by "
+                "Issuer chain pointer is not null. This memory will be "
+                "allocated by "
                 "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
@@ -1497,8 +1547,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         log(SGX_QL_LOG_INFO, "Getting root ca crl");
         if (pp_root_ca_crl == nullptr)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Pointer to crl pointer is null");
+            log(SGX_QL_LOG_ERROR, "Pointer to crl pointer is null");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -1510,7 +1559,8 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
-        std::string root_ca_crl_url = build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+        std::string root_ca_crl_url =
+            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 
@@ -1518,7 +1568,10 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
             "Fetching Root CA CRL from remote server: '%s'.",
             root_ca_crl_url.c_str());
         auto operation_result = get_collateral(
-            root_ca_crl_url, headers::CRL_ISSUER_CHAIN, root_ca_crl, root_ca_chain);
+            root_ca_crl_url,
+            headers::CRL_ISSUER_CHAIN,
+            root_ca_crl,
+            root_ca_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1529,8 +1582,8 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
 
         // Set the out parameters
         uint32_t bufferSize;
-        auto retval = fill_qpl_string_buffer(
-            root_ca_crl, *pp_root_ca_crl, bufferSize);
+        auto retval =
+            fill_qpl_string_buffer(root_ca_crl, *pp_root_ca_crl, bufferSize);
         *p_root_ca_crl_size = bufferSize;
         return retval;
     }
@@ -1547,7 +1600,9 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
     }
     catch (std::exception& error)
     {
-        log(SGX_QL_LOG_ERROR, "Unknown exception thrown, error: %s", error.what());
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
         return SGX_QL_ERROR_UNEXPECTED;
     }
 }
