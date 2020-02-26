@@ -69,7 +69,7 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.i
 
 static std::string get_env_variable(std::string env_variable)
 {
-#ifdef LINUX
+#ifdef __LINUX__
     const char* env_value = getenv(env_variable.c_str());
     if (env_value == NULL)
     {
@@ -106,14 +106,14 @@ static std::string get_env_variable(std::string env_variable)
                 "expected max length '%d'.",
                 env_variable.c_str(),
                 MAX_ENV_VAR_LENGTH);
-#ifndef LINUX
+#ifndef __LINUX__
             free(env_value);
 #endif
             return std::string();
         }
 
         auto retval = std::string(env_value);
-#ifndef LINUX
+#ifndef __LINUX__
         free(env_value);
 #endif
         return retval;
