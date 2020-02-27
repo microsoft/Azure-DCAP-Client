@@ -24,6 +24,12 @@ See [src/Linux/README.MD](src/Linux/README.MD).
 
 See [src/Windows/README.MD](src/Windows/README.MD).
 
+# Implementation
+
+The library builds the full URL of the artifacts served by the Azure-internal caching service from the parameters passed to the `sgx_ql_get_revocation_info_t` and `sgx_get_qe_identity_info_t` API calls. 
+
+For the certificate chain associated with an Intel SGX quote, each CRL Distribution Point is wrapped into an Azure-specific URL before being fetched by the Azure-DCAP-Client library. For example, the well-known Intel SGX Root CA CRL endpoint (https://certificates.trustedservices.intel.com/IntelSGXRootCA.crl) is served by the Azure-internal caching service at: https://global.acccache.azure.net/sgx/certificates/pckcrl?uri=https://certificates.trustedservices.intel.com/IntelSGXRootCA.crl&api-version=API_VERSION (where `API_VERSION` specifies the current API version).
+
 # Configuration
 
 The Azure-DCAP-Client library uses the following environment variables if set:
