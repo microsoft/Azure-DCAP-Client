@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>a5e8bfb6-3dbe-498f-9431-544d7c09b1f0</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>AzureDCAPSetupProject</OutputName>
+    <OutputName>Azure DCAP Client Installer</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
