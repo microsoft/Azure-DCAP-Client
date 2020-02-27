@@ -1,5 +1,4 @@
 // Licensed under the MIT License.
-#define _CRT_SECURE_NO_WARNINGS
 
 #ifndef __LINUX__
 #include "evtx_logging.h"
