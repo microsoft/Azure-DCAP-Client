@@ -69,30 +69,32 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.i
 
 static std::string get_env_variable(std::string env_variable)
 {
+    const char* env_value;
 #ifdef __LINUX__
-    const char* env_value = getenv(env_variable.c_str());
+    env_value = getenv(env_variable.c_str());
     if (env_value == NULL)
     {
         return std::string();
     }
 #else
-    char* env_value = (char*)malloc(MAX_ENV_VAR_LENGTH);
-    if (env_value == nullptr)
+    std::unique_ptr<char[]> env_temp =
+        std::make_unique<char[]>(MAX_ENV_VAR_LENGTH);
+    if (env_temp == nullptr)
     {
         log(SGX_QL_LOG_ERROR,
-            "Failed to retreive environment varible for '%s'",
+            "Failed to allocate memory for environment varible for '%s'",
             env_variable.c_str(),
             MAX_ENV_VAR_LENGTH);
     }
+    env_value = env_temp.get();
     DWORD status = GetEnvironmentVariableA(
-        env_variable.c_str(), env_value, MAX_ENV_VAR_LENGTH);
+        env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
     if (status == 0 )
     {
         log(SGX_QL_LOG_ERROR,
             "Failed to retreive environment varible for '%s'",
             env_variable.c_str(),
             MAX_ENV_VAR_LENGTH);
-        free(env_value);
         return std::string();
     }
 #endif
@@ -106,16 +108,10 @@ static std::string get_env_variable(std::string env_variable)
                 "expected max length '%d'.",
                 env_variable.c_str(),
                 MAX_ENV_VAR_LENGTH);
-#ifndef __LINUX__
-            free(env_value);
-#endif
             return std::string();
         }
 
         auto retval = std::string(env_value);
-#ifndef __LINUX__
-        free(env_value);
-#endif
         return retval;
     }
 }
@@ -203,7 +199,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     uint32_t& bufferLength)
 {
     content.push_back(0);
-    bufferLength = content.size();
+    bufferLength = (uint32_t) content.size();
     buffer = new char[bufferLength];
     if (!buffer)
     {
@@ -1584,7 +1580,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         uint32_t bufferSize;
         auto retval =
             fill_qpl_string_buffer(root_ca_crl, *pp_root_ca_crl, bufferSize);
-        *p_root_ca_crl_size = bufferSize;
+        *p_root_ca_crl_size = (uint16_t) bufferSize;
         return retval;
     }
     catch (std::bad_alloc&)
