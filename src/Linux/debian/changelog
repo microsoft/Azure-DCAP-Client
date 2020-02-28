@@ -1,3 +1,10 @@
+az-dcap-client (1.2) unstable; urgency=medium
+  * Added Quote verification support
+  * Added an MSI installer
+  * Added support for querying V2 collateral from the PCK Cache service  
+
+ -- Derek Schumacher <deschuma@microsoft.com>  Fri, 28 Feb 2020 1:12:00 -0700
+
 az-dcap-client (1.1) unstable; urgency=medium
 
   * Added Quote Identity support
