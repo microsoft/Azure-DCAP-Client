@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Azure.DCAP.Windows</id>
-        <version>0.0.3</version>
+        <version>1.2</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
@@ -17,13 +17,14 @@
         <projectUrl>https://github.com/Microsoft/Azure-DCAP-Client/</projectUrl>
         <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>
         <license type="expression">MIT</license>
+        <tags>Native native</tags>
     </metadata>
 
     <!-- A readme.txt to display when the package is installed -->
     <files>
-        <file src="..\x64\Release\dcap_quoteprov.dll" target="dll" />
-        <file src="..\x64\Release\dcap_quoteprov.pdb" target="dll" />
-        <file src=".\InstallAzureDCAP.ps1" target="script" />
+        <file src="..\x64\Release\dcap_quoteprov.dll" target="build\native\" />
+        <file src="..\x64\Release\dcap_quoteprov.pdb" target="build\native\" />
+        <file src=".\InstallAzureDCAP.ps1" target="tools" />
         <file src=".\README.txt" target="" />
     </files>
 </package>
