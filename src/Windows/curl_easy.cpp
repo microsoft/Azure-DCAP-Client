@@ -212,6 +212,20 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
             "curl_easy::create/WinHttpSetOption(RedirectPolicy)");
     }
 
+    // Specify TLS 1.2
+    DWORD protocolOptions =
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3; 
+    if (!WinHttpSetOption(
+            curl->sessionHandle.get(),
+            WINHTTP_OPTION_SECURE_PROTOCOLS,
+            &protocolOptions,
+            sizeof(protocolOptions)))
+    {
+        throw_on_error(
+            GetLastError(),
+            "curl_easy::create/WinHttpSetOption(SecureProtocols)");
+    }
+
     return std::move(curl);
 }
 
