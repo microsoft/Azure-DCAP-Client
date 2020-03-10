@@ -400,6 +400,9 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
 
+    const std::string eppid = format_as_hex_string(
+        pck_cert_id.p_encrypted_ppid, pck_cert_id.encrypted_ppid_size);
+
     std::string version = get_collateral_version();
     std::stringstream pck_cert_url;
     pck_cert_url << get_base_url();
@@ -411,7 +414,8 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     pck_cert_url << '/' << qe_id;
     pck_cert_url << '/' << cpu_svn;
     pck_cert_url << '/' << pce_svn;
-    pck_cert_url << '/' << pce_id << '?';
+    pck_cert_url << '/' << pce_id;
+    pck_cert_url << '/' << eppid << '?';
 
     std::string client_id = get_client_id();
     if (!client_id.empty())
