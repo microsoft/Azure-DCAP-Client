@@ -64,8 +64,10 @@ static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
-static char ROOT_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
-static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxpckprocessor.crl";
+static char ROOT_CRL_NAME[] =
+    "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
+static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
+                                   "intel.com%2fintelsgxpckprocessor.crl";
 
 static std::string get_env_variable(std::string env_variable)
 {
@@ -89,7 +91,7 @@ static std::string get_env_variable(std::string env_variable)
     env_value = env_temp.get();
     DWORD status = GetEnvironmentVariableA(
         env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
-    if (status == 0 )
+    if (status == 0)
     {
         log(SGX_QL_LOG_ERROR,
             "Failed to retreive environment varible for '%s'",
@@ -118,13 +120,16 @@ static std::string get_env_variable(std::string env_variable)
 
 static std::string get_collateral_version()
 {
-    std::string collateral_version = get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
+    std::string collateral_version =
+        get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
     if (!collateral_version.empty())
     {
-        if (!collateral_version.compare("v1") && !collateral_version.compare("v2"))
+        if (!collateral_version.compare("v1") &&
+            !collateral_version.compare("v2"))
         {
             log(SGX_QL_LOG_ERROR,
-                "Value specified in environment variable '%s' is invalid. Acceptable values are empty, v1, or v2",
+                "Value specified in environment variable '%s' is invalid. "
+                "Acceptable values are empty, v1, or v2",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -199,7 +204,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     uint32_t& bufferLength)
 {
     content.push_back(0);
-    bufferLength = (uint32_t) content.size();
+    bufferLength = (uint32_t)content.size();
     buffer = new char[bufferLength];
     if (!buffer)
     {
@@ -415,7 +420,12 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     pck_cert_url << '/' << cpu_svn;
     pck_cert_url << '/' << pce_svn;
     pck_cert_url << '/' << pce_id;
-    pck_cert_url << '/' << eppid << '?';
+    if (!eppid.empty())
+    {
+        pck_cert_url << '/' << eppid;
+    }
+
+    pck_cert_url << '?';
 
     std::string client_id = get_client_id();
     if (!client_id.empty())
@@ -1584,7 +1594,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         uint32_t bufferSize;
         auto retval =
             fill_qpl_string_buffer(root_ca_crl, *pp_root_ca_crl, bufferSize);
-        *p_root_ca_crl_size = (uint16_t) bufferSize;
+        *p_root_ca_crl_size = (uint16_t)bufferSize;
         return retval;
     }
     catch (std::bad_alloc&)
