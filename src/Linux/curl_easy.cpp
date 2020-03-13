@@ -121,7 +121,14 @@ curl_easy::~curl_easy()
 
 void curl_easy::perform() const
 {
-    throw_on_error(curl_easy_perform(handle), "curl_easy_perform");
+    CURLcode result = curl_easy_perform(handle);
+    if (result == CURLE_HTTP_RETURNED_ERROR)
+    {
+        long http_code = 0;
+        curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &http_code);
+        log(SGX_QL_LOG_ERROR, "HTTP error (%zd)", http_code);
+    }
+    throw_on_error(result, "curl_easy_perform");
 }
 
 const std::vector<uint8_t>& curl_easy::get_body() const

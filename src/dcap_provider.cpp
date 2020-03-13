@@ -62,6 +62,9 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
+static char DEFAULT_COLLATARAL_VERSION[] = "v1";
+static std::string default_collateral_version = DEFAULT_COLLATARAL_VERSION;
+
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
 static char ROOT_CRL_NAME[] =
@@ -122,7 +125,15 @@ static std::string get_collateral_version()
 {
     std::string collateral_version =
         get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
-    if (!collateral_version.empty())
+
+    if (collateral_version.empty())
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Using default collateral version '%s'.",
+            default_collateral_version.c_str());
+        return default_collateral_version;
+    }
+    else
     {
         if (!collateral_version.compare("v1") &&
             !collateral_version.compare("v2"))
@@ -133,14 +144,18 @@ static std::string get_collateral_version()
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
-            return std::string();
+            log(SGX_QL_LOG_WARNING,
+                "Using default collateral version '%s'.",
+                default_collateral_version.c_str());
+            return default_collateral_version;
         }
+
         log(SGX_QL_LOG_INFO,
             "Using %s envvar for collateral version URL, set to '%s'.",
             ENV_AZDCAP_COLLATERAL_VER,
             collateral_version.c_str());
-    }
-    return collateral_version;
+        return collateral_version;
+    }    
 }
 
 static std::string get_base_url()
@@ -423,6 +438,10 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     if (!eppid.empty())
     {
         pck_cert_url << '/' << eppid;
+    }
+    else
+    {
+        log(SGX_QL_LOG_WARNING, "No eppid provided");
     }
 
     pck_cert_url << '?';
