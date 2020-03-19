@@ -52,6 +52,7 @@ constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 }; // namespace headers
 
+// New API version used to request PEM encoded CRLs
 constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
 
