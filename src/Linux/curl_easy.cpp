@@ -70,7 +70,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -89,6 +89,13 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+
+    if (p_body != nullptr && !p_body->empty())
+    {
+        easy->set_opt_or_throw(CURLOPT_CUSTOMREQUEST, "GET");
+        easy->set_opt_or_throw(CURLOPT_COPYPOSTFIELDS, p_body->c_str());
+    }
+
 #if !defined(__LINUX__)
     // The version of LibCURL we were built with was built with OpenSSL, not WinSSL. As a result, we need to
     // inform LibCURL where to find the trusted list of root CAs. We assume it is in a file named "curl-ca-bundle.crt"
@@ -141,6 +148,17 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
     const std::string lower_field_name = to_lower(field_name);
     const auto field_iter = headers.find(lower_field_name);
     return field_iter == headers.end() ? nullptr : &field_iter->second;
+}
+
+void curl_easy::set_headers(const std::map<std::string, std::string>& header_name_values)
+{
+    struct curl_slist *headers = NULL;
+    for (auto kvp : header_name_values)
+    {
+        std::string header = kvp.first + ":" + kvp.second;
+        headers = curl_slist_append(headers, header.c_str());
+    }
+    set_opt_or_throw(CURLOPT_HTTPHEADER, headers);
 }
 
 std::string curl_easy::unescape(const std::string& encoded) const

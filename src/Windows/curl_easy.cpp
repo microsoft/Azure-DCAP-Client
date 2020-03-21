@@ -19,6 +19,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 static constexpr int maximum_retries = 5;
 static constexpr int initial_retry_delay_ms = 20;
+static constexpr WCHAR content_type_header[] =
+    L"Content-Type: application/json";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Local Helper Functions
@@ -124,7 +126,9 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
+std::unique_ptr<curl_easy> curl_easy::create(
+    const std::string& url,
+    const std::string* const p_body)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -214,7 +218,7 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
 
     // Specify TLS 1.2
     DWORD protocolOptions =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3; 
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
     if (!WinHttpSetOption(
             curl->sessionHandle.get(),
             WINHTTP_OPTION_SECURE_PROTOCOLS,
@@ -224,6 +228,11 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
         throw_on_error(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(SecureProtocols)");
+    }
+
+    if (p_body != nullptr)
+    {
+        curl->request_body_data = *p_body;
     }
 
     return std::move(curl);
@@ -242,11 +251,11 @@ void curl_easy::perform() const
         //  Start the protocol exchange with the server.
         if (!WinHttpSendRequest(
                 request.get(),
-                WINHTTP_NO_ADDITIONAL_HEADERS,
-                0,
-                WINHTTP_NO_REQUEST_DATA,
-                0,
-                0,
+                request_header_text.c_str(),
+                request_header_text.size(),
+                (PVOID) request_body_data.c_str(),
+                request_body_data.size(),
+                request_body_data.size(),
                 0))
         {
             throw_on_error(
@@ -264,7 +273,8 @@ void curl_easy::perform() const
                 {
                     attempts++;
                     log(SGX_QL_LOG_INFO,
-                        "CURL timeout detected (WINHTTP Error %zd). Retrying after %d milliseconds (attempt %d / %d) ",
+                        "CURL timeout detected (WINHTTP Error %zd). Retrying "
+                        "after %d milliseconds (attempt %d / %d) ",
                         lastError,
                         retry_delay,
                         attempts,
@@ -369,6 +379,16 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
         return returnValue;
     }
     return nullptr;
+}
+
+void curl_easy::set_headers(
+    const std::map<std::string, std::string>& header_name_values)
+{
+    request_header_text = L"";
+    for (auto kvp : header_name_values)
+    {
+        request_header_text.append(UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
+    }
 }
 
 int8_t Int8FromHexAscii(char ch)
