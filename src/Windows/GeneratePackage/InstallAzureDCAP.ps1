@@ -10,7 +10,7 @@ if (-not (Test-Path -Path $localPath))
 else
 {
     Write-Host "Copying dcap_quoteprov.dll into $localPath"
-    Copy-Item "..\dll\dcap_quoteprov.dll" -Destination $localPath
+    Copy-Item "..\build\native\dcap_quoteprov.dll" -Destination $localPath
     
     $newPath = $env:Path + ";$localPath"
 

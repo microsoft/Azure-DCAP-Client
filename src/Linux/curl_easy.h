@@ -36,7 +36,7 @@ class curl_easy
         char function[128]{};
     };
 
-    static std::unique_ptr<curl_easy> create(const std::string& url);
+    static std::unique_ptr<curl_easy> create(const std::string& url, const std::string* const p_body);
 
     ~curl_easy();
 
@@ -50,6 +50,8 @@ class curl_easy
     const std::vector<uint8_t>& get_body() const;
 
     const std::string* get_header(const std::string& field_name) const;
+
+    void set_headers(const std::map<std::string, std::string>& header_name_values);
 
     std::string unescape(const std::string& encoded) const;
     static std::string escape(const char *buffer, int len);

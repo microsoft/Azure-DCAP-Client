@@ -15,6 +15,14 @@
 #include <strsafe.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+static constexpr int maximum_retries = 5;
+static constexpr int initial_retry_delay_ms = 20;
+static constexpr WCHAR content_type_header[] =
+    L"Content-Type: application/json";
+
+///////////////////////////////////////////////////////////////////////////////
 // Local Helper Functions
 ///////////////////////////////////////////////////////////////////////////////
 static std::string to_lower(const std::string& inout)
@@ -53,17 +61,11 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
     std::string ansiString;
 
     auto ansiCharSize = WideCharToMultiByte(
-        CP_UTF8,
-        0,
-        unicodeString.c_str(),
-        -1,
-        nullptr,
-        0,
-        nullptr,
-        nullptr);
+        CP_UTF8, 0, unicodeString.c_str(), -1, nullptr, 0, nullptr, nullptr);
     if (ansiCharSize == 0)
     {
-        throw curl_easy::error(GetLastError(), "Unable to convert string to Utf8 (sizing)");
+        throw curl_easy::error(
+            GetLastError(), "Unable to convert string to Utf8 (sizing)");
     }
     ansiString.reserve(ansiCharSize);
     ansiString.resize(ansiCharSize - 1);
@@ -79,7 +81,8 @@ std::string Utf8StringFromUnicodeString(const std::wstring& unicodeString)
         nullptr);
     if (ansiCharSize == 0)
     {
-        throw curl_easy::error(GetLastError(), "Unable to convert string to Utf8 (conversion)");
+        throw curl_easy::error(
+            GetLastError(), "Unable to convert string to Utf8 (conversion)");
     }
 
     return ansiString;
@@ -113,7 +116,8 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
         wideCharSize);
     if (wideCharSize == 0)
     {
-        throw curl_easy::error(GetLastError(), "Unable to convert string to unicode (conversion)");
+        throw curl_easy::error(
+            GetLastError(), "Unable to convert string to unicode (conversion)");
     }
 
     return unicodeString;
@@ -122,7 +126,9 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
+std::unique_ptr<curl_easy> curl_easy::create(
+    const std::string& url,
+    const std::string* const p_body)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -191,6 +197,7 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
         WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES,
         WINHTTP_FLAG_SECURE));
+
     if (!curl->request)
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpOpenRequest");
@@ -209,6 +216,25 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url)
             "curl_easy::create/WinHttpSetOption(RedirectPolicy)");
     }
 
+    // Specify TLS 1.2
+    DWORD protocolOptions =
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
+    if (!WinHttpSetOption(
+            curl->sessionHandle.get(),
+            WINHTTP_OPTION_SECURE_PROTOCOLS,
+            &protocolOptions,
+            sizeof(protocolOptions)))
+    {
+        throw_on_error(
+            GetLastError(),
+            "curl_easy::create/WinHttpSetOption(SecureProtocols)");
+    }
+
+    if (p_body != nullptr)
+    {
+        curl->request_body_data = *p_body;
+    }
+
     return std::move(curl);
 }
 
@@ -218,24 +244,52 @@ curl_easy::~curl_easy()
 
 void curl_easy::perform() const
 {
-    //  Start the protocol exchange with the server.
-    if (!WinHttpSendRequest(
-            request.get(),
-            WINHTTP_NO_ADDITIONAL_HEADERS,
-            0,
-            WINHTTP_NO_REQUEST_DATA,
-            0,
-            0,
-            0))
+    int retry_delay = initial_retry_delay_ms;
+    int attempts = 0;
+    do
     {
-        throw_on_error(GetLastError(), "curl_easy::perform/WinHttpSendRequest");
-    }
+        //  Start the protocol exchange with the server.
+        if (!WinHttpSendRequest(
+                request.get(),
+                request_header_text.c_str(),
+                (DWORD) request_header_text.size(),
+                (PVOID) request_body_data.c_str(),
+                (DWORD) request_body_data.size(),
+                (DWORD) request_body_data.size(),
+                0))
+        {
+            throw_on_error(
+                GetLastError(), "curl_easy::perform/WinHttpSendRequest");
+        }
 
-    //  Wait for the response from the server.
-    if (!WinHttpReceiveResponse(request.get(), nullptr))
-    {
-        throw_on_error(GetLastError(), "curl_easy::perform/WinHttpReceiveRequest");
-    }
+        //  Wait for the response from the server.
+        if (!WinHttpReceiveResponse(request.get(), nullptr))
+        {
+            DWORD lastError = GetLastError();
+            if (lastError == ERROR_WINHTTP_TIMEOUT ||
+                lastError == ERROR_WINHTTP_RESEND_REQUEST)
+            {
+                if (attempts <= maximum_retries)
+                {
+                    attempts++;
+                    log(SGX_QL_LOG_INFO,
+                        "CURL timeout detected (WINHTTP Error %zd). Retrying "
+                        "after %d milliseconds (attempt %d / %d) ",
+                        lastError,
+                        retry_delay,
+                        attempts,
+                        maximum_retries);
+                    Sleep(retry_delay);
+                    retry_delay *= 2;
+                    continue;
+                }
+            }
+            throw_on_error(
+                lastError, "curl_easy::perform/WinHttpReceiveRequest");
+        }
+
+        return;
+    } while (true);
 }
 
 const std::vector<uint8_t>& curl_easy::get_body() const
@@ -249,7 +303,9 @@ const std::vector<uint8_t>& curl_easy::get_body() const
 
             if (!WinHttpQueryDataAvailable(request.get(), &sizeAvailable))
             {
-                throw_on_error(GetLastError(), "curl_easy::get_body/WinHttpQueryDataAvailable");
+                throw_on_error(
+                    GetLastError(),
+                    "curl_easy::get_body/WinHttpQueryDataAvailable");
             }
             if (sizeAvailable == 0)
             {
@@ -260,9 +316,11 @@ const std::vector<uint8_t>& curl_easy::get_body() const
             ZeroMemory(buffer.get(), sizeAvailable + 1);
 
             DWORD bytesRead;
-            if (!WinHttpReadData(request.get(), buffer.get(), sizeAvailable, &bytesRead))
+            if (!WinHttpReadData(
+                    request.get(), buffer.get(), sizeAvailable, &bytesRead))
             {
-                throw_on_error(GetLastError(), "curl_easy::get_body/WinHttpReadData");
+                throw_on_error(
+                    GetLastError(), "curl_easy::get_body/WinHttpReadData");
             }
 
             resultData.reserve(bytesRead + resultData.size());
@@ -290,13 +348,14 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
     {
         return &result->second;
     }
-    else if (!WinHttpQueryHeaders(
+    else if (
+        !WinHttpQueryHeaders(
             request.get(),
             WINHTTP_QUERY_CUSTOM,
             UnicodeStringFromUtf8String(header).c_str(),
             WINHTTP_NO_OUTPUT_BUFFER,
             &bufferLength,
-            WINHTTP_NO_HEADER_INDEX) && 
+            WINHTTP_NO_HEADER_INDEX) &&
         (GetLastError() == ERROR_INSUFFICIENT_BUFFER))
     {
         auto buffer = std::make_unique<wchar_t[]>(bufferLength + 1);
@@ -310,7 +369,8 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
                 &bufferLength,
                 WINHTTP_NO_HEADER_INDEX))
         {
-            throw_on_error(GetLastError(), "curl_easy::get_header/WinHttpQueryHeaders");
+            throw_on_error(
+                GetLastError(), "curl_easy::get_header/WinHttpQueryHeaders");
         }
         std::string headerAsUtf8(Utf8StringFromUnicodeString(buffer.get()));
 
@@ -319,6 +379,16 @@ const std::string* curl_easy::get_header(const std::string& field_name) const
         return returnValue;
     }
     return nullptr;
+}
+
+void curl_easy::set_headers(
+    const std::map<std::string, std::string>& header_name_values)
+{
+    request_header_text = L"";
+    for (auto kvp : header_name_values)
+    {
+        request_header_text.append(UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
+    }
 }
 
 int8_t Int8FromHexAscii(char ch)
@@ -354,7 +424,8 @@ std::string curl_easy::unescape(const std::string& encoded) const
             ++it;
             if (it == encoded.end())
             {
-                throw_on_error(EBADMSG, "Malformed URL encoding in header " + encoded);
+                throw_on_error(
+                    EBADMSG, "Malformed URL encoding in header " + encoded);
             }
             char ch = *it;
             int8_t hexValue = Int8FromHexAscii(ch);
@@ -413,15 +484,12 @@ std::string curl_easy::escape(const char* url, int length)
         length = static_cast<int>(strlen(url));
     }
 
-    for (int i = 0 ; i < length ; i += 1)
+    for (int i = 0; i < length; i += 1)
     {
         char ch = url[i];
-        if ((ch >= 'a' && ch <= 'z') ||
-            (ch >= 'A' && ch <= 'Z') ||
-            (ch >= '0' && ch <= '9') ||
-            (ch == '-') || (ch == '.') ||
-            (ch == '~') || (ch == '?') ||
-            (ch == '_'))
+        if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+            (ch >= '0' && ch <= '9') || (ch == '-') || (ch == '.') ||
+            (ch == '~') || (ch == '?') || (ch == '_'))
         {
             escapedHeader.push_back(ch);
         }
@@ -433,12 +501,12 @@ std::string curl_easy::escape(const char* url, int length)
             {
                 std::stringstream ss;
                 ss << "Bogus hex value " << (uint8_t)ch << "(" << ch
-                    << ") in URL encoding in header " << url;
+                   << ") in URL encoding in header " << url;
                 throw_on_error(EBADMSG, ss.str());
             }
             escapedHeader.push_back(firstNibble);
-            char secondNibble = HexAsciiFromUInt8(ch &0x0f);
-            if (secondNibble< 0)
+            char secondNibble = HexAsciiFromUInt8(ch & 0x0f);
+            if (secondNibble < 0)
             {
                 std::stringstream ss;
                 ss << "Bogus hex value " << (uint8_t)ch << "(" << ch

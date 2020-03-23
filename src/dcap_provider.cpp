@@ -50,8 +50,13 @@ constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
 constexpr char ENCLAVE_ID_ISSUER_CHAIN[] = "SGX-Enclave-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
+
+static const std::map<std::string, std::string> default_values = {
+    {"Content-Type", "application/json"}};
+
 }; // namespace headers
 
+// New API version used to request PEM encoded CRLs
 constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
 
@@ -62,10 +67,15 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
+static char DEFAULT_COLLATARAL_VERSION[] = "v1";
+static std::string default_collateral_version = DEFAULT_COLLATARAL_VERSION;
+
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
-static char ROOT_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
-static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxpckprocessor.crl";
+static char ROOT_CRL_NAME[] =
+    "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
+static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
+                                   "intel.com%2fintelsgxpckprocessor.crl";
 
 static std::string get_env_variable(std::string env_variable)
 {
@@ -89,7 +99,7 @@ static std::string get_env_variable(std::string env_variable)
     env_value = env_temp.get();
     DWORD status = GetEnvironmentVariableA(
         env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
-    if (status == 0 )
+    if (status == 0)
     {
         log(SGX_QL_LOG_ERROR,
             "Failed to retreive environment varible for '%s'",
@@ -118,24 +128,39 @@ static std::string get_env_variable(std::string env_variable)
 
 static std::string get_collateral_version()
 {
-    std::string collateral_version = get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
-    if (!collateral_version.empty())
+    std::string collateral_version =
+        get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
+
+    if (collateral_version.empty())
     {
-        if (!collateral_version.compare("v1") && !collateral_version.compare("v2"))
+        log(SGX_QL_LOG_WARNING,
+            "Using default collateral version '%s'.",
+            default_collateral_version.c_str());
+        return default_collateral_version;
+    }
+    else
+    {
+        if (!collateral_version.compare("v1") &&
+            !collateral_version.compare("v2"))
         {
             log(SGX_QL_LOG_ERROR,
-                "Value specified in environment variable '%s' is invalid. Acceptable values are empty, v1, or v2",
+                "Value specified in environment variable '%s' is invalid. "
+                "Acceptable values are empty, v1, or v2",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
-            return std::string();
+            log(SGX_QL_LOG_WARNING,
+                "Using default collateral version '%s'.",
+                default_collateral_version.c_str());
+            return default_collateral_version;
         }
+
         log(SGX_QL_LOG_INFO,
             "Using %s envvar for collateral version URL, set to '%s'.",
             ENV_AZDCAP_COLLATERAL_VER,
             collateral_version.c_str());
+        return collateral_version;
     }
-    return collateral_version;
 }
 
 static std::string get_base_url()
@@ -199,7 +224,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     uint32_t& bufferLength)
 {
     content.push_back(0);
-    bufferLength = (uint32_t) content.size();
+    bufferLength = (uint32_t)content.size();
     buffer = new char[bufferLength];
     if (!buffer)
     {
@@ -411,7 +436,8 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     pck_cert_url << '/' << qe_id;
     pck_cert_url << '/' << cpu_svn;
     pck_cert_url << '/' << pce_svn;
-    pck_cert_url << '/' << pce_id << '?';
+    pck_cert_url << '/' << pce_id;
+    pck_cert_url << '?';
 
     std::string client_id = get_client_id();
     if (!client_id.empty())
@@ -429,8 +455,8 @@ static std::string build_cert_chain(const curl_easy& curl)
 {
     std::string leaf_cert(curl.get_body().begin(), curl.get_body().end());
 
-    // The cache service does not return a newline in the response body.
-    // Add one here so that we have a properly formatted chain.
+    // The cache service does not return a newline in the response
+    // response_body. Add one here so that we have a properly formatted chain.
     if (leaf_cert.back() != '\n')
     {
         leaf_cert += "\n";
@@ -683,14 +709,15 @@ static std::string build_enclave_id_url(
 static quote3_error_t get_collateral(
     std::string url,
     const char header_name[],
-    std::vector<uint8_t>& body,
-    std::string& issuer_chain)
+    std::vector<uint8_t>& response_body,
+    std::string& issuer_chain,
+    const std::string* const request_body = nullptr)
 {
     try
     {
-        const auto crl_operation = curl_easy::create(url);
+        const auto crl_operation = curl_easy::create(url, request_body);
         crl_operation->perform();
-        body = crl_operation->get_body();
+        response_body = crl_operation->get_body();
         auto get_header_operation =
             get_unescape_header(*crl_operation, header_name, &issuer_chain);
         return convert_to_intel_error(get_header_operation);
@@ -707,6 +734,27 @@ static quote3_error_t get_collateral(
     }
 }
 
+static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
+{
+    const std::string eppid = format_as_hex_string(
+        pck_cert_id.p_encrypted_ppid, pck_cert_id.encrypted_ppid_size);
+
+    if (eppid.empty())
+    {
+        log(SGX_QL_LOG_WARNING, "No eppid provided");
+        return "";
+    }
+
+    static const char json_prefix[] = "{\"eppid\":\"";
+    static const char json_postfix[] = "\"}\n";
+
+    std::stringstream json;
+    json << json_prefix;
+    json << eppid;
+    json << json_postfix;
+    return json.str();
+}
+
 extern "C" quote3_error_t sgx_ql_get_quote_config(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config)
@@ -716,7 +764,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     try
     {
         const std::string cert_url = build_pck_cert_url(*p_pck_cert_id);
-
         if (auto cache_hit = local_cache_get(cert_url))
         {
             *pp_quote_config =
@@ -730,10 +777,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             return SGX_QL_SUCCESS;
         }
 
-        const auto curl = curl_easy::create(cert_url);
+        const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
+        const auto curl = curl_easy::create(cert_url, &eppid_json);
         log(SGX_QL_LOG_INFO,
             "Fetching quote config from remote server: '%s'.",
             cert_url.c_str());
+        curl->set_headers(headers::default_values);
         curl->perform();
 
         // we better get TCB info and the cert chain, else we cannot provide the
@@ -882,10 +931,12 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
                 return err;
             }
 
-            const auto crl_operation = curl_easy::create(crl_url);
+            const auto crl_operation = curl_easy::create(crl_url, nullptr);
             log(SGX_QL_LOG_INFO,
                 "Fetching revocation info from remote server: '%s'",
                 crl_url.c_str());
+
+            crl_operation->set_headers(headers::default_values);
             crl_operation->perform();
             crls.push_back(crl_operation->get_body());
             total_crl_size = safe_add(total_crl_size, crls.back().size());
@@ -914,7 +965,8 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         {
             std::string tcb_info_url = build_tcb_info_url(*params);
 
-            const auto tcb_info_operation = curl_easy::create(tcb_info_url);
+            const auto tcb_info_operation =
+                curl_easy::create(tcb_info_url, nullptr);
             log(SGX_QL_LOG_INFO,
                 "Fetching TCB Info from remote server: '%s'.",
                 tcb_info_url.c_str());
@@ -1084,7 +1136,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         std::string qe_id_url =
             build_enclave_id_url(false, issuer_chain_header);
 
-        const auto curl = curl_easy::create(qe_id_url);
+        const auto curl = curl_easy::create(qe_id_url, nullptr);
         log(SGX_QL_LOG_INFO,
             "Fetching QE Identity from remote server: '%s'.",
             qe_id_url.c_str());
@@ -1095,7 +1147,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         if (result != SGX_PLAT_ERROR_OK)
             return result;
 
-        // read body
+        // read response_body
         identity_info = curl->get_body();
         std::string qe_identity(
             curl->get_body().begin(), curl->get_body().end());
@@ -1292,6 +1344,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         log(SGX_QL_LOG_INFO,
             "Fetching PCK CRL from remote server: '%s'.",
             pck_crl_url.c_str());
+
         operation_result = get_collateral(
             pck_crl_url, headers::CRL_ISSUER_CHAIN, pck_crl, pck_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
@@ -1323,7 +1376,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Tcb Info & Issuer Chain
         std::string tcb_info_url = build_tcb_info_url(str_fmspc);
-        const auto tcb_info_operation = curl_easy::create(tcb_info_url);
+        const auto tcb_info_operation =
+            curl_easy::create(tcb_info_url, nullptr);
         log(SGX_QL_LOG_INFO,
             "Fetching TCB Info from remote server: '%s'.",
             tcb_info_url.c_str());
@@ -1343,7 +1397,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         // Get QE Identity
         std::string header_name;
         std::string qe_identity_url = build_enclave_id_url(false, header_name);
-        const auto qe_identity_operation = curl_easy::create(qe_identity_url);
+        const auto qe_identity_operation =
+            curl_easy::create(qe_identity_url, nullptr);
         log(SGX_QL_LOG_INFO,
             "Fetching QE Identity from remote server: '%s'.",
             tcb_info_url.c_str());
@@ -1580,7 +1635,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         uint32_t bufferSize;
         auto retval =
             fill_qpl_string_buffer(root_ca_crl, *pp_root_ca_crl, bufferSize);
-        *p_root_ca_crl_size = (uint16_t) bufferSize;
+        *p_root_ca_crl_size = (uint16_t)bufferSize;
         return retval;
     }
     catch (std::bad_alloc&)

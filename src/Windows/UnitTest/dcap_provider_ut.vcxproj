@@ -113,6 +113,11 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dll\dcap_provider.vcxproj">
+      <Project>{aaa37df8-87a5-40e9-b0df-8919d5e92533}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
