@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="AzureDCAPClient" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft" UpgradeCode="8c473d43-cce9-448e-b3ad-3858f4fe6459">
+  <Product Id="*" Name="Microsoft Azure DCAP Client" Language="1033" Version="1.0.0.1" Manufacturer="Microsoft" UpgradeCode="8c473d43-cce9-448e-b3ad-3858f4fe6459">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<Feature Id="ProductFeature" Title="Azure DCAP Client" Level="1">
+		<Feature Id="ProductFeature" Title="Microsoft Azure DCAP Client" Level="1">
 			<ComponentGroupRef Id="ProductComponents" />
       <ComponentRef Id="MyProgramDir"></ComponentRef>
 		</Feature>
@@ -11,8 +11,8 @@
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
     <DirectoryRef Id="TARGETDIR">
       <Directory Id="CommonAppDataFolder">
-        <Directory Id="ManufactuerDir" Name="[Manufacturer]">
-          <Directory Id="ProductDir" Name="[ProductName]">
+        <Directory Id="ManufactuerDir" Name="Microsoft">
+          <Directory Id="ProductDir" Name="Microsoft Azure DCAP Client">
             <Component Id="MyProgramDir" Guid="6248AA29-253C-4A3B-B6FE-796481422DB2">
               <CreateFolder></CreateFolder>
             </Component>
@@ -24,7 +24,7 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="INSTALLFOLDER" Name="Azure DCAP Client" />
+				<Directory Id="INSTALLFOLDER" Name="Microsoft Azure DCAP Client" />
 			</Directory>
 		</Directory>
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
