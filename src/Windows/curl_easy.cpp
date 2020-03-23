@@ -252,10 +252,10 @@ void curl_easy::perform() const
         if (!WinHttpSendRequest(
                 request.get(),
                 request_header_text.c_str(),
-                request_header_text.size(),
+                (DWORD) request_header_text.size(),
                 (PVOID) request_body_data.c_str(),
-                request_body_data.size(),
-                request_body_data.size(),
+                (DWORD) request_body_data.size(),
+                (DWORD) request_body_data.size(),
                 0))
         {
             throw_on_error(
