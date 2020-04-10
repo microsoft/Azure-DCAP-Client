@@ -52,7 +52,8 @@ constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 
 static const std::map<std::string, std::string> default_values = {
-    {"Content-Type", "application/json"}};
+    {"Content-Type", "application/json"}
+};
 
 }; // namespace headers
 
@@ -755,6 +756,20 @@ static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
     return json.str();
 }
 
+static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
+    const std::string& cert_url)
+{
+    try 
+    {
+        return local_cache_get(cert_url);
+    }
+    catch (std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
+        return nullptr;
+    }
+}
+
 extern "C" quote3_error_t sgx_ql_get_quote_config(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config)
@@ -764,8 +779,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     try
     {
         const std::string cert_url = build_pck_cert_url(*p_pck_cert_id);
-        if (auto cache_hit = local_cache_get(cert_url))
+        if (auto cache_hit = try_cache_get(cert_url))
         {
+            log(SGX_QL_LOG_INFO,
+                "Fetching quote config from cache: '%s'.",
+                cert_url.c_str());
+
             *pp_quote_config =
                 (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
             memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
@@ -861,6 +880,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_QL_NO_PLATFORM_CERT_DATA
                    : SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Runtime exception thrown, error: %s",
+            error.what());
+        // Swallow adding file to cache. Library can
+        // operate without caching
+        // return SGX_QL_ERROR_UNEXPECTED;
     }
     catch (std::exception& error)
     {
