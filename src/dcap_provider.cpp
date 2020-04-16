@@ -68,7 +68,7 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
-static char DEFAULT_COLLATARAL_VERSION[] = "v1";
+static char DEFAULT_COLLATARAL_VERSION[] = "v2";
 static std::string default_collateral_version = DEFAULT_COLLATARAL_VERSION;
 
 static char CRL_CA_PROCESSOR[] = "processor";
