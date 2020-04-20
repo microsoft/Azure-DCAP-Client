@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
+// Change for testing the build pipeline
 #pragma once
 #ifndef PLATFORM_QUOTE_PROVIDER_H
 #define PLATFORM_QUOTE_PROVIDER_H
