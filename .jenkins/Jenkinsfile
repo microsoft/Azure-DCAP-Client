@@ -61,6 +61,7 @@ def ACCContainerTest(String label, String version, String lvi_mitigation = 'None
                         cd ${WORKSPACE}/openenclave/build
                         cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLVI_MITIGATION=${lvi_mitigation} -DLVI_MITIGATION_BINDIR=/usr/local/lvi-mitigation/bin -DLVI_MITIGATION_SKIP_TESTS=${lvi_mitigation_skip_tests}
                         ninja -v
+                        sudo ninja -v install
                         ctest --output-on-failure
                        """
                 oe.ContainerRun("${DOCKER_REGISTRY}/az-dcap-tools-${version}", 'clang-7', task, '--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx')
