@@ -191,7 +191,7 @@ static void load_cache_locations()
     cache_locations[3] = ::getenv("TMPDIR");
 
     // The fallback location isn't an environment variable
-    cache_locations[4] = std::string("/tmp").c_str();
+    cache_locations[4] = "/tmp/";
 }
 
 static void init_callback()
@@ -213,8 +213,7 @@ static void init_callback()
         }
     }
     
-    // Collect all of the environment variables for
-    // the error message
+    // Collect all of the environment variables for the error message
     std::string environment_variable_list;
     for (size_t i = 0; i < CACHE_LOCATIONS - 1; ++i)
     {
