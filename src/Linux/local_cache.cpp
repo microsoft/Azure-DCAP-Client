@@ -23,6 +23,9 @@ constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 
 static std::string g_cache_dirname;
 
+static constexpr size_t CACHE_LOCATIONS = 5;
+static const char *cache_locations[CACHE_LOCATIONS];
+
 //
 // Various exception helpers
 //
@@ -180,35 +183,49 @@ static void make_dir(const std::string& dirname, mode_t mode)
     }
 }
 
+static void load_cache_locations()
+{
+    cache_locations[0] = ::getenv("AZDCAP_CACHE");
+    cache_locations[1] = ::getenv("XDG_CACHE_HOME");
+    cache_locations[2] = ::getenv("HOME");
+    cache_locations[3] = ::getenv("TMPDIR");
+
+    // The fallback location isn't an environment variable
+    cache_locations[4] = std::string("/tmp").c_str();
+}
+
 static void init_callback()
 {
-    const char * env_home = ::getenv("HOME");
-    const char * env_azdcap_cache = ::getenv("AZDCAP_CACHE");
+    load_cache_locations();
     const std::string application_name("/.az-dcap-client/");
-    
     std::string dirname;
+    std::string all_locations;
 
-    if (env_azdcap_cache != 0 && (strcmp(env_azdcap_cache,"") != 0))
+    // Try the cache locations in order
+    for (auto &cache_location : cache_locations)
     {
-        dirname = env_azdcap_cache;
+        if (cache_location != 0 && strcmp(cache_location, "") != 0)
+        {
+            dirname = cache_location + application_name;
+            make_dir(dirname, 0700);
+            g_cache_dirname = dirname;
+            return;
+        }
     }
-    else if (env_home != 0 && (strcmp(env_home,"") != 0))
+    
+    // Collect all of the environment variables for
+    // the error message
+    std::string environment_variable_list;
+    for (size_t i = 0; i < CACHE_LOCATIONS - 1; ++i)
     {
-        dirname = std::string(env_home);
-    }
-    else
-    {
-        // Throwing exception if the expected HOME
-        // environment variable is not defined.
-
-        throw std::runtime_error("HOME and AZDCAPCACHE environment variables not defined");
+        environment_variable_list += cache_locations[i];
+        if (i != CACHE_LOCATIONS - 2)
+        {
+            environment_variable_list += ",";
+        }
     }
 
-    dirname += application_name;
-
-    make_dir(dirname, 0700);
-
-    g_cache_dirname = dirname;
+    throw std::runtime_error("No cache location was found. Please define one of the following environment variables: " + environment_variable_list);
 }
 
 static void init()
