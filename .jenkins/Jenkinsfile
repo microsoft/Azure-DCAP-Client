@@ -60,9 +60,9 @@ def ACCContainerTest(String label, String version, String lvi_mitigation = 'None
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
                         cd ${WORKSPACE}/openenclave/scripts/ansible
-                        ./install-ansible.sh
-                        ansible localhost --playbook-dir=/openenclave/scripts/ansible -m import_role -a "name=linux/docker tasks_from=ci-setup.yml" -vvv
-                        ./remove-ansible.sh
+                        sudo ./install-ansible.sh
+                        sudo ansible localhost --playbook-dir=/openenclave/scripts/ansible -m import_role -a "name=linux/docker tasks_from=ci-setup.yml" -vvv
+                        sudo ./remove-ansible.sh
                         mkdir -p ${WORKSPACE}/openenclave/build
                         cd ${WORKSPACE}/openenclave/build
                         cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLVI_MITIGATION=${lvi_mitigation} -DLVI_MITIGATION_BINDIR=/usr/local/lvi-mitigation/bin -DLVI_MITIGATION_SKIP_TESTS=${lvi_mitigation_skip_tests}
