@@ -59,6 +59,8 @@ def ACCContainerTest(String label, String version, String lvi_mitigation = 'None
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
                         mkdir -p ${WORKSPACE}/openenclave/build
                         cd ${WORKSPACE}/openenclave/build
+                        sudo mkdir /usr/local/
+                        sudo mkdir /usr/local/lvi-mitigation/bin
                         cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLVI_MITIGATION=${lvi_mitigation} -DLVI_MITIGATION_BINDIR=/usr/local/lvi-mitigation/bin -DLVI_MITIGATION_SKIP_TESTS=${lvi_mitigation_skip_tests}
                         ninja -v
                         sudo ninja -v install
