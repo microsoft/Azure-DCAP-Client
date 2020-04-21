@@ -59,7 +59,7 @@ def ACCContainerTest(String label, String version, String lvi_mitigation = 'None
                         cd ${WORKSPACE}/src/Linux
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
-                        cd ${WORKSPACE}/openenclave/ansible
+                        cd ${WORKSPACE}/openenclave/scripts/ansible
                         ./install-ansible.sh
                         ansible localhost --playbook-dir=/openenclave/scripts/ansible -m import_role -a "name=linux/docker tasks_from=ci-setup.yml" -vvv
                         ./remove-ansible.sh
