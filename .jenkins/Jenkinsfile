@@ -54,6 +54,9 @@ def ACCContainerTest(String label, String version) {
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt-get purge az-dcap-client -y 
+                        sudo apt-get update
+                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
                         cd ${WORKSPACE}/src/Linux
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
@@ -63,7 +66,8 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/az-dcap-tools-${version}", 'clang-7', task, '--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx')
+                // oe.ContainerRun("${DOCKER_REGISTRY}/az-dcap-tools-${version}", 'clang-7', task, '--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx')
+                oe.ContainerRun("oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
