@@ -142,7 +142,7 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
          "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
          "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
-         "ACCWin DCAP Debug Test" :                    { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
-         "ACCWin DCAP Release Test" :                  { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
+         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
          "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
-         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') }
+         "ACCWin DCAP Debug Test" :                    { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
+         "ACCWin DCAP Release Test" :                  { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') }
