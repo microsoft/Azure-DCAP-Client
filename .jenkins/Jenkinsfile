@@ -66,8 +66,7 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                // oe.ContainerRun("${DOCKER_REGISTRY}/az-dcap-tools-${version}", 'clang-7', task, '--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx')
-                oe.ContainerRun("oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -83,6 +82,9 @@ def ACCTestOeRelease(String label, String version) {
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt-get purge az-dcap-client -y
+                        sudo apt-get update
+                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
                         cd ${WORKSPACE}/src/Linux
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
@@ -96,7 +98,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/az-dcap-tools-${version}", 'clang-7', task, '--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx')
+                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -126,10 +128,6 @@ def DCAPBuildTest(String label, String build_type) {
     }
 }
 
-// Add these back in once OESDK is stabalized
-//"ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
-//"ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
-
 parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
          "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
          "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
@@ -145,4 +143,6 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
          "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
          "ACCWin DCAP Debug Test" :                    { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
-         "ACCWin DCAP Release Test" :                  { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') }
+         "ACCWin DCAP Release Test" :                  { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') }
