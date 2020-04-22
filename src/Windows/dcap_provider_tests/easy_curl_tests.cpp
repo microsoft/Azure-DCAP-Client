@@ -34,28 +34,31 @@ namespace dcap_provider_tests
         
         TEST_METHOD(TestCreateCurlEasy)
         {
-            auto curl = curl_easy::create("http://www.microsoft.com");
+            auto curl = curl_easy::create("http://www.microsoft.com", nullptr);
             Assert::IsTrue(static_cast<bool>(curl), L"Create curl_easy object.");
         }
 
         TEST_METHOD(TestSimpleNetworkExchanges)
         {
             {
-                auto curl = curl_easy::create("https://www.microsoft.com");
+                auto curl =
+                    curl_easy::create("https://www.microsoft.com", nullptr);
                 Assert::IsTrue(
                     static_cast<bool>(curl), L"Create curl_easy object.");
 
                 curl->perform();
             }
             {
-                auto curl = curl_easy::create("https://www.example.com");
+                auto curl =
+                    curl_easy::create("https://www.example.com", nullptr);
                 Assert::IsTrue(
                     static_cast<bool>(curl), L"Create curl_easy object.");
 
                 curl->perform();
             }
             {
-                auto curl = curl_easy::create("https://www.nonexistanthost.com");
+                auto curl = curl_easy::create(
+                    "https://www.nonexistanthost.com", nullptr);
                 Assert::IsTrue(
                     static_cast<bool>(curl), L"Create curl_easy object.");
 
@@ -68,7 +71,7 @@ namespace dcap_provider_tests
 
         TEST_METHOD(GetHeader)
         {
-            auto curl = curl_easy::create("https://www.microsoft.com");
+            auto curl = curl_easy::create("https://www.microsoft.com", nullptr);
             Assert::IsTrue(
                 static_cast<bool>(curl), L"Create curl_easy object.");
 

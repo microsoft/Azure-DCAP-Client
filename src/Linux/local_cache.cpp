@@ -21,7 +21,8 @@ constexpr uint16_t CACHE_V1 = 1;
 
 constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 
-static std::string g_cache_dirname;
+static std::string g_cache_dirname = "";
+static std::mutex cache_directory_lock;
 
 static constexpr size_t CACHE_LOCATIONS = 5;
 static const char *cache_locations[CACHE_LOCATIONS];
@@ -224,13 +225,16 @@ static void init_callback()
         }
     }
 
-    throw std::runtime_error("No cache location was found. Please define one of the following environment variables: " + environment_variable_list);
+    throw std::runtime_error("No cache location was found. Please define one of the following environment variables to enable caching: " + environment_variable_list);
 }
 
 static void init()
 {
-    static std::once_flag init_flag;
-    std::call_once(init_flag, init_callback);
+    std::lock_guard<std::mutex> lock(cache_directory_lock);
+    if (g_cache_dirname == "")
+    {
+        init_callback();
+    }
 }
 
 static std::string sha256(size_t data_size, const void* data)
@@ -260,6 +264,7 @@ static std::string sha256(const std::string& input)
 
 static std::string get_file_name(const std::string& id)
 {
+    std::lock_guard<std::mutex> lock(cache_directory_lock);
     return g_cache_dirname + "/" + sha256(id);
 }
 
@@ -304,6 +309,7 @@ void local_cache_clear()
 {
     init();
 
+    std::lock_guard<std::mutex> lock(cache_directory_lock);
     constexpr int MAX_FDS = 4;
     int rc = nftw(g_cache_dirname.c_str(), delete_path, MAX_FDS, FTW_DEPTH);
     if (rc != 0)
