@@ -208,7 +208,7 @@ static void init_callback()
         if (cache_location != 0 && strcmp(cache_location, "") != 0)
         {
             dirname = cache_location + application_name;
-            make_dir(dirname, 0700);
+            make_dir(dirname, 0777);
             g_cache_dirname = dirname;
             return;
         }
@@ -336,7 +336,7 @@ void local_cache_add(
 
     file cache_entry;
     cache_entry.throw_on_error();
-    cache_entry.open(get_file_name(id), O_CREAT | O_WRONLY, 0600);
+    cache_entry.open(get_file_name(id), O_CREAT | O_WRONLY, 0666);
     cache_entry.truncate();
     cache_entry.write(&header, sizeof(header));
     cache_entry.write(data, data_size);
