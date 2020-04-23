@@ -403,15 +403,10 @@ void RunQuoteProviderTests(bool caching_enabled=true)
         assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
         assert(duration_local < CURL_TOLERANCE);
     }
-    else 
-    {
-        //assert(fabs(duration_curl - duration_local) <= CURL_TOLERANCE);
-        //assert(duration_local > CURL_TOLERANCE);
-    }
 }
 
 #if defined __LINUX__
-void ForceCacheReload(libary_type_t *library)
+void ReloadLibrary(libary_type_t *library)
 {
 
     dlclose(*library);
@@ -432,22 +427,25 @@ void RunCachePermissionTests(libary_type_t *library)
     // Create the parent folder before the library runs
     for (auto permission : permissions)
     {   
-        ForceCacheReload(library);
+        ReloadLibrary(library);
         assert(0 == mkdir(permission_folder, permission));
         
-        RunQuoteProviderTests(false);
+        RunQuoteProviderTests(permission == 0700);
+        assert(0 == chmod(permission_folder, 0700));
         assert(0 == system("rm -rf ./test_permissions"));
     }
 
     // Change the permissions on the parent folder after the
-    // library has created it 
-    ForceCacheReload(library);
+    // library has used it
     for (auto permission : permissions)
     {
-        RunQuoteProviderTests(false);
+        ReloadLibrary(library);
+        assert(0 == mkdir(permission_folder, 0700));
+        RunQuoteProviderTests(true);
 
-        chmod(permission_folder, permission);
+        assert(0 == chmod(permission_folder, permission));
         RunQuoteProviderTests(false);
+        assert(0 == chmod(permission_folder, 0700));
         assert(0 == system("rm -rf ./test_permissions"));
     }
     
