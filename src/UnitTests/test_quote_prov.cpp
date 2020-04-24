@@ -20,12 +20,15 @@
 #include <iostream>
 #include <stdlib.h>
 #include <windows.h>
+#include <AccCtrl.h>
 #endif
 
 #if defined __LINUX__
 typedef void * libary_type_t;
+typedef int permission_type_t;
 #else
 typedef HINSTANCE libary_type_t;
+typedef EXPLICIT_ACCESS permission_type_t;
 #endif
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
@@ -405,20 +408,71 @@ void RunQuoteProviderTests(bool caching_enabled=true)
     }
 }
 
-#if defined __LINUX__
 void ReloadLibrary(libary_type_t *library)
 {
-
+#if defined __LINUX__
     dlclose(*library);
     *library = LoadFunctions();
     assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+#else 
+    FreeLibrary(*library);
+    *library = LoadFunctions();
+#endif
+}
+
+void allow_access(std::string foldername)
+{
+#if defined __LINUX__
+    assert(0 == chmod(permission_folder, 0700));
+#else
+
+#endif
+}
+
+void make_folder(std::string foldername, permission_type_t permissions)
+{
+#if defined __LINUX__
+    assert(0 == mkdir(permission_folder, permission));
+#else 
+
+#endif
+}
+
+void change_permission(std::string foldername, permission_type_t permissions)
+{
+#if defined __LINUX__
+    assert(0 == chmod(permission_folder, permission));
+#else
+
+#endif
+}
+
+bool is_caching_allowed(permission_type_t permissino)
+{
+#if defined __LINUX__
+    return permission == 0700;
+#else
+    return false;
+#endif
+}
+
+void remove_folder(std::string foldername)
+{
+#if defined __LINUX__
+    assert(0 == system("rm -rf ./test_permissions"));
+#else
+#endif
 }
 
 void RunCachePermissionTests(libary_type_t *library)
 {
     TEST_START();
-
+#if defined __LINUX__
     auto permissions = {0700, 0400, 0200, 0000};
+#else 
+    permission_type_t permissions[] = {{}};
+#endif
+
     auto permission_folder = "./test_permissions";
     #if defined __LINUX__
         setenv("AZDCAP_CACHE", permission_folder, 1);
@@ -428,11 +482,11 @@ void RunCachePermissionTests(libary_type_t *library)
     for (auto permission : permissions)
     {   
         ReloadLibrary(library);
-        assert(0 == mkdir(permission_folder, permission));
+        make_folder(permission_folder, permission);
         
-        RunQuoteProviderTests(permission == 0700);
-        assert(0 == chmod(permission_folder, 0700));
-        assert(0 == system("rm -rf ./test_permissions"));
+        RunQuoteProviderTests(is_caching_allowed(permission));
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
     }
 
     // Change the permissions on the parent folder after the
@@ -440,18 +494,16 @@ void RunCachePermissionTests(libary_type_t *library)
     for (auto permission : permissions)
     {
         ReloadLibrary(library);
-        assert(0 == mkdir(permission_folder, 0700));
+        allow_access(permission_folder);
         RunQuoteProviderTests(true);
-
-        assert(0 == chmod(permission_folder, permission));
+        change_permission(permission_folder, permission);
         RunQuoteProviderTests(false);
-        assert(0 == chmod(permission_folder, 0700));
-        assert(0 == system("rm -rf ./test_permissions"));
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
     }
     
     TEST_PASSED();
 }
-#endif
 
 void SetupEnvironment(std::string version)
 {
