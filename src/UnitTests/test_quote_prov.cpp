@@ -11,6 +11,7 @@
 #include <ctime>
 #include <memory>
 #include <sstream>
+#include <sys/stat.h>
 
 #if defined(__LINUX__)
 #include <tgmath.h>
@@ -19,6 +20,12 @@
 #include <iostream>
 #include <stdlib.h>
 #include <windows.h>
+#endif
+
+#if defined __LINUX__
+typedef void * libary_type_t;
+#else
+typedef HINSTANCE libary_type_t;
 #endif
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
@@ -72,6 +79,22 @@ static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 
 // Test FMSPC
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
+
+// Test input (choose an arbitrary Azure server)
+static uint8_t qe_id[16] = {
+       0x00, 0xfb, 0xe6, 0x73, 0x33, 0x36, 0xea, 0xf7,
+       0xa4, 0xe3, 0xd8, 0xb9, 0x66, 0xa8, 0x2e, 0x64
+    };
+
+static sgx_cpu_svn_t cpusvn = {
+        0x04, 0x04, 0x02, 0x04, 0xff, 0x80, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+static sgx_isv_svn_t pcesvn = 6;
+
+static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
+
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
@@ -193,27 +216,13 @@ static void GetCertsTest()
 {
     TEST_START();
 
-    // Setup the input (choose an arbitrary Azure server)
-    uint8_t qe_id[16] = {
-       0x00, 0xfb, 0xe6, 0x73, 0x33, 0x36, 0xea, 0xf7,
-       0xa4, 0xe3, 0xd8, 0xb9, 0x66, 0xa8, 0x2e, 0x64
-    };
-    sgx_cpu_svn_t cpusvn = {
-        0x04, 0x04, 0x02, 0x04, 0xff, 0x80, 0x00, 0x00, 
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
-
-    sgx_isv_svn_t pcesvn = 6;
-
-    sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
-
+    sgx_ql_config_t* config = nullptr;
     // Get the cert data
-    sgx_ql_config_t* config;
     Log(SGX_QL_LOG_INFO , "Calling sgx_ql_get_quote_config");
     assert(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
     Log(SGX_QL_LOG_INFO , "sgx_ql_get_quote_config returned");
     assert(nullptr != config);
-
+    
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
     constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
@@ -359,7 +368,7 @@ constexpr auto CURL_TOLERANCE = 0.002;
 constexpr auto CURL_TOLERANCE = 0.04;
 #endif
 
-void RunQuoteProviderTests()
+void RunQuoteProviderTests(bool caching_enabled=true)
 {
     std::clock_t start;
     double duration_curl;
@@ -386,12 +395,63 @@ void RunQuoteProviderTests()
     GetRootCACrlTest();
     GetVerificationCollateralTest();
 
-    // Ensure that there is a signficiant enough difference between the cert
-    // fetch to the end point and cert fetch to local cache and that local cache
-    // call is fast enough
-    assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
-    assert(duration_local < CURL_TOLERANCE);
+    if (caching_enabled)
+    {
+        // Ensure that there is a signficiant enough difference between the cert
+        // fetch to the end point and cert fetch to local cache and that local cache
+        // call is fast enough
+        assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
+        assert(duration_local < CURL_TOLERANCE);
+    }
 }
+
+#if defined __LINUX__
+void ReloadLibrary(libary_type_t *library)
+{
+
+    dlclose(*library);
+    *library = LoadFunctions();
+    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+}
+
+void RunCachePermissionTests(libary_type_t *library)
+{
+    TEST_START();
+
+    auto permissions = {0700, 0400, 0200, 0000};
+    auto permission_folder = "./test_permissions";
+    #if defined __LINUX__
+        setenv("AZDCAP_CACHE", permission_folder, 1);
+    #endif
+
+    // Create the parent folder before the library runs
+    for (auto permission : permissions)
+    {   
+        ReloadLibrary(library);
+        assert(0 == mkdir(permission_folder, permission));
+        
+        RunQuoteProviderTests(permission == 0700);
+        assert(0 == chmod(permission_folder, 0700));
+        assert(0 == system("rm -rf ./test_permissions"));
+    }
+
+    // Change the permissions on the parent folder after the
+    // library has used it
+    for (auto permission : permissions)
+    {
+        ReloadLibrary(library);
+        assert(0 == mkdir(permission_folder, 0700));
+        RunQuoteProviderTests(true);
+
+        assert(0 == chmod(permission_folder, permission));
+        RunQuoteProviderTests(false);
+        assert(0 == chmod(permission_folder, 0700));
+        assert(0 == system("rm -rf ./test_permissions"));
+    }
+    
+    TEST_PASSED();
+}
+#endif
 
 void SetupEnvironment(std::string version)
 {
@@ -419,32 +479,36 @@ void SetupEnvironment(std::string version)
 
 extern void QuoteProvTests()
 {
-#if defined __LINUX__
-    void* library = LoadFunctions();
-#else
-    HINSTANCE library = LoadFunctions();
-#endif
+    libary_type_t library = LoadFunctions();
 
     assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
 
     //
-    // First pass: Get the data from the service
+    // Get the data from the service
     //
     SetupEnvironment("");
     RunQuoteProviderTests();
 
     //
-    // Second pass: Get the V1 collateral specifically
+    // Get the V1 collateral specifically
     //
     SetupEnvironment("v1");
     RunQuoteProviderTests();
 
     //
-    // Second pass: Get the V2 data from the service
+    // Get the V2 data from the service
     //
     SetupEnvironment("v2");
     RunQuoteProviderTests();
     GetQveIdentityTest();
+
+ #if defined __LINUX__
+    // 
+    // Run tests to make sure libray can operate
+    // even if access to filesystem is restricted
+    //
+    RunCachePermissionTests(&library);
+ #endif
   
 #if defined __LINUX__
     dlclose(library);

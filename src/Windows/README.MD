@@ -19,11 +19,10 @@ cd src\Windows
 > If you get an error like the script cannot be loaded because the execution of scripts is disabled on this system, run `Set-ExecutionPolicy bypass` and accept the changes.
 
 # Build the Installer
-To build the installer Visual Studio 2017 and the WIX toolset are required.
+To build the installer Visual Studio 2017 or 2019 and the WIX toolset are required.
 1. Downlad the WIX Toolset from https://wixtoolset.org/releases/ and install the recommended Toolset
-1. Install the Wix Toolset Visual Studio 2017 Extension. From Visual Studio select Tools->Extensions and Updates and search for "Wix Toolset Visual Studio 2017 Extension"
+1. Install the Wix Toolset Visual Studio Extension. From Visual Studio search for "Wix Toolset Visual Studio Extension"
 1. Reload the project or re-open `src/Windows/dcap_provider.sln` 
-
 
 # Packaging
 1. Run the build script in Release mode

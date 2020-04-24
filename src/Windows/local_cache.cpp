@@ -70,7 +70,7 @@ static void init_callback()
     } 
     else if (wenv_home != L"" && wenv_home[0] != 0)
     {
-        dirname = wenv_home;
+        dirname = wenv_home.append(L"..\\..\\LocalLow");
     } 
     else
     {
