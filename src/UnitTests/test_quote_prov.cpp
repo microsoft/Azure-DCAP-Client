@@ -613,7 +613,7 @@ void RunCachePermissionTests(libary_type_t *library)
     TEST_START();
     #if defined __LINUX__
         auto permission_folder = "./test_permission";
-        auto permissions = {0700, 0400, 0200, 0000};
+        int permissions[] = {0700, 0400, 0200, 0000};
         setenv("AZDCAP_CACHE", permission_folder, 1);
     #else 
         auto permission_folder = ".\\test_permission";
@@ -641,10 +641,13 @@ void RunCachePermissionTests(libary_type_t *library)
     for (auto permission : permissions)
     {
         ReloadLibrary(library);
-        allow_access(permission_folder);
+        make_folder(permission_folder, permissions[0]);
         RunQuoteProviderTests(true);
+
         change_permission(permission_folder, permission);
+
         RunQuoteProviderTests(false);
+
         allow_access(permission_folder);
         remove_folder(permission_folder);
     }
