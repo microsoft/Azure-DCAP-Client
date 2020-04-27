@@ -20,7 +20,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <windows.h>
-#include <AccCtrl.h>
+#include <AclAPI.h>
 #endif
 
 #if defined __LINUX__
@@ -28,7 +28,11 @@ typedef void * libary_type_t;
 typedef int permission_type_t;
 #else
 typedef HINSTANCE libary_type_t;
-typedef EXPLICIT_ACCESS permission_type_t;
+typedef struct _access_permission
+{
+    DWORD access_permissions;
+    ACCESS_MODE access_mode;
+} permission_type_t;
 #endif
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
@@ -413,69 +417,212 @@ void ReloadLibrary(libary_type_t *library)
 #if defined __LINUX__
     dlclose(*library);
     *library = LoadFunctions();
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
 #else 
     FreeLibrary(*library);
     *library = LoadFunctions();
 #endif
+    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
 }
+
+#ifndef __LINUX__
+void set_access(std::string foldername, permission_type_t permission)
+{
+    PSID p_groupId;
+    PSID p_ownerId;
+    PACL p_dacl;
+    PACL p_sacl;
+    PACL new_acl;
+    PSECURITY_DESCRIPTOR p_security_desc = NULL;
+    EXPLICIT_ACCESS_A new_ace;
+    DWORD lastError = ERROR_SUCCESS;
+    DWORD retval;
+    PEXPLICIT_ACCESS_A existing_explicit_entries = NULL;
+
+    retval = GetNamedSecurityInfoA(
+        foldername.c_str(),
+        SE_FILE_OBJECT,
+        GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION |
+            LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION |
+            ATTRIBUTE_SECURITY_INFORMATION,
+        &p_ownerId,
+        &p_groupId,
+        &p_dacl,
+        &p_sacl,
+        &p_security_desc);
+    if (!SUCCEEDED(retval))
+    {
+        lastError = GetLastError();
+        goto Cleanup;
+    }
+
+    retval = SetNamedSecurityInfoA(
+        (LPSTR)foldername.c_str(),
+        SE_FILE_OBJECT,
+        OWNER_SECURITY_INFORMATION,
+        p_ownerId,
+        p_groupId,
+        p_dacl,
+        p_sacl);
+    if (!SUCCEEDED(retval))
+    {
+        lastError = GetLastError();
+        goto Cleanup;
+    }
+
+    ULONG existingEntries;
+    retval = GetExplicitEntriesFromAclA(
+        p_dacl, &existingEntries, &existing_explicit_entries);
+    if (!SUCCEEDED(retval))
+    {
+        lastError = GetLastError();
+        goto Cleanup;
+    }
+
+    for (size_t i = 0; i < existingEntries; ++i)
+    {
+        if (existing_explicit_entries[i].Trustee.ptstrName == p_ownerId)
+        {
+
+        }
+    }
+
+    // Initialize the new ACE
+    RtlZeroMemory(&new_ace, sizeof(new_ace));
+    new_ace.grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    new_ace.Trustee.pMultipleTrustee = NULL;
+    new_ace.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
+    new_ace.Trustee.TrusteeForm = _TRUSTEE_FORM::TRUSTEE_IS_SID;
+    new_ace.Trustee.TrusteeType = _TRUSTEE_TYPE::TRUSTEE_IS_UNKNOWN;
+    new_ace.Trustee.ptstrName = (LPCH)p_ownerId;
+
+    // Set the new access permission
+    new_ace.grfAccessMode = permission.access_mode;
+    new_ace.grfAccessPermissions = permission.access_permissions;
+    
+    retval = SetEntriesInAclA(1, &new_ace, p_dacl, &new_acl);
+    if (!SUCCEEDED(retval))
+    {
+        lastError = GetLastError();
+        goto Cleanup;
+    }
+
+    retval = SetNamedSecurityInfoA(
+        (LPSTR)foldername.c_str(),
+        SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION,
+        p_ownerId,
+        p_groupId,
+        new_acl,
+        p_sacl);
+    if (!SUCCEEDED(retval))
+    {
+        lastError = GetLastError();
+        goto Cleanup;
+    }
+
+Cleanup:
+    if (p_dacl != NULL)
+    {
+        LocalFree(p_dacl);
+    }
+
+    if (p_sacl != NULL)
+    {
+        LocalFree(p_sacl);
+    }
+
+    if (p_security_desc != NULL)
+    {
+        LocalFree(p_security_desc);
+    }
+
+    if (existing_explicit_entries != NULL)
+    {
+        LocalFree(existing_explicit_entries);
+    }
+
+    if (lastError != ERROR_SUCCESS)
+    {
+        std::stringstream error_message;
+        error_message << "Setting folder permissions failed. Last error: ";
+        error_message << lastError;
+        Log(SGX_QL_LOG_ERROR, error_message.str().c_str());
+        assert(false);
+    }
+}
+#endif
 
 void allow_access(std::string foldername)
 {
 #if defined __LINUX__
-    assert(0 == chmod(permission_folder, 0700));
+    assert(0 == chmod(foldername.c_str(), 0700));
 #else
-
+    set_access(
+        foldername,
+        {
+            STANDARD_RIGHTS_ALL,
+            SET_ACCESS,
+        });
 #endif
 }
 
-void make_folder(std::string foldername, permission_type_t permissions)
+void make_folder(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
-    assert(0 == mkdir(permission_folder, permission));
+    assert(0 == mkdir(foldername.c_str(), permission));
 #else 
-
+    assert(CreateDirectoryA(foldername.c_str(), NULL));
+    set_access(foldername, permission);
 #endif
 }
 
-void change_permission(std::string foldername, permission_type_t permissions)
+void change_permission(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
-    assert(0 == chmod(permission_folder, permission));
+    assert(0 == chmod(foldername.c_str(), permission));
 #else
-
+    set_access(foldername, permission);
 #endif
 }
 
-bool is_caching_allowed(permission_type_t permissino)
+bool is_caching_allowed(permission_type_t permission)
 {
 #if defined __LINUX__
     return permission == 0700;
-#else
-    return false;
+#else 
+    return permission.access_mode == ACCESS_MODE::GRANT_ACCESS &&
+           ((permission.access_permissions & (GENERIC_WRITE | GENERIC_READ)) !=
+            0);
 #endif
 }
 
 void remove_folder(std::string foldername)
 {
 #if defined __LINUX__
-    assert(0 == system("rm -rf ./test_permissions"));
+    auto delete_command = "rm -rf " + foldername;
 #else
+    auto delete_command = "del /s /q " + foldername + "\\*";
+    assert(0 == system(delete_command.c_str()));
+    delete_command = "rmdir /s /q " + foldername;
 #endif
+    assert(0 == system(delete_command.c_str()));
 }
 
 void RunCachePermissionTests(libary_type_t *library)
 {
     TEST_START();
-#if defined __LINUX__
-    auto permissions = {0700, 0400, 0200, 0000};
-#else 
-    permission_type_t permissions[] = {{}};
-#endif
-
-    auto permission_folder = "./test_permissions";
     #if defined __LINUX__
+        auto permission_folder = "./test_permission";
+        auto permissions = {0700, 0400, 0200, 0000};
         setenv("AZDCAP_CACHE", permission_folder, 1);
+    #else 
+        auto permission_folder = ".\\test_permission";
+    permission_type_t permissions[] = {
+            {STANDARD_RIGHTS_ALL, SET_ACCESS}, 
+            {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
+            {GENERIC_READ, DENY_ACCESS},
+            {GENERIC_WRITE, DENY_ACCESS}};
+        assert(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
     #endif
 
     // Create the parent folder before the library runs
@@ -554,13 +701,11 @@ extern void QuoteProvTests()
     RunQuoteProviderTests();
     GetQveIdentityTest();
 
- #if defined __LINUX__
     // 
     // Run tests to make sure libray can operate
     // even if access to filesystem is restricted
     //
     RunCachePermissionTests(&library);
- #endif
   
 #if defined __LINUX__
     dlclose(library);
