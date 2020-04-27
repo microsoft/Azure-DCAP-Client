@@ -16,17 +16,21 @@ def buildDockerImages() {
                 checkout scm
             }
             stage("Build Ubuntu 16.04 Docker Image") {
-                azDcapTools1604 = oe.dockerImage("az-dcap-tools-16.04:${DOCKER_TAG}",
-                                                    ".jenkins/Dockerfile",
-                                                    "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=16.04")
+                docker.withRegistry(OETOOLS_REPO, OETOOLS_REPO_CREDENTIAL_ID) {
+                    azDcapTools1604 = oe.dockerImage("az-dcap-tools-16.04:${DOCKER_TAG}",
+                                                     ".jenkins/Dockerfile",
+                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=16.04")
+                }
                 pubazDcapTools1604 = oe.dockerImage("oeciteam/az-dcap-tools-16.04:${DOCKER_TAG}",
                                                     ".jenkins/Dockerfile",
                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=16.04")
             }
             stage("Build Ubuntu 18.04 Docker Image") {
-                azDcapTools1804 = oe.dockerImage("az-dcap-tools-18.04:${DOCKER_TAG}",
-                                                    ".jenkins/Dockerfile",
-                                                    "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
+                docker.withRegistry(OETOOLS_REPO, OETOOLS_REPO_CREDENTIAL_ID) {
+                    azDcapTools1804 = oe.dockerImage("az-dcap-tools-18.04:${DOCKER_TAG}",
+                                                     ".jenkins/Dockerfile",
+                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
+                }
                 pubazDcapTools1804 = oe.dockerImage("oeciteam/az-dcap-tools-18.04:${DOCKER_TAG}",
                                                     ".jenkins/Dockerfile",
                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
