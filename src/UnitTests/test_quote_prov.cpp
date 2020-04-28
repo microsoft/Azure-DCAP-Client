@@ -431,12 +431,11 @@ void set_access(std::string foldername, permission_type_t permission)
     PSID p_ownerId;
     PACL p_dacl;
     PACL p_sacl;
-    PACL new_acl;
+    PACL new_acl = NULL;
     PSECURITY_DESCRIPTOR p_security_desc = NULL;
     EXPLICIT_ACCESS_A new_ace;
     DWORD lastError = ERROR_SUCCESS;
     DWORD retval;
-    PEXPLICIT_ACCESS_A existing_explicit_entries = NULL;
 
     retval = GetNamedSecurityInfoA(
         foldername.c_str(),
@@ -453,37 +452,6 @@ void set_access(std::string foldername, permission_type_t permission)
     {
         lastError = GetLastError();
         goto Cleanup;
-    }
-
-    retval = SetNamedSecurityInfoA(
-        (LPSTR)foldername.c_str(),
-        SE_FILE_OBJECT,
-        OWNER_SECURITY_INFORMATION,
-        p_ownerId,
-        p_groupId,
-        p_dacl,
-        p_sacl);
-    if (!SUCCEEDED(retval))
-    {
-        lastError = GetLastError();
-        goto Cleanup;
-    }
-
-    ULONG existingEntries;
-    retval = GetExplicitEntriesFromAclA(
-        p_dacl, &existingEntries, &existing_explicit_entries);
-    if (!SUCCEEDED(retval))
-    {
-        lastError = GetLastError();
-        goto Cleanup;
-    }
-
-    for (size_t i = 0; i < existingEntries; ++i)
-    {
-        if (existing_explicit_entries[i].Trustee.ptstrName == p_ownerId)
-        {
-
-        }
     }
 
     // Initialize the new ACE
@@ -521,24 +489,14 @@ void set_access(std::string foldername, permission_type_t permission)
     }
 
 Cleanup:
-    if (p_dacl != NULL)
-    {
-        LocalFree(p_dacl);
-    }
-
-    if (p_sacl != NULL)
-    {
-        LocalFree(p_sacl);
-    }
-
     if (p_security_desc != NULL)
     {
         LocalFree(p_security_desc);
     }
 
-    if (existing_explicit_entries != NULL)
+    if (new_acl != NULL)
     {
-        LocalFree(existing_explicit_entries);
+        LocalFree(new_acl);
     }
 
     if (lastError != ERROR_SUCCESS)
