@@ -24,7 +24,7 @@ make install
 1. `make install` (optional)
     * Installs the library to `/usr/local/lib` and header to `/usr/local/include`.
 1. `make DEBUG=1` (optional)
-    * Builds the library with the -g flag for debugging
+    * Builds the library with the -g flag
 
 # Packaging
 
