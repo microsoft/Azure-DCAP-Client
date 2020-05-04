@@ -238,7 +238,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
 //
 // determines the maximum age in local cache
 //
-sgx_plat_error_t get_cache_max_age(const curl_easy&, time_t* max_age)
+sgx_plat_error_t get_cache_max_age(time_t* max_age)
 {
     if (max_age == nullptr)
     {
@@ -707,6 +707,25 @@ static std::string build_enclave_id_url(
     return qe_id_url.str();
 }
 
+static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
+    const std::string& cert_url)
+{
+    try 
+    {
+        return local_cache_get(cert_url);
+    }
+    catch (std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
+        return nullptr;
+    }
+}
+
+static std::string get_issuer_chain_cache_name(std::string url)
+{
+    return url + "IssuerChain";
+}
+
 static quote3_error_t get_collateral(
     std::string url,
     const char header_name[],
@@ -714,14 +733,48 @@ static quote3_error_t get_collateral(
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
 {
+    quote3_error_t retval;
     try
     {
+        std::string issuer_chain_cache_name = get_issuer_chain_cache_name(url);
+        if (auto cache_hit_collateral = try_cache_get(url))
+        {
+            if (auto cache_hit_issuer_chain = try_cache_get(issuer_chain_cache_name))
+            {
+                response_body = *cache_hit_collateral;
+                issuer_chain = std::string(cache_hit_issuer_chain->begin(), cache_hit_issuer_chain->end());
+                return SGX_QL_SUCCESS;
+            }
+        }
+
         const auto crl_operation = curl_easy::create(url, request_body);
         crl_operation->perform();
         response_body = crl_operation->get_body();
         auto get_header_operation =
             get_unescape_header(*crl_operation, header_name, &issuer_chain);
-        return convert_to_intel_error(get_header_operation);
+
+        retval = convert_to_intel_error(get_header_operation);
+        // Update the cache if needed
+        time_t max_age = 0;
+        get_cache_max_age(&max_age);
+
+        if (max_age > 0)
+        {
+            time_t expiry = time(nullptr) + max_age;
+            local_cache_add(url, expiry, response_body.size(), response_body.data());
+            local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), &issuer_chain);
+        }
+
+        return retval;
+    }
+    catch (std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Runtime exception thrown, error: %s",
+            error.what());
+        // Swallow adding file to cache. Library can
+        // operate without caching
+        return retval;
     }
     catch (curl_easy::error& error)
     {
@@ -754,20 +807,6 @@ static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
     json << eppid;
     json << json_postfix;
     return json.str();
-}
-
-static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
-    const std::string& cert_url)
-{
-    try 
-    {
-        return local_cache_get(cert_url);
-    }
-    catch (std::runtime_error& error)
-    {
-        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
-        return nullptr;
-    }
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_config(
@@ -815,14 +854,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             return SGX_QL_ERROR_UNEXPECTED;
         }
 
-        // figure out how long we should cache the data (if at all)
-        time_t max_age = 0;
-        if (get_cache_max_age(*curl, &max_age) != SGX_PLAT_ERROR_OK)
-        {
-            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
-            return SGX_QL_ERROR_UNEXPECTED;
-        }
-
         // parse the SVNs into a local data structure so we can handle any parse
         // errors before allocating the output buffer
         sgx_ql_config_t temp_config{};
@@ -859,12 +890,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
         buf += cert_data_size;
         assert(buf == buf_end);
-
-        if (max_age > 0)
-        {
-            time_t expiry = time(nullptr) + max_age;
-            local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
-        }
     }
     catch (std::bad_alloc&)
     {
@@ -1141,124 +1166,6 @@ extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
     return SGX_PLAT_ERROR_OK;
 }
 
-extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
-    sgx_qe_identity_info_t** pp_qe_identity_info)
-{
-    sgx_qe_identity_info_t* p_qe_identity_info = NULL;
-    sgx_plat_error_t result;
-    char* buffer = nullptr;
-
-    if (!pp_qe_identity_info)
-    {
-        log(SGX_QL_LOG_ERROR, "Invalid parameter pp_qe_identity_info");
-        return SGX_PLAT_ERROR_INVALID_PARAMETER;
-    }
-
-    try
-    {
-        std::vector<uint8_t> identity_info;
-        std::string issuer_chain_header;
-        std::string issuer_chain;
-        std::string request_id;
-        size_t total_buffer_size = 0;
-        std::string qe_id_url =
-            build_enclave_id_url(false, issuer_chain_header);
-
-        const auto curl = curl_easy::create(qe_id_url, nullptr);
-        log(SGX_QL_LOG_INFO,
-            "Fetching QE Identity from remote server: '%s'.",
-            qe_id_url.c_str());
-        curl->perform();
-
-        // issuer chain
-        result = get_unescape_header(*curl, issuer_chain_header, &issuer_chain);
-        if (result != SGX_PLAT_ERROR_OK)
-            return result;
-
-        // read response_body
-        identity_info = curl->get_body();
-        std::string qe_identity(
-            curl->get_body().begin(), curl->get_body().end());
-
-        // Calculate total buffer size
-        total_buffer_size =
-            safe_add(sizeof(sgx_qe_identity_info_t), identity_info.size());
-        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
-        total_buffer_size = safe_add(total_buffer_size, issuer_chain.size());
-        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
-
-        buffer = new char[total_buffer_size];
-        memset(buffer, 0, total_buffer_size);
-
-#ifndef NDEBUG
-        const char* buffer_end = buffer + total_buffer_size;
-#endif
-        // fill in the qe info
-        p_qe_identity_info = reinterpret_cast<sgx_qe_identity_info_t*>(buffer);
-
-        // advance to the end of the sgx_qe_identity_info_t structure
-        buffer += sizeof(*p_qe_identity_info);
-
-        // qe_id_info
-        p_qe_identity_info->qe_id_info_size =
-            static_cast<uint32_t>(identity_info.size());
-        p_qe_identity_info->qe_id_info = buffer;
-        memcpy(
-            p_qe_identity_info->qe_id_info,
-            identity_info.data(),
-            identity_info.size());
-        buffer += identity_info.size() + 1; // skip null terminator
-        assert(buffer < buffer_end);
-
-        // set issuer_chain info
-        p_qe_identity_info->issuer_chain_size =
-            static_cast<uint32_t>(issuer_chain.size());
-        p_qe_identity_info->issuer_chain = buffer;
-        buffer += issuer_chain.size() + 1; // skip null terminator
-        assert(buffer == buffer_end);
-        memcpy(
-            p_qe_identity_info->issuer_chain,
-            issuer_chain.data(),
-            issuer_chain.size());
-        *pp_qe_identity_info = p_qe_identity_info;
-    }
-    catch (std::bad_alloc&)
-    {
-        return SGX_PLAT_ERROR_OUT_OF_MEMORY;
-    }
-    catch (std::overflow_error& error)
-    {
-        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
-        *pp_qe_identity_info = nullptr;
-        return SGX_PLAT_ERROR_OVERFLOW;
-    }
-    catch (curl_easy::error& error)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "error thrown, error code: %x: %s",
-            error.code,
-            error.what());
-        return error.code == CURLE_HTTP_RETURNED_ERROR
-                   ? SGX_PLAT_NO_DATA_FOUND
-                   : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-    }
-    catch (std::exception& error)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Unknown exception thrown, error: %s",
-            error.what());
-        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-    }
-
-    return SGX_PLAT_ERROR_OK;
-}
-
-extern "C" void sgx_free_qe_identity_info(
-    sgx_qe_identity_info_t* p_qe_identity_info)
-{
-    delete[] reinterpret_cast<uint8_t*>(p_qe_identity_info);
-}
-
 extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
     sgx_ql_qve_collateral_t* p_quote_collateral)
 {
@@ -1366,6 +1273,14 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string tcb_issuer_chain;
         std::vector<uint8_t> qe_identity;
         std::string qe_identity_issuer_chain;
+
+        // Figure out how long we should cache the data (if at all)
+        time_t max_age = 0;
+        if (get_cache_max_age(&max_age) != SGX_PLAT_ERROR_OK)
+        {
+            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
+            return SGX_QL_ERROR_UNEXPECTED;
+        }
 
         // Get PCK CRL
         std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);

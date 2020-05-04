@@ -378,16 +378,21 @@ constexpr auto CURL_TOLERANCE = 0.04;
 void RunQuoteProviderTests(bool caching_enabled=true)
 {
     std::clock_t start;
-    double duration_curl;
-    double duration_local;
+    double duration_curl_cert;
+    double duration_local_cert;
+    double duration_curl_verification;
+    double duration_local_verification;
     local_cache_clear();
 
     start = std::clock();
     GetCertsTest();
-    duration_curl = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    duration_curl_cert = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
     GetCrlTest();
+    
+    start = std::clock();
     GetVerificationCollateralTest();
+    duration_curl_verification = (std::clock() - start) / (double) CLOCKS_PER_SEC;
     GetRootCACrlTest();
 
 
@@ -396,19 +401,24 @@ void RunQuoteProviderTests(bool caching_enabled=true)
     //
     start = std::clock();
     GetCertsTest();
-    duration_local = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    duration_local_cert = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
     GetCrlTest();
     GetRootCACrlTest();
+
+    start = std::clock();
     GetVerificationCollateralTest();
+    duration_local_verification = (std::clock()) / (double) CLOCKS_PER_SEC;
 
     if (caching_enabled)
     {
         // Ensure that there is a signficiant enough difference between the cert
         // fetch to the end point and cert fetch to local cache and that local cache
         // call is fast enough
-        assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
-        assert(duration_local < CURL_TOLERANCE);
+        assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        assert(duration_local_cert < CURL_TOLERANCE);
+        assert(fabs(duration_curl_verification - duration_local_verification) > CURL_TOLERANCE);
+        assert(duration_local_verification < CURL_TOLERANCE);
     }
 }
 
