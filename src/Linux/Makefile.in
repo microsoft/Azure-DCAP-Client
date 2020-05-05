@@ -4,7 +4,12 @@
 prefix = /usr/local
 
 INCLUDES = -I##CURLINC## -I. -I.. -Iext/intel
-CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS = -fPIC -std=c++14 -g -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+else
+    CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+endif
 
 PROVIDER_SRC = ../dcap_provider.cpp ../logging.cpp curl_easy.cpp local_cache.cpp init.cpp
 PROVIDER_OBJ = $(PROVIDER_SRC:.cpp=.o)
