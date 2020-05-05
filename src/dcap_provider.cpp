@@ -727,13 +727,14 @@ static std::string get_issuer_chain_cache_name(std::string url)
 }
 
 static quote3_error_t get_collateral(
+    std::string friendy_name,
     std::string url,
     const char header_name[],
     std::vector<uint8_t>& response_body,
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
 {
-    quote3_error_t retval;
+    quote3_error_t retval = SGX_QL_ERROR_UNEXPECTED;
     try
     {
         std::string issuer_chain_cache_name = get_issuer_chain_cache_name(url);
@@ -741,11 +742,20 @@ static quote3_error_t get_collateral(
         {
             if (auto cache_hit_issuer_chain = try_cache_get(issuer_chain_cache_name))
             {
+                log(SGX_QL_LOG_INFO,
+                    "Fetching %s from cache: '%s'.",
+                    friendy_name.c_str(),
+                    url.c_str());
                 response_body = *cache_hit_collateral;
                 issuer_chain = std::string(cache_hit_issuer_chain->begin(), cache_hit_issuer_chain->end());
                 return SGX_QL_SUCCESS;
             }
         }
+
+        log(SGX_QL_LOG_INFO,
+            "Fetching %s from remote server: '%s'.",
+            friendy_name.c_str(),
+            url.c_str());
 
         const auto crl_operation = curl_easy::create(url, request_body);
         crl_operation->perform();
@@ -754,15 +764,15 @@ static quote3_error_t get_collateral(
             get_unescape_header(*crl_operation, header_name, &issuer_chain);
 
         retval = convert_to_intel_error(get_header_operation);
+
         // Update the cache if needed
         time_t max_age = 0;
         get_cache_max_age(&max_age);
-
         if (max_age > 0)
         {
             time_t expiry = time(nullptr) + max_age;
             local_cache_add(url, expiry, response_body.size(), response_body.data());
-            local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), &issuer_chain);
+            local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
         }
 
         return retval;
@@ -834,7 +844,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
             return SGX_QL_SUCCESS;
         }
-
+        
         const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
         const auto curl = curl_easy::create(cert_url, &eppid_json);
         log(SGX_QL_LOG_INFO,
@@ -851,6 +861,14 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
              SGX_PLAT_ERROR_OK))
         {
             log(SGX_QL_LOG_ERROR, "Required HTTP headers are missing.");
+            return SGX_QL_ERROR_UNEXPECTED;
+        }
+
+        // figure out how long we should cache the data (if at all)
+        time_t max_age = 0;
+        if (get_cache_max_age(&max_age) != SGX_PLAT_ERROR_OK)
+        {
+            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
             return SGX_QL_ERROR_UNEXPECTED;
         }
 
@@ -890,6 +908,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
         buf += cert_data_size;
         assert(buf == buf_end);
+
+        if (max_age > 0)
+        {
+            time_t expiry = time(nullptr) + max_age;
+            local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+        }
     }
     catch (std::bad_alloc&)
     {
@@ -1284,12 +1308,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get PCK CRL
         std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
-        log(SGX_QL_LOG_INFO,
-            "Fetching PCK CRL from remote server: '%s'.",
-            pck_crl_url.c_str());
-
         operation_result = get_collateral(
-            pck_crl_url, headers::CRL_ISSUER_CHAIN, pck_crl, pck_issuer_chain);
+            "PCK CRL",
+            pck_crl_url, 
+            headers::CRL_ISSUER_CHAIN, 
+            pck_crl, 
+            pck_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1301,10 +1325,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         // Get Root CA CRL
         std::string root_ca_crl_url =
             build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
-        log(SGX_QL_LOG_INFO,
-            "Fetching Root CA CRL from remote server: '%s'.",
-            root_ca_crl_url.c_str());
         operation_result = get_collateral(
+            "Root CA CRL",
             root_ca_crl_url,
             headers::CRL_ISSUER_CHAIN,
             root_ca_crl,
@@ -1321,10 +1343,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string tcb_info_url = build_tcb_info_url(str_fmspc);
         const auto tcb_info_operation =
             curl_easy::create(tcb_info_url, nullptr);
-        log(SGX_QL_LOG_INFO,
-            "Fetching TCB Info from remote server: '%s'.",
-            tcb_info_url.c_str());
+
         operation_result = get_collateral(
+            "TCB Info",
             tcb_info_url,
             headers::TCB_INFO_ISSUER_CHAIN,
             tcb_info,
@@ -1342,10 +1363,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string qe_identity_url = build_enclave_id_url(false, header_name);
         const auto qe_identity_operation =
             curl_easy::create(qe_identity_url, nullptr);
-        log(SGX_QL_LOG_INFO,
-            "Fetching QE Identity from remote server: '%s'.",
-            tcb_info_url.c_str());
+
         operation_result = get_collateral(
+            "QE Identity",
             qe_identity_url,
             header_name.c_str(),
             qe_identity,
@@ -1485,11 +1505,8 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
-        log(SGX_QL_LOG_INFO,
-            "Fetching QVE Identity from remote server: '%s'.",
-            qve_url.c_str());
-
         quote3_error_t operation_result = get_collateral(
+            "QVE Identity",
             qve_url, expected_issuer.c_str(), qve_identity, issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
@@ -1558,10 +1575,8 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 
-        log(SGX_QL_LOG_INFO,
-            "Fetching Root CA CRL from remote server: '%s'.",
-            root_ca_crl_url.c_str());
         auto operation_result = get_collateral(
+            "Root CA CRL",
             root_ca_crl_url,
             headers::CRL_ISSUER_CHAIN,
             root_ca_crl,
