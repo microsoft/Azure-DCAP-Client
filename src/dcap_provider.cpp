@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "sgx_ql_lib_common.h"
 
@@ -77,6 +78,16 @@ static char ROOT_CRL_NAME[] =
     "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
+
+enum class CollateralTypes
+{
+    TcbInfo,
+    QeIdentity,
+    QveIdentity,
+    PckCert,
+    PckCrl,
+    PckRootCrl
+};
 
 static std::string get_env_variable(std::string env_variable)
 {
@@ -236,24 +247,75 @@ static inline quote3_error_t fill_qpl_string_buffer(
 }
 
 //
-// determines the maximum age in local cache
+// Determine time cache should invalidate for given collateral
 //
-sgx_plat_error_t get_cache_max_age(time_t* max_age)
+bool get_cache_expiration_time(CollateralTypes collateral_type, time_t &expiration_time)
 {
-    if (max_age == nullptr)
+    time_t max_age = 0;
+    tm* max_age_s = localtime(&max_age);
+
+    switch(collateral_type)
     {
-        return SGX_PLAT_ERROR_INVALID_PARAMETER;
+        case CollateralTypes::TcbInfo:
+        case CollateralTypes::QeIdentity:
+        case CollateralTypes::QveIdentity:
+        {
+            max_age_s->tm_hour += 12;
+            break;
+        }
+        case CollateralTypes::PckCert:
+        case CollateralTypes::PckCrl:
+        case CollateralTypes::PckRootCrl:
+        {
+            max_age_s->tm_mday += 1;
+            break;
+        }
+        default:
+        {
+            return false;
+        }
     }
 
-    //
-    // currently set to persist all cached
-    // certs for exactly 1 day.
-    //
-    tm* max_age_s = localtime(max_age);
-    max_age_s->tm_mday += 1;
-    *max_age = mktime(max_age_s);
+    expiration_time = time(nullptr) + mktime(max_age_s);
+    return true;
+}
 
-    return SGX_PLAT_ERROR_OK;
+//
+// Get string value for printing for each collateral type
+//
+std::string get_collateral_friendly_name(CollateralTypes collateral_type)
+{
+    switch(collateral_type)
+    {
+        case CollateralTypes::TcbInfo:
+        {
+            return "Tcb Info";
+        }
+        case CollateralTypes::QeIdentity:
+        {
+            return "Qe Identity";
+        }
+        case CollateralTypes::QveIdentity:
+        {
+            return "Qve Identity";
+        }
+        case CollateralTypes::PckCert:
+        {
+            return "PCK Cert";
+        }
+        case CollateralTypes::PckCrl:
+        {
+            return "PCK Crl";
+        }
+        case CollateralTypes::PckRootCrl:
+        {
+            return "Root CA Crl";
+        }
+        default:
+        {
+            return std::string();
+        }
+    }
 }
 
 //
@@ -727,7 +789,7 @@ static std::string get_issuer_chain_cache_name(std::string url)
 }
 
 static quote3_error_t get_collateral(
-    std::string friendy_name,
+    CollateralTypes collateral_type,
     std::string url,
     const char header_name[],
     std::vector<uint8_t>& response_body,
@@ -735,6 +797,7 @@ static quote3_error_t get_collateral(
     const std::string* const request_body = nullptr)
 {
     quote3_error_t retval = SGX_QL_ERROR_UNEXPECTED;
+    std::string friendly_name = get_collateral_friendly_name(collateral_type);
     try
     {
         std::string issuer_chain_cache_name = get_issuer_chain_cache_name(url);
@@ -744,7 +807,7 @@ static quote3_error_t get_collateral(
             {
                 log(SGX_QL_LOG_INFO,
                     "Fetching %s from cache: '%s'.",
-                    friendy_name.c_str(),
+                    friendly_name.c_str(),
                     url.c_str());
                 response_body = *cache_hit_collateral;
                 issuer_chain = std::string(cache_hit_issuer_chain->begin(), cache_hit_issuer_chain->end());
@@ -754,23 +817,21 @@ static quote3_error_t get_collateral(
 
         log(SGX_QL_LOG_INFO,
             "Fetching %s from remote server: '%s'.",
-            friendy_name.c_str(),
+            friendly_name.c_str(),
             url.c_str());
 
-        const auto crl_operation = curl_easy::create(url, request_body);
-        crl_operation->perform();
-        response_body = crl_operation->get_body();
+        const auto curl_operation = curl_easy::create(url, request_body);
+        curl_operation->perform();
+        response_body = curl_operation->get_body();
         auto get_header_operation =
-            get_unescape_header(*crl_operation, header_name, &issuer_chain);
+            get_unescape_header(*curl_operation, header_name, &issuer_chain);
 
         retval = convert_to_intel_error(get_header_operation);
 
         // Update the cache if needed
-        time_t max_age = 0;
-        get_cache_max_age(&max_age);
-        if (max_age > 0)
+        time_t expiry = 0;
+        if (get_cache_expiration_time(collateral_type, expiry))
         {
-            time_t expiry = time(nullptr) + max_age;
             local_cache_add(url, expiry, response_body.size(), response_body.data());
             local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
         }
@@ -864,14 +925,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             return SGX_QL_ERROR_UNEXPECTED;
         }
 
-        // figure out how long we should cache the data (if at all)
-        time_t max_age = 0;
-        if (get_cache_max_age(&max_age) != SGX_PLAT_ERROR_OK)
-        {
-            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
-            return SGX_QL_ERROR_UNEXPECTED;
-        }
-
         // parse the SVNs into a local data structure so we can handle any parse
         // errors before allocating the output buffer
         sgx_ql_config_t temp_config{};
@@ -909,9 +962,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         buf += cert_data_size;
         assert(buf == buf_end);
 
-        if (max_age > 0)
+        time_t expiry;
+        if (get_cache_expiration_time(CollateralTypes::PckCert, expiry))
         {
-            time_t expiry = time(nullptr) + max_age;
             local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
         }
     }
@@ -1298,18 +1351,10 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::vector<uint8_t> qe_identity;
         std::string qe_identity_issuer_chain;
 
-        // Figure out how long we should cache the data (if at all)
-        time_t max_age = 0;
-        if (get_cache_max_age(&max_age) != SGX_PLAT_ERROR_OK)
-        {
-            log(SGX_QL_LOG_ERROR, "Failed to process cache header(s).");
-            return SGX_QL_ERROR_UNEXPECTED;
-        }
-
         // Get PCK CRL
         std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
         operation_result = get_collateral(
-            "PCK CRL",
+            CollateralTypes::PckCrl,
             pck_crl_url, 
             headers::CRL_ISSUER_CHAIN, 
             pck_crl, 
@@ -1326,7 +1371,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string root_ca_crl_url =
             build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
         operation_result = get_collateral(
-            "Root CA CRL",
+            CollateralTypes::PckRootCrl,
             root_ca_crl_url,
             headers::CRL_ISSUER_CHAIN,
             root_ca_crl,
@@ -1345,7 +1390,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
-            "TCB Info",
+            CollateralTypes::TcbInfo,
             tcb_info_url,
             headers::TCB_INFO_ISSUER_CHAIN,
             tcb_info,
@@ -1365,7 +1410,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             curl_easy::create(qe_identity_url, nullptr);
 
         operation_result = get_collateral(
-            "QE Identity",
+            CollateralTypes::QeIdentity,
             qe_identity_url,
             header_name.c_str(),
             qe_identity,
@@ -1506,7 +1551,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         }
 
         quote3_error_t operation_result = get_collateral(
-            "QVE Identity",
+            CollateralTypes::QveIdentity,
             qve_url, expected_issuer.c_str(), qve_identity, issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
@@ -1576,7 +1621,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         std::string root_ca_chain;
 
         auto operation_result = get_collateral(
-            "Root CA CRL",
+            CollateralTypes::PckRootCrl,
             root_ca_crl_url,
             headers::CRL_ISSUER_CHAIN,
             root_ca_crl,
