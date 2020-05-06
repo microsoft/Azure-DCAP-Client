@@ -840,7 +840,7 @@ static quote3_error_t get_collateral(
     }
     catch (std::runtime_error& error)
     {
-        log(SGX_QL_LOG_ERROR,
+        log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
             error.what());
         // Swallow adding file to cache. Library can
@@ -985,7 +985,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     }
     catch (std::runtime_error& error)
     {
-        log(SGX_QL_LOG_ERROR,
+        log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
             error.what());
         // Swallow adding file to cache. Library can
@@ -1403,7 +1403,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
             return operation_result;
         }
 
-        // Get QE Identity
+        // Get QE Identity & Issuer Chain
         std::string header_name;
         std::string qe_identity_url = build_enclave_id_url(false, header_name);
         const auto qe_identity_operation =
