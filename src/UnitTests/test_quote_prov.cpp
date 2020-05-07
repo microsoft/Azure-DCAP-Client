@@ -380,21 +380,21 @@ constexpr auto CURL_TOLERANCE = 0.002;
 constexpr auto CURL_TOLERANCE = 0.04;
 #endif
 
-static inline chrono::seconds MeasureFunction(measured_function_t func)
+static inline float MeasureFunction(measured_function_t func)
 {
     auto start = chrono::steady_clock::now();
     func();
-    return chrono::duration_cast<chrono::seconds>(
-        chrono::steady_clock::now() - start);
+    return (float)chrono::duration_cast<chrono::microseconds>(
+               chrono::steady_clock::now() - start).count() / 1000000;
 }
 
-void RunQuoteProviderTests(bool caching_enabled=true)
+void RunQuoteProviderTests(bool caching_enabled = true)
 {
     local_cache_clear();
 
     auto duration_curl_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
-    
+
     auto duration_curl_verification =
         MeasureFunction(GetVerificationCollateralTest);
 
@@ -414,14 +414,18 @@ void RunQuoteProviderTests(bool caching_enabled=true)
     if (caching_enabled)
     {
         // Ensure that there is a signficiant enough difference between the cert
-        // fetch to the end point and cert fetch to local cache and that local cache
-        // call is fast enough
-        assert(fabs(duration_curl_cert.count() - duration_local_cert.count()) > CURL_TOLERANCE);
-        assert(duration_local_cert.count() < CURL_TOLERANCE);
-        assert(fabs(duration_curl_verification.count() - duration_local_verification.count()) > CURL_TOLERANCE);
+        // fetch to the end point and cert fetch to local cache and that local
+        // cache call is fast enough
+        assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        assert(duration_local_cert < CURL_TOLERANCE);
+        assert(
+            fabs(duration_curl_verification - duration_local_verification) >
+            CURL_TOLERANCE);
 
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
-        assert(duration_local_verification.count() < NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE);
+        assert(
+            duration_local_verification <
+            NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE);
     }
 }
 
