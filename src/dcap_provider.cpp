@@ -828,12 +828,15 @@ static quote3_error_t get_collateral(
 
         retval = convert_to_intel_error(get_header_operation);
 
-        // Update the cache if needed
-        time_t expiry = 0;
-        if (get_cache_expiration_time(collateral_type, expiry))
+        if (retval == SGX_QL_SUCCESS)
         {
-            local_cache_add(url, expiry, response_body.size(), response_body.data());
-            local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
+            // Update the cache if needed
+            time_t expiry = 0;
+            if (get_cache_expiration_time(collateral_type, expiry))
+            {
+                local_cache_add(url, expiry, response_body.size(), response_body.data());
+                local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
+            }
         }
 
         return retval;
@@ -1228,6 +1231,124 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
+}
+
+extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
+    sgx_qe_identity_info_t** pp_qe_identity_info)
+{
+    sgx_qe_identity_info_t* p_qe_identity_info = NULL;
+    sgx_plat_error_t result;
+    char* buffer = nullptr;
+
+    if (!pp_qe_identity_info)
+    {
+        log(SGX_QL_LOG_ERROR, "Invalid parameter pp_qe_identity_info");
+        return SGX_PLAT_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        std::vector<uint8_t> identity_info;
+        std::string issuer_chain_header;
+        std::string issuer_chain;
+        std::string request_id;
+        size_t total_buffer_size = 0;
+        std::string qe_id_url =
+            build_enclave_id_url(false, issuer_chain_header);
+
+        const auto curl = curl_easy::create(qe_id_url, nullptr);
+        log(SGX_QL_LOG_INFO,
+            "Fetching QE Identity from remote server: '%s'.",
+            qe_id_url.c_str());
+        curl->perform();
+
+        // issuer chain
+        result = get_unescape_header(*curl, issuer_chain_header, &issuer_chain);
+        if (result != SGX_PLAT_ERROR_OK)
+            return result;
+
+        // read response_body
+        identity_info = curl->get_body();
+        std::string qe_identity(
+            curl->get_body().begin(), curl->get_body().end());
+
+        // Calculate total buffer size
+        total_buffer_size =
+            safe_add(sizeof(sgx_qe_identity_info_t), identity_info.size());
+        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
+        total_buffer_size = safe_add(total_buffer_size, issuer_chain.size());
+        total_buffer_size = safe_add(total_buffer_size, 1); // null terminator
+
+        buffer = new char[total_buffer_size];
+        memset(buffer, 0, total_buffer_size);
+
+#ifndef NDEBUG
+        const char* buffer_end = buffer + total_buffer_size;
+#endif
+        // fill in the qe info
+        p_qe_identity_info = reinterpret_cast<sgx_qe_identity_info_t*>(buffer);
+
+        // advance to the end of the sgx_qe_identity_info_t structure
+        buffer += sizeof(*p_qe_identity_info);
+
+        // qe_id_info
+        p_qe_identity_info->qe_id_info_size =
+            static_cast<uint32_t>(identity_info.size());
+        p_qe_identity_info->qe_id_info = buffer;
+        memcpy(
+            p_qe_identity_info->qe_id_info,
+            identity_info.data(),
+            identity_info.size());
+        buffer += identity_info.size() + 1; // skip null terminator
+        assert(buffer < buffer_end);
+
+        // set issuer_chain info
+        p_qe_identity_info->issuer_chain_size =
+            static_cast<uint32_t>(issuer_chain.size());
+        p_qe_identity_info->issuer_chain = buffer;
+        buffer += issuer_chain.size() + 1; // skip null terminator
+        assert(buffer == buffer_end);
+        memcpy(
+            p_qe_identity_info->issuer_chain,
+            issuer_chain.data(),
+            issuer_chain.size());
+        *pp_qe_identity_info = p_qe_identity_info;
+    }
+    catch (std::bad_alloc&)
+    {
+        return SGX_PLAT_ERROR_OUT_OF_MEMORY;
+    }
+    catch (std::overflow_error& error)
+    {
+        log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
+        *pp_qe_identity_info = nullptr;
+        return SGX_PLAT_ERROR_OVERFLOW;
+    }
+    catch (curl_easy::error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "error thrown, error code: %x: %s",
+            error.code,
+            error.what());
+        return error.code == CURLE_HTTP_RETURNED_ERROR
+                   ? SGX_PLAT_NO_DATA_FOUND
+                   : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    catch (std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+
+    return SGX_PLAT_ERROR_OK;
+}
+
+extern "C" void sgx_free_qe_identity_info(
+    sgx_qe_identity_info_t* p_qe_identity_info)
+{
+    delete[] reinterpret_cast<uint8_t*>(p_qe_identity_info);
 }
 
 extern "C" void sgx_ql_free_revocation_info(
