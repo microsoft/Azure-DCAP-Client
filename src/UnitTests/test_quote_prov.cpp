@@ -12,6 +12,7 @@
 #include <memory>
 #include <sstream>
 #include <sys/stat.h>
+#include <chrono>
 
 #if defined(__LINUX__)
 #include <tgmath.h>
@@ -22,6 +23,8 @@
 #include <windows.h>
 #include <AclAPI.h>
 #endif
+
+using namespace std;
 
 #if defined __LINUX__
 typedef void * libary_type_t;
@@ -34,6 +37,8 @@ typedef struct _access_permission
     ACCESS_MODE access_mode;
 } permission_type_t;
 #endif
+
+typedef void (*measured_function_t)(void);
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
@@ -375,40 +380,52 @@ constexpr auto CURL_TOLERANCE = 0.002;
 constexpr auto CURL_TOLERANCE = 0.04;
 #endif
 
-void RunQuoteProviderTests(bool caching_enabled=true)
+static inline float MeasureFunction(measured_function_t func)
 {
-    std::clock_t start;
-    double duration_curl;
-    double duration_local;
+    auto start = chrono::steady_clock::now();
+    func();
+    return (float)chrono::duration_cast<chrono::microseconds>(
+               chrono::steady_clock::now() - start).count() / 1000000;
+}
+
+void RunQuoteProviderTests(bool caching_enabled = true)
+{
     local_cache_clear();
 
-    start = std::clock();
-    GetCertsTest();
-    duration_curl = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
+    auto duration_curl_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
-    GetVerificationCollateralTest();
-    GetRootCACrlTest();
 
+    auto duration_curl_verification =
+        MeasureFunction(GetVerificationCollateralTest);
+
+    GetRootCACrlTest();
 
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
-    start = std::clock();
-    GetCertsTest();
-    duration_local = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    auto duration_local_cert = MeasureFunction(GetCertsTest);
 
     GetCrlTest();
     GetRootCACrlTest();
-    GetVerificationCollateralTest();
+
+    auto duration_local_verification =
+        MeasureFunction(GetVerificationCollateralTest);
 
     if (caching_enabled)
     {
         // Ensure that there is a signficiant enough difference between the cert
-        // fetch to the end point and cert fetch to local cache and that local cache
-        // call is fast enough
-        assert(fabs(duration_curl - duration_local) > CURL_TOLERANCE);
-        assert(duration_local < CURL_TOLERANCE);
+        // fetch to the end point and cert fetch to local cache and that local
+        // cache call is fast enough
+        assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        assert(duration_local_cert < CURL_TOLERANCE);
+        assert(
+            fabs(duration_curl_verification - duration_local_verification) >
+            CURL_TOLERANCE);
+
+        constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
+        assert(
+            duration_local_verification <
+            NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE);
     }
 }
 
