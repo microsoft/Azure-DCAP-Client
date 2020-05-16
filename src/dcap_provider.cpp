@@ -884,6 +884,10 @@ static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
         log(SGX_QL_LOG_WARNING, "No eppid provided");
         return "";
     }
+    else 
+    {
+        log(SGX_QL_LOG_INFO, "Sending eppid provided");
+    }
 
     static const char json_prefix[] = "{\"eppid\":\"";
     static const char json_postfix[] = "\"}\n";
