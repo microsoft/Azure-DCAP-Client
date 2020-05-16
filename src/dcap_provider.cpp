@@ -35,6 +35,8 @@
 #define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
 #define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
 #define ENV_AZDCAP_COLLATERAL_VER "AZDCAP_COLLATERAL_VERSION"
+#define ENV_AZDCAP_DEBUG_LOG "AZDCAP_DEBUG_LOG_LEVEL"
+#define ENV_AZDCAP_DISABLE_ONDEMAND "AZDCAP_DISABLE_ONDEMAND"
 #define MAX_ENV_VAR_LENGTH 2000
 
 // External function names are dictated by Intel
@@ -864,6 +866,16 @@ static quote3_error_t get_collateral(
 
 static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
 {
+    const std::string disable_ondemand = get_env_variable(ENV_AZDCAP_DISABLE_ONDEMAND);
+    if (!disable_ondemand.empty())
+    {
+        if (disable_ondemand == "1")
+        {
+            log(SGX_QL_LOG_WARNING, "On demand registration disabled. No eppid being sent to cache");
+            return "";
+        }
+    }
+
     const std::string eppid = format_as_hex_string(
         pck_cert_id.p_encrypted_ppid, pck_cert_id.encrypted_ppid_size);
 
@@ -1360,6 +1372,14 @@ extern "C" void sgx_ql_free_revocation_info(
 extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
     sgx_ql_logging_function_t logger)
 {
+    if (logger_callback == nullptr)
+    {
+        auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
+        if (!log_level.empty())
+        {
+            enable_debug_logging(log_level);
+        }
+    }
     logger_callback = logger;
     return SGX_PLAT_ERROR_OK;
 }

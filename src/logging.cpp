@@ -16,16 +16,56 @@
 #include <string>
 #include <vector>
 
-#if 0 // Flip this to true for easy local debugging
-static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
+using namespace std;
+
+sgx_ql_logging_function_t logger_callback = nullptr;
+static sgx_ql_log_level_t debug_log_level;
+bool enable_debug_log = false;
+
+static const string LEVEL_ERROR = "ERROR";
+static const string LEVEL_ERROR_ALT = "SGX_QL_LOG_ERROR";
+
+static const string LEVEL_WARNING = "WARNING";
+static const string LEVEL_WARNING_ALT = "SGX_QL_LOG_WARNING";
+
+static const string LEVEL_INFO = "INFO";
+static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
+
+static inline bool convert_string_to_level(string level, sgx_ql_log_level_t &sqx_ql_level)
 {
-    printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
+    if (level == LEVEL_ERROR || level == LEVEL_ERROR_ALT)
+    {
+        sqx_ql_level = SGX_QL_LOG_ERROR;
+        return true;
+    }
+
+    if (level == LEVEL_WARNING || level == LEVEL_WARNING_ALT)
+    {
+        sqx_ql_level = SGX_QL_LOG_WARNING;
+        return true;
+    }
+
+    if (level == LEVEL_INFO || level == LEVEL_INFO_ALT)
+    {
+        sqx_ql_level = SGX_QL_LOG_INFO;
+        return true;
+    }
+
+    return false;
 }
 
-sgx_ql_logging_function_t logger_callback = DefaultLogCallback;
-#else
-sgx_ql_logging_function_t logger_callback = nullptr;
-#endif
+//
+// Global enable for debug logging via stdout
+//
+void enable_debug_logging(string level)
+{
+    sgx_ql_log_level_t sgx_level;
+    if (convert_string_to_level(level, sgx_level))
+    {
+        enable_debug_log = true;
+        debug_log_level = sgx_level;
+    }
+}
 
 //
 // Global logging function.
@@ -45,6 +85,14 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     if (logger_callback != nullptr)
     {
         logger_callback(level, message);
+    }
+
+    if (enable_debug_log)
+    {
+        if (level >= debug_log_level)
+        {
+            printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
+        }
     }
 
 #ifndef __LINUX__

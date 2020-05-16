@@ -6,6 +6,7 @@
 #define PRIVATE_H
 
 #include "dcap_provider.h"
+#include <string>
 
 extern sgx_ql_logging_function_t logger_callback;
 
@@ -14,5 +15,5 @@ extern sgx_ql_logging_function_t logger_callback;
 // Various internal functions which are not exported.
 ///////////////////////////////////////////////////////////////////////////////
 void log(sgx_ql_log_level_t level, const char* fmt, ...);
-
+void enable_debug_logging(std::string level);
 #endif
