@@ -15,12 +15,14 @@
 #include <new>
 #include <string>
 #include <vector>
+#include "environment.h"
 
 using namespace std;
 
 sgx_ql_logging_function_t logger_callback = nullptr;
 static sgx_ql_log_level_t debug_log_level;
 bool enable_debug_log = false;
+bool logging_enable_init = false;
 
 static const string LEVEL_ERROR = "ERROR";
 static const string LEVEL_ERROR_ALT = "SGX_QL_LOG_ERROR";
@@ -31,7 +33,7 @@ static const string LEVEL_WARNING_ALT = "SGX_QL_LOG_WARNING";
 static const string LEVEL_INFO = "INFO";
 static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
-static inline bool convert_string_to_level(string level, sgx_ql_log_level_t &sqx_ql_level)
+static inline bool convert_string_to_level(const string level, sgx_ql_log_level_t &sqx_ql_level)
 {
     if (level == LEVEL_ERROR || level == LEVEL_ERROR_ALT)
     {
@@ -54,10 +56,25 @@ static inline bool convert_string_to_level(string level, sgx_ql_log_level_t &sqx
     return false;
 }
 
+static inline string log_level_string(const sgx_ql_log_level_t sgx_ql_level)
+{
+    switch (sgx_ql_level)
+    {
+        case SGX_QL_LOG_INFO:
+            return LEVEL_INFO;
+        case SGX_QL_LOG_WARNING:
+            return LEVEL_WARNING;
+        case SGX_QL_LOG_ERROR:
+            return LEVEL_ERROR;
+        default:
+            return LEVEL_INFO;
+    }
+}
+
 //
-// Global enable for debug logging via stdout
+// Enable for debug logging via stdout
 //
-void enable_debug_logging(string level)
+static inline void enable_debug_logging(string level)
 {
     sgx_ql_log_level_t sgx_level;
     if (convert_string_to_level(level, sgx_level))
@@ -87,11 +104,21 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
         logger_callback(level, message);
     }
 
+    if (!logging_enable_init)
+    {
+        auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
+        if (!log_level.empty())
+        {
+            enable_debug_logging(log_level);
+        }
+        logging_enable_init = true;
+    }
+
     if (enable_debug_log)
     {
-        if (level >= debug_log_level)
+        if (level <= debug_log_level)
         {
-            printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", level == SGX_QL_LOG_ERROR ? "ERROR" : "DEBUG", message);
+            printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
         }
     }
 
