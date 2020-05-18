@@ -81,6 +81,16 @@ static inline void enable_debug_logging(string level)
     {
         enable_debug_log = true;
         debug_log_level = sgx_level;
+
+        auto logging_enabled_message = "Debug Logging Enabled";
+        if (logger_callback != nullptr)
+        {
+            logger_callback(SGX_QL_LOG_INFO, logging_enabled_message);
+        }
+        printf(
+            "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
+            log_level_string(SGX_QL_LOG_INFO).c_str(),
+            logging_enabled_message);
     }
 }
 
@@ -99,11 +109,6 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     // ensure buf is always null-terminated
     message[sizeof(message) - 1] = 0;
 
-    if (logger_callback != nullptr)
-    {
-        logger_callback(level, message);
-    }
-
     if (!logging_enable_init)
     {
         auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
@@ -114,7 +119,10 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
         logging_enable_init = true;
     }
 
-    if (enable_debug_log)
+    if (logger_callback != nullptr)
+    {
+        logger_callback(level, message);
+    }else if (enable_debug_log)
     {
         if (level <= debug_log_level)
         {

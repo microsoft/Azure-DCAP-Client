@@ -38,7 +38,7 @@
         <Environment Id="AzDcapCache" Action="set" Name="AZDCAP_CACHE" Permanent="no" Value="[CommonAppDataFolder][Manufacturer]\[ProductName]"></Environment>
         <Environment Id="AzDcapBaseUrl" Action="set" Name="AZDCAP_BASE_CERT_URL" Permanent="no" Value="https://global.acccache.azure.net/sgx/certificates"></Environment>
         <Environment Id="AzDcapClientId" Action="set" Name="AZDCAP_CLIENT_ID" Permanent="no" Value="production_client"></Environment>
-        <Environment Id="AzDcapCollateralVersion" Action="set" Name="AZDCAP_COLLATERAL_VERSION" Permanent="no" Value="v1"></Environment>
+        <Environment Id="AzDcapCollateralVersion" Action="set" Name="AZDCAP_COLLATERAL_VERSION" Permanent="no" Value="v2"></Environment>
         <Environment Id="AzDcapAddPath" Action="set" Name="PATH" Permanent="no" Value="[INSTALLFOLDER]" System="yes" Part="last"></Environment>
       </Component>
     </ComponentGroup>
