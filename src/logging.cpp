@@ -15,6 +15,7 @@
 #include <new>
 #include <string>
 #include <vector>
+#include <mutex>
 #include "environment.h"
 
 using namespace std;
@@ -22,7 +23,8 @@ using namespace std;
 sgx_ql_logging_function_t logger_callback = nullptr;
 static sgx_ql_log_level_t debug_log_level;
 bool enable_debug_log = false;
-bool logging_enable_init = false;
+bool debug_log_initialized = false;
+mutex log_init_mutex;
 
 static const string LEVEL_ERROR = "ERROR";
 static const string LEVEL_ERROR_ALT = "SGX_QL_LOG_ERROR";
@@ -94,6 +96,20 @@ static inline void enable_debug_logging(string level)
     }
 }
 
+void init_debug_log()
+{
+    std::lock_guard<std::mutex> lock(log_init_mutex);
+    if (debug_log_initialized)
+    {
+        auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
+        if (!log_level.empty())
+        {
+            enable_debug_logging(log_level);
+        }
+        debug_log_initialized = true;
+    }
+}
+
 //
 // Global logging function.
 //
@@ -109,15 +125,7 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     // ensure buf is always null-terminated
     message[sizeof(message) - 1] = 0;
 
-    if (!logging_enable_init)
-    {
-        auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
-        if (!log_level.empty())
-        {
-            enable_debug_logging(log_level);
-        }
-        logging_enable_init = true;
-    }
+    init_debug_log();
 
     if (logger_callback != nullptr)
     {

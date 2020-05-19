@@ -34,8 +34,7 @@ static std::string get_env_variable(std::string env_variable)
     {
         log(SGX_QL_LOG_ERROR,
             "Failed to allocate memory for environment varible for '%s'",
-            env_variable.c_str(),
-            MAX_ENV_VAR_LENGTH);
+            env_variable.c_str());
     }
     env_value = env_temp.get();
     DWORD status = GetEnvironmentVariableA(
@@ -44,8 +43,7 @@ static std::string get_env_variable(std::string env_variable)
     {
         log(SGX_QL_LOG_ERROR,
             "Failed to retreive environment varible for '%s'",
-            env_variable.c_str(),
-            MAX_ENV_VAR_LENGTH);
+            env_variable.c_str());
         return std::string();
     }
 #endif
@@ -57,8 +55,7 @@ static std::string get_env_variable(std::string env_variable)
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable %s is either empty or "
                 "expected max length '%d'.",
-                env_variable.c_str(),
-                MAX_ENV_VAR_LENGTH);
+                env_variable.c_str());
             return std::string();
         }
 
