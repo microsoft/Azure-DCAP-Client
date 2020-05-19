@@ -165,6 +165,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     buffer = new char[bufferLength];
     if (buffer == nullptr)
     {
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
 
@@ -182,6 +183,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     buffer = new char[bufferLength];
     if (!buffer)
     {
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     memcpy(buffer, content.data(), content.size());
@@ -929,7 +931,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     }
     catch (std::bad_alloc&)
     {
-        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
+        log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (curl_easy::error& error)
@@ -1561,6 +1563,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     catch (std::bad_alloc&)
     {
         sgx_ql_free_quote_verification_collateral(p_quote_collateral);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)
@@ -1653,6 +1656,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
     {
         sgx_ql_free_qve_identity(
             *pp_qve_identity, *pp_qve_identity_issuer_chain);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)
@@ -1721,6 +1725,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
     catch (std::bad_alloc&)
     {
         sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)

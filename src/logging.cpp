@@ -111,20 +111,10 @@ void init_debug_log()
 }
 
 //
-// Global logging function.
+// Logging function which doesn't allocate any memory
 //
-void log(sgx_ql_log_level_t level, const char* fmt, ...)
+void log_message(sgx_ql_log_level_t level, const char* message)
 {
-    char message[512];
-    va_list args;
-    va_start(args, fmt);
-#pragma warning(suppress : 25141) // all fmt buffers come from static strings
-    vsnprintf(message, sizeof(message), fmt, args);
-    va_end(args);
-
-    // ensure buf is always null-terminated
-    message[sizeof(message) - 1] = 0;
-
     init_debug_log();
 
     if (logger_callback != nullptr)
@@ -159,4 +149,21 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
         }
     }
 #endif
+}
+
+//
+// Global logging function.
+//
+void log(sgx_ql_log_level_t level, const char* fmt, ...)
+{
+    char message[512];
+    va_list args;
+    va_start(args, fmt);
+#pragma warning(suppress : 25141) // all fmt buffers come from static strings
+    vsnprintf(message, sizeof(message), fmt, args);
+    va_end(args);
+
+    // ensure buf is always null-terminated
+    message[sizeof(message) - 1] = 0;
+    log_message(level, message);
 }
