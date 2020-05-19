@@ -21,8 +21,7 @@
 using namespace std;
 
 sgx_ql_logging_function_t logger_callback = nullptr;
-static sgx_ql_log_level_t debug_log_level = SGX_QL_LOG_ERROR;
-static bool debug_log_enabled = false;
+static sgx_ql_log_level_t debug_log_level = SGX_QL_LOG_NONE;
 static bool debug_log_initialized = false;
 static mutex log_init_mutex;
 
@@ -82,7 +81,6 @@ static inline void enable_debug_logging(string level)
     if (convert_string_to_level(level, sgx_level))
     {
         debug_log_level = sgx_level;
-        debug_log_enabled = true;
 
         auto logging_enabled_message = "Debug Logging Enabled";
         if (logger_callback != nullptr)
@@ -125,7 +123,7 @@ void log_message(sgx_ql_log_level_t level, const char* message)
     else 
     {
         init_debug_log();
-        if (debug_log_enabled)
+        if (debug_log_level != SGX_QL_LOG_NONE)
         {
             if (level <= debug_log_level)
             {
