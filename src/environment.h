@@ -59,8 +59,7 @@ static std::string get_env_variable(std::string env_variable)
             return std::string();
         }
 
-        auto retval = std::string(env_value);
-        return retval;
+        return std::string(env_value);
     }
 }
 

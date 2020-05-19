@@ -21,10 +21,10 @@
 using namespace std;
 
 sgx_ql_logging_function_t logger_callback = nullptr;
-static sgx_ql_log_level_t debug_log_level;
-bool enable_debug_log = false;
-bool debug_log_initialized = false;
-mutex log_init_mutex;
+static sgx_ql_log_level_t debug_log_level = SGX_QL_LOG_ERROR;
+static bool debug_log_enabled = false;
+static bool debug_log_initialized = false;
+static mutex log_init_mutex;
 
 static const string LEVEL_ERROR = "ERROR";
 static const string LEVEL_ERROR_ALT = "SGX_QL_LOG_ERROR";
@@ -81,25 +81,28 @@ static inline void enable_debug_logging(string level)
     sgx_ql_log_level_t sgx_level;
     if (convert_string_to_level(level, sgx_level))
     {
-        enable_debug_log = true;
         debug_log_level = sgx_level;
+        debug_log_enabled = true;
 
         auto logging_enabled_message = "Debug Logging Enabled";
         if (logger_callback != nullptr)
         {
             logger_callback(SGX_QL_LOG_INFO, logging_enabled_message);
         }
-        printf(
-            "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
-            log_level_string(SGX_QL_LOG_INFO).c_str(),
-            logging_enabled_message);
+        else 
+        {
+            printf(
+                "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
+                log_level_string(SGX_QL_LOG_INFO).c_str(),
+                logging_enabled_message);
+        }
     }
 }
 
 void init_debug_log()
 {
     std::lock_guard<std::mutex> lock(log_init_mutex);
-    if (debug_log_initialized)
+    if (!debug_log_initialized)
     {
         auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
         if (!log_level.empty())
@@ -115,16 +118,19 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
-    init_debug_log();
-
     if (logger_callback != nullptr)
     {
         logger_callback(level, message);
-    }else if (enable_debug_log)
+    }
+    else 
     {
-        if (level <= debug_log_level)
+        init_debug_log();
+        if (debug_log_enabled)
         {
-            printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+            if (level <= debug_log_level)
+            {
+                printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+            }
         }
     }
 
