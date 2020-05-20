@@ -116,7 +116,7 @@ void init_debug_log()
 }
 
 //
-// Logging function which doesn't allocate any memory
+// Logging function which doesn't allocate buffer 
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
