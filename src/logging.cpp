@@ -150,6 +150,8 @@ void log_message(sgx_ql_log_level_t level, const char* message)
             case SGX_QL_LOG_ERROR:
                 log_event_log_message(message, EVENTLOG_ERROR_TYPE);
                 break;
+            default:
+                break;
         }
     }
 #endif
