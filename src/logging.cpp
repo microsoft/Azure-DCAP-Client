@@ -34,6 +34,8 @@ static const string LEVEL_WARNING_ALT = "SGX_QL_LOG_WARNING";
 static const string LEVEL_INFO = "INFO";
 static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
+static const string LEVEL_UNKNOWN = "UNKNOWN";
+
 static inline bool convert_string_to_level(const string level, sgx_ql_log_level_t &sqx_ql_level)
 {
     if (level == LEVEL_ERROR || level == LEVEL_ERROR_ALT)
@@ -67,8 +69,10 @@ static inline string log_level_string(const sgx_ql_log_level_t sgx_ql_level)
             return LEVEL_WARNING;
         case SGX_QL_LOG_ERROR:
             return LEVEL_ERROR;
+        case SGX_QL_LOG_NONE:
+            return LEVEL_UNKNOWN;
         default:
-            return LEVEL_INFO;
+            return LEVEL_UNKNOWN;
     }
 }
 
@@ -149,6 +153,8 @@ void log_message(sgx_ql_log_level_t level, const char* message)
 
             case SGX_QL_LOG_ERROR:
                 log_event_log_message(message, EVENTLOG_ERROR_TYPE);
+                break;
+            case SGX_QL_LOG_NONE:
                 break;
             default:
                 break;
