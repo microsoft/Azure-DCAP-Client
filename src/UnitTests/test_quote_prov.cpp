@@ -122,6 +122,8 @@ static void Log(sgx_ql_log_level_t level, const char* message)
         case SGX_QL_LOG_ERROR:
             levelText = "ERROR";
             break;
+        case SGX_QL_LOG_NONE:
+            return;
     }
     printf("[%s]: %s\n", levelText, message);
 }
