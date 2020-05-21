@@ -34,9 +34,10 @@ For the certificate chain associated with an Intel SGX quote, each CRL Distribut
 
 The Azure-DCAP-Client library uses the following environment variables if set:
 
-* `AZDCAP_CACHE` - Represents the base directory where the library cache directory `.az-dcap-client` is created. The default value is `$HOME`.
+* `AZDCAP_CACHE` - Represents the base directory where the library cache directory `.az-dcap-client` is created. The default value is `$HOME` in Linux and LocalLow in Windows.
 * `AZDCAP_BASE_CERT_URL` and `AZDCAP_CLIENT_ID` - Used in conjunction to explicitly overwrite the default values for the PCK caching service. These should be used only for development purposes and they **must** not be used in any production environment.
 * `AZDCAP_COLLATERAL_VERSION` - Used to specify the collateral version requested from the PCK caching service. Must be either'v1' or 'v2' if specified and defaults to 'v1' if unspecified.
+* `AZDCAP_DEBUG_LOG_LEVEL` - Used to enable logging to stdout for debug purposes. Supported values are INFO, WARNING, and ERROR; any other values will fail silently. If a logging callback is set by the caller such as open enclave this setting will be ignored as the logging callback will have precedence. Log levels follow standard behavior: INFO logs everything, WARNING logs warnings and errors, and ERROR logs only errors. Default setting has logging off.
 
 # See Also
 

@@ -2,17 +2,12 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.4.2</version>
+        <version>1.5.0</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <releaseNotes> Switch default to V2 and continue to operate if caching is unavailable:
-            -Disable caching if there are permissions issues with the caching folder
-            -Attempt a few more environment variables and add a fallback location for the cache directory
-            -Updates the Jenkins file for the build pipeline
-            -Changes the default collateral version to v2
-        </releaseNotes>
+        <releaseNotes>Cache additional collateral (not just certificates) for 12 hours. Internal logging updates</releaseNotes>
         <description>
             This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
             This provider plugin is then used to fetch certain data files, such as platform certificates, TCB structures, and revocation lists.

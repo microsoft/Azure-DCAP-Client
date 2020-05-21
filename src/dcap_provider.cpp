@@ -19,6 +19,7 @@
 #include <unordered_map>
 
 #include "sgx_ql_lib_common.h"
+#include "environment.h"
 
 #ifdef __LINUX__
 #include <arpa/inet.h>
@@ -26,16 +27,6 @@
 #include <intsafe.h>
 #include <winsock.h>
 #endif
-
-// NOTE:
-//  The environment variables below are mostly meant to be modified
-//  by the OE Jenkins environment to support CI/CD testing. Do not
-//  modify or override these values as they can cause regressions in
-//  caching service behavior.
-#define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
-#define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
-#define ENV_AZDCAP_COLLATERAL_VER "AZDCAP_COLLATERAL_VERSION"
-#define MAX_ENV_VAR_LENGTH 2000
 
 // External function names are dictated by Intel
 // ReSharper disable CppInconsistentNaming
@@ -88,55 +79,6 @@ enum class CollateralTypes
     PckCrl,
     PckRootCrl
 };
-
-static std::string get_env_variable(std::string env_variable)
-{
-    const char* env_value;
-#ifdef __LINUX__
-    env_value = getenv(env_variable.c_str());
-    if (env_value == NULL)
-    {
-        return std::string();
-    }
-#else
-    std::unique_ptr<char[]> env_temp =
-        std::make_unique<char[]>(MAX_ENV_VAR_LENGTH);
-    if (env_temp == nullptr)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Failed to allocate memory for environment varible for '%s'",
-            env_variable.c_str(),
-            MAX_ENV_VAR_LENGTH);
-    }
-    env_value = env_temp.get();
-    DWORD status = GetEnvironmentVariableA(
-        env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
-    if (status == 0)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Failed to retreive environment varible for '%s'",
-            env_variable.c_str(),
-            MAX_ENV_VAR_LENGTH);
-        return std::string();
-    }
-#endif
-    else
-    {
-        if ((strnlen(env_value, MAX_ENV_VAR_LENGTH) <= 0) ||
-            (strnlen(env_value, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Value specified in environment variable %s is either empty or "
-                "expected max length '%d'.",
-                env_variable.c_str(),
-                MAX_ENV_VAR_LENGTH);
-            return std::string();
-        }
-
-        auto retval = std::string(env_value);
-        return retval;
-    }
-}
 
 static std::string get_collateral_version()
 {
@@ -223,6 +165,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     buffer = new char[bufferLength];
     if (buffer == nullptr)
     {
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
 
@@ -240,6 +183,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
     buffer = new char[bufferLength];
     if (!buffer)
     {
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     memcpy(buffer, content.data(), content.size());
@@ -864,13 +808,27 @@ static quote3_error_t get_collateral(
 
 static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
 {
+    const std::string disable_ondemand = get_env_variable(ENV_AZDCAP_DISABLE_ONDEMAND);
+    if (!disable_ondemand.empty())
+    {
+        if (disable_ondemand == "1")
+        {
+            log(SGX_QL_LOG_WARNING, "On demand registration disabled by environment variable. No eppid being sent to caching service");
+            return "";
+        }
+    }
+
     const std::string eppid = format_as_hex_string(
         pck_cert_id.p_encrypted_ppid, pck_cert_id.encrypted_ppid_size);
 
     if (eppid.empty())
     {
-        log(SGX_QL_LOG_WARNING, "No eppid provided");
+        log(SGX_QL_LOG_WARNING, "No eppid provided - unable to send to caching service");
         return "";
+    }
+    else 
+    {
+        log(SGX_QL_LOG_INFO, "Sending the provided eppid to caching service");
     }
 
     static const char json_prefix[] = "{\"eppid\":\"";
@@ -973,7 +931,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     }
     catch (std::bad_alloc&)
     {
-        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
+        log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (curl_easy::error& error)
@@ -1605,6 +1563,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     catch (std::bad_alloc&)
     {
         sgx_ql_free_quote_verification_collateral(p_quote_collateral);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)
@@ -1697,6 +1656,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
     {
         sgx_ql_free_qve_identity(
             *pp_qve_identity, *pp_qve_identity_issuer_chain);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)
@@ -1765,6 +1725,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
     catch (std::bad_alloc&)
     {
         sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
+        log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (std::overflow_error& error)
