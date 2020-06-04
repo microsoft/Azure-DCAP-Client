@@ -390,7 +390,7 @@ static inline float MeasureFunction(measured_function_t func)
                chrono::steady_clock::now() - start).count() / 1000000;
 }
 
-void RunQuoteProviderTests(bool caching_enabled = true)
+void RunQuoteProviderTests(bool caching_enabled = false)
 {
     local_cache_clear();
 

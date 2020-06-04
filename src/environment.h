@@ -19,10 +19,10 @@
 #define MAX_ENV_VAR_LENGTH 2000
 
 #include <sstream>
+#include <utility>
 
-static std::string get_env_variabe_no_log(
-    std::string env_variable,
-    std::string& error_message)
+static std::pair<std::string, std::string> get_env_variable_no_log(
+    std::string env_variable)
 {
     const char* env_value;
     std::stringstream error_message_stream;
@@ -32,8 +32,7 @@ static std::string get_env_variabe_no_log(
     {
         error_message_stream << "Could not retreive environment variable for '"
                              << env_variable << "'";
-        error_message = error_message_stream.str();
-        return std::string();
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 #else
     std::unique_ptr<char[]> env_temp =
@@ -43,8 +42,7 @@ static std::string get_env_variabe_no_log(
         error_message_stream
             << "Failed to allocate memory for environment varible for '"
             << env_variable << "'";
-        error_message = error_message_stream.str();
-        return std::string();
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 
     env_value = env_temp.get();
@@ -54,8 +52,7 @@ static std::string get_env_variabe_no_log(
     {
         error_message_stream << "Could not retreive environment variable for '"
                              << env_variable << "'";
-        error_message = error_message_stream.str();
-        return std::string();
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 #endif
     auto length = strnlen(env_value, MAX_ENV_VAR_LENGTH);
@@ -67,11 +64,10 @@ static std::string get_env_variabe_no_log(
                                 "length. ";
         error_message_stream << "Actual length is: " << length << " ";
         error_message_stream << "Max length is " << MAX_ENV_VAR_LENGTH;
-        error_message = error_message_stream.str();
-        return std::string();
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 
-    return std::string(env_value);
+    return std::make_pair(env_value, std::string());
 }
 
 #endif
