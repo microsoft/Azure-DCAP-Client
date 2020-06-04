@@ -74,15 +74,4 @@ static std::string get_env_variabe_no_log(
     return std::string(env_value);
 }
 
-static std::string get_env_variable(std::string env_variable)
-{
-    std::string error_message;
-    auto retval = get_env_variabe_no_log(env_variable, error_message);
-    if (!error_message.empty())
-    {
-        log(SGX_QL_LOG_ERROR, error_message.c_str());
-    }
-    return retval;
-}
-
 #endif
