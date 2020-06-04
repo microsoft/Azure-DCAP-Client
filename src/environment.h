@@ -18,49 +18,56 @@
 
 #define MAX_ENV_VAR_LENGTH 2000
 
-static std::string get_env_variable(std::string env_variable)
+#include <sstream>
+#include <utility>
+
+static std::pair<std::string, std::string> get_env_variable_no_log(
+    std::string env_variable)
 {
     const char* env_value;
+    std::stringstream error_message_stream;
 #ifdef __LINUX__
     env_value = getenv(env_variable.c_str());
     if (env_value == NULL)
     {
-        return std::string();
+        error_message_stream << "Could not retreive environment variable for '"
+                             << env_variable << "'";
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 #else
     std::unique_ptr<char[]> env_temp =
         std::make_unique<char[]>(MAX_ENV_VAR_LENGTH);
     if (env_temp == nullptr)
     {
-        log(SGX_QL_LOG_ERROR,
-            "Failed to allocate memory for environment varible for '%s'",
-            env_variable.c_str());
+        error_message_stream
+            << "Failed to allocate memory for environment varible for '"
+            << env_variable << "'";
+        return std::make_pair(std::string(), error_message_stream.str());
     }
+
     env_value = env_temp.get();
     DWORD status = GetEnvironmentVariableA(
         env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
     if (status == 0)
     {
-        log(SGX_QL_LOG_ERROR,
-            "Failed to retreive environment varible for '%s'",
-            env_variable.c_str());
-        return std::string();
+        error_message_stream << "Could not retreive environment variable for '"
+                             << env_variable << "'";
+        return std::make_pair(std::string(), error_message_stream.str());
     }
 #endif
-    else
+    auto length = strnlen(env_value, MAX_ENV_VAR_LENGTH);
+    if (length <= 0 || length == MAX_ENV_VAR_LENGTH)
     {
-        if ((strnlen(env_value, MAX_ENV_VAR_LENGTH) <= 0) ||
-            (strnlen(env_value, MAX_ENV_VAR_LENGTH) == MAX_ENV_VAR_LENGTH))
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Value specified in environment variable %s is either empty or "
-                "expected max length '%d'.",
-                env_variable.c_str());
-            return std::string();
-        }
-
-        return std::string(env_value);
+        error_message_stream << "Length of environment variable '"
+                             << env_variable << "' ";
+        error_message_stream << "is either empty or equal to expected max "
+                                "length. ";
+        error_message_stream << "Actual length is: " << length << " ";
+        error_message_stream << "Max length is " << MAX_ENV_VAR_LENGTH;
+        return std::make_pair(std::string(), error_message_stream.str());
     }
+
+    return std::make_pair(env_value, std::string());
 }
 
 #endif

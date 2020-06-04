@@ -80,6 +80,16 @@ enum class CollateralTypes
     PckRootCrl
 };
 
+static std::string get_env_variable(std::string env_variable)
+{
+    auto retval = get_env_variable_no_log(env_variable);
+    if (!retval.second.empty())
+    {
+        log(SGX_QL_LOG_ERROR, retval.second.c_str());
+    }
+    return retval.first;
+}
+
 static std::string get_collateral_version()
 {
     std::string collateral_version =

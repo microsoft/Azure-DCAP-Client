@@ -390,7 +390,7 @@ static inline float MeasureFunction(measured_function_t func)
                chrono::steady_clock::now() - start).count() / 1000000;
 }
 
-void RunQuoteProviderTests(bool caching_enabled = true)
+void RunQuoteProviderTests(bool caching_enabled = false)
 {
     local_cache_clear();
 
@@ -431,7 +431,7 @@ void RunQuoteProviderTests(bool caching_enabled = true)
     }
 }
 
-void ReloadLibrary(libary_type_t *library)
+void ReloadLibrary(libary_type_t *library, bool set_logging_callback = true)
 {
 #if defined __LINUX__
     dlclose(*library);
@@ -440,7 +440,10 @@ void ReloadLibrary(libary_type_t *library)
     FreeLibrary(*library);
     *library = LoadFunctions();
 #endif
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    if (set_logging_callback)
+    {
+        assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    }
 }
 
 #ifndef __LINUX__
@@ -681,6 +684,13 @@ extern void QuoteProvTests()
     RunQuoteProviderTests();
     GetQveIdentityTest();
 
+    //
+    // Run tests without logging to make sure library can operate
+    // even if logging callback isn't set
+    //
+    ReloadLibrary(&library, false);
+    RunQuoteProviderTests();
+    GetQveIdentityTest();
     // 
     // Run tests to make sure libray can operate
     // even if access to filesystem is restricted

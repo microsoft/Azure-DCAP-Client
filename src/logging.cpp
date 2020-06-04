@@ -106,10 +106,18 @@ void init_debug_log()
     std::lock_guard<std::mutex> lock(log_init_mutex);
     if (!debug_log_initialized)
     {
-        auto log_level = get_env_variable(ENV_AZDCAP_DEBUG_LOG);
-        if (!log_level.empty())
+        auto log_level = get_env_variable_no_log(ENV_AZDCAP_DEBUG_LOG);
+        if (!log_level.first.empty() && log_level.second.empty())
         {
-            enable_debug_logging(log_level);
+            enable_debug_logging(log_level.first);
+        }
+
+        if (!log_level.second.empty())
+        {
+            printf(
+                "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
+                log_level_string(SGX_QL_LOG_ERROR).c_str(),
+                log_level.second.c_str());
         }
         debug_log_initialized = true;
     }
