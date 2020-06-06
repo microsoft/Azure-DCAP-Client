@@ -966,10 +966,14 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         buf += cert_data_size;
         assert(buf == buf_end);
 
-        time_t expiry;
-        if (get_cache_expiration_time(cache_control, cert_url, expiry))
+        auto retval = convert_to_intel_error(get_cache_header_operation);
+        if (retval == SGX_QL_SUCCESS)
         {
-            local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+            time_t expiry;
+            if (get_cache_expiration_time(cache_control, cert_url, expiry))
+            {
+                local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+            }
         }
     }
     catch (std::bad_alloc&)
