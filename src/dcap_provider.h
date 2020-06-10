@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+//test git pull
 
 #pragma once
 #ifndef PLATFORM_QUOTE_PROVIDER_H
