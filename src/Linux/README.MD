@@ -7,12 +7,16 @@ This library requires libcurl built with OpenSSL support and package config.
 * `sudo apt install libcurl4-openssl-dev`
 * `sudo apt-get install pkg-config`
 
+Additionally, if you used the standard git clone command to pull down the repo without initializing the submodule, you may have to run the following to initialize the submodule:
+
+* `git submodule update –recursive –init`
+
 
 ## Quick Start
 ```
 ./configure
 make
-make install
+sudo make install
 ```
 
 ## Step-by-Step
@@ -21,7 +25,7 @@ make install
       paths, and creates `Makefile`
 1. `make`
     * Builds `libdcap_quoteprov.so`, the provider library.
-1. `make install` (optional)
+1. `sudo make install` (optional)
     * Installs the library to `/usr/local/lib` and header to `/usr/local/include`.
 1. `make DEBUG=1` (optional)
     * Builds the library with the -g flag
