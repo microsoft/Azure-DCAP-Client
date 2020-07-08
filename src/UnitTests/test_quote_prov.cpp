@@ -378,8 +378,10 @@ static void GetRootCACrlTest()
 // 2) The windows console is synchronous and quite slow relative to the linux console.
 #if defined __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
+constexpr auto CURL_FILESYSTEM_TOLERANCE = 0;
 #else
 constexpr auto CURL_TOLERANCE = 0.04;
+constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.1;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -427,7 +429,8 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
         assert(
             duration_local_verification <
-            NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE);
+            (NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE) +
+                CURL_FILESYSTEM_TOLERANCE);
     }
 }
 
@@ -550,7 +553,7 @@ void make_folder(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
     assert(0 == mkdir(foldername.c_str(), permission));
-#else 
+#else
     assert(CreateDirectoryA(foldername.c_str(), NULL));
     set_access(foldername, permission);
 #endif
