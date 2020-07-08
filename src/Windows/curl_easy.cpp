@@ -242,6 +242,25 @@ curl_easy::~curl_easy()
 {
 }
 
+DWORD curl_easy::get_response_code() const
+{
+    DWORD dwStatusCode = 0;
+    DWORD dwSize = sizeof(dwStatusCode);
+
+    // Query for the response from the current request
+    if(!WinHttpQueryHeaders(
+        request.get(),
+        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX,
+        &dwStatusCode,
+        &dwSize,
+        WINHTTP_NO_HEADER_INDEX))
+    {
+        throw_on_error(GetLastError(), "curl_easy::get_response_code/WinHttpQueryHeaders");
+    }
+    return dwStatusCode;
+}
+
 void curl_easy::perform() const
 {
     int retry_delay = initial_retry_delay_ms;
@@ -288,6 +307,15 @@ void curl_easy::perform() const
                 lastError, "curl_easy::perform/WinHttpReceiveRequest");
         }
 
+        DWORD response_code = get_response_code();
+        if (response_code >= HTTP_STATUS_BAD_REQUEST && response_code <= HTTP_STATUS_SERVER_ERROR)
+        {
+            log(SGX_QL_LOG_INFO,
+                "HTTP Error (%d) on curl->perform() request",
+                response_code);
+            throw_on_error(
+                WINHTTP_ERROR_BASE, "curl_easy::perform");
+        }
         return;
     } while (true);
 }

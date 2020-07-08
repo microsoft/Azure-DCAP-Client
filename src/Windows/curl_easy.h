@@ -63,6 +63,8 @@ class curl_easy
   private:
     curl_easy() = default;
 
+    DWORD get_response_code() const;
+
     static void throw_on_error(DWORD code, const std::string& function)
     {
         throw_on_error(code, function.c_str());
