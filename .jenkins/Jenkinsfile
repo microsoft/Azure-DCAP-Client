@@ -5,7 +5,7 @@ oe = new jenkins.common.Openenclave()
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
-DOCKER_REGISTRY = "oejenkinscidockerregistry.azurecr.io"
+DOCKER_REGISTRY = "dcapdockerciregistry.azurecr.io"
 
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
