@@ -4,9 +4,10 @@ oe = new jenkins.common.Openenclave()
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
-OETOOLS_REPO = "https://oejenkinscidockerregistry.azurecr.io"
-OETOOLS_REPO_CREDENTIAL_ID = "oejenkinscidockerregistry"
-OETOOLS_DOCKERHUB_REPO_CREDENTIAL_ID = "oeciteamdockerhub"
+OETOOLS_REPO = "https://dcapdockerciregistry.azurecr.io"
+OETOOLS_REPO_CREDENTIAL_ID = "dcapdockerciregistry"
+
+//OETOOLS_DOCKERHUB_REPO_CREDENTIAL_ID = "oeciteamdockerhub"
 
 def buildDockerImages() {
     node("nonSGX") {
@@ -45,16 +46,16 @@ def buildDockerImages() {
                     }
                 }
             }
-            stage("Push to OE Docker Hub Registry") {
-                docker.withRegistry('', OETOOLS_DOCKERHUB_REPO_CREDENTIAL_ID) {
-                    pubazDcapTools1604.push()
-                    pubazDcapTools1804.push()
-                    if(params.TAG_LATEST == true) {
-                        pubazDcapTools1604.push('latest')
-                        pubazDcapTools1804.push('latest')
-                    }
-                }
-            }
+            //stage("Push to OE Docker Hub Registry") {
+            //    docker.withRegistry('', OETOOLS_DOCKERHUB_REPO_CREDENTIAL_ID) {
+            //        pubazDcapTools1604.push()
+            //        pubazDcapTools1804.push()
+            //        if(params.TAG_LATEST == true) {
+            //            pubazDcapTools1604.push('latest')
+            //            pubazDcapTools1804.push('latest')
+            //        }
+            //    }
+            //}
         }
     }
 }
