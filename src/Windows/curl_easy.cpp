@@ -242,11 +242,12 @@ curl_easy::~curl_easy()
 {
 }
 
-// Test  Comment
+
 void curl_easy::perform() const
 {
     int retry_delay = initial_retry_delay_ms;
     int attempts = 0;
+    int testCode = 0;
     do
     {
         //  Start the protocol exchange with the server.
@@ -288,7 +289,7 @@ void curl_easy::perform() const
             throw_on_error(
                 lastError, "curl_easy::perform/WinHttpReceiveRequest");
         }
-
+        testCode = 1;
         return;
     } while (true);
 
