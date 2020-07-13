@@ -1,6 +1,6 @@
 // common lib definition
-@Library("OpenEnclaveCommon") _
-oe = new jenkins.common.Openenclave()
+@Library("DcapCommon") _
+dcap = new jenkins.common.Dcap()
 
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
@@ -33,7 +33,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
                         ninja -v
                         LD_LIBRARY_PATH=${WORKSPACE}/src/Linux ctest --output-on-failure
                        """
-                oe.Run(compiler, task)
+                dcap.Run(compiler, task)
             }
         }
     }
@@ -68,7 +68,7 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -100,7 +100,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
