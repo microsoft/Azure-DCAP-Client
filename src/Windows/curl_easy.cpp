@@ -242,6 +242,7 @@ curl_easy::~curl_easy()
 {
 }
 
+// Test  Comment
 void curl_easy::perform() const
 {
     int retry_delay = initial_retry_delay_ms;
@@ -290,6 +291,7 @@ void curl_easy::perform() const
 
         return;
     } while (true);
+
 }
 
 const std::vector<uint8_t>& curl_easy::get_body() const
