@@ -3,7 +3,7 @@
 
 ARG ubuntu_version=18.04
 
-FROM oejenkinscidockerregistry.azurecr.io/oetools-full-${ubuntu_version}
+FROM dcapdockerciregistry.azurecr.io/oetools-full-${ubuntu_version}
 
 ARG UNAME=jenkins
 
