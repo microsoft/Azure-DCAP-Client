@@ -14,7 +14,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
 			
-				def dcap = load "src/Dcap.groovy"
+				def dcap = load ".jenkins/src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
@@ -48,7 +48,7 @@ def ACCContainerTest(String label, String version) {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
 			
-				def dcap = load "src/Dcap.groovy"
+				def dcap = load ".jenkins/src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
@@ -85,7 +85,7 @@ def ACCTestOeRelease(String label, String version) {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
 			
-				def dcap = load "src/Dcap.groovy"
+				def dcap = load ".jenkins/src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
