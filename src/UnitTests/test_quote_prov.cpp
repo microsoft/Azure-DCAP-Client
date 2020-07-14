@@ -381,7 +381,7 @@ constexpr auto CURL_TOLERANCE = 0.002;
 constexpr auto CURL_FILESYSTEM_TOLERANCE = 0;
 #else
 constexpr auto CURL_TOLERANCE = 0.04;
-constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.1;
+constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.025;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -430,7 +430,7 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         assert(
             duration_local_verification <
             (NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE) +
-                CURL_FILESYSTEM_TOLERANCE);
+               (NUMBER_VERIFICATION_CURL_CALLS * CURL_FILESYSTEM_TOLERANCE));
     }
 }
 
