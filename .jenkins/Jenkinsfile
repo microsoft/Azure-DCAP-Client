@@ -2,6 +2,8 @@
 //@Library("DcapCommon") _
 //dcap = new jenkins.shared.Dcap()
 
+def dcap = load "./src/Dcap.groovy"
+
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
@@ -13,8 +15,6 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
-				def dcap = load "./src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
@@ -47,8 +47,6 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
-				def dcap = load "./src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
@@ -84,8 +82,6 @@ def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
-				def dcap = load "./src/Dcap.groovy"
 			
                 cleanWs()
                 checkout scm
