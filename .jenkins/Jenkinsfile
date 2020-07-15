@@ -1,6 +1,3 @@
-// common lib definition
-//@Library("DcapCommon") _
-//dcap = new jenkins.shared.Dcap()
 
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240

@@ -1,8 +1,5 @@
 #!/usr/bin/groovy
-// Copyright (c) Open Enclave SDK contributors.
 // Licensed under the MIT License.
-
-//package jenkins.shared;
 
 String dockerBuildArgs(String... args) {
     String argumentString = ""
