@@ -2,8 +2,6 @@
 //@Library("DcapCommon") _
 //dcap = new jenkins.shared.Dcap()
 
-def dcap = load "./src/Dcap.groovy"
-
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
@@ -18,6 +16,8 @@ def ACCTest(String label, String version, String compiler, String build_type) {
 			
                 cleanWs()
                 checkout scm
+				
+				def dcap = load pwd() + ".jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -50,6 +50,8 @@ def ACCContainerTest(String label, String version) {
 			
                 cleanWs()
                 checkout scm
+				
+				def dcap = load pwd() + ".jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -85,6 +87,8 @@ def ACCTestOeRelease(String label, String version) {
 			
                 cleanWs()
                 checkout scm
+				
+				def dcap = load pwd() + ".jenkins/src/Dcap.groovy"
 
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
