@@ -30,7 +30,7 @@ static std::pair<std::string, std::string> get_env_variable_no_log(
     env_value = getenv(env_variable.c_str());
     if (env_value == NULL)
     {
-        error_message_stream << "Could not retreive environment variable for '"
+        error_message_stream << "Could not retrieve environment variable for '"
                              << env_variable << "'";
         return std::make_pair(std::string(), error_message_stream.str());
     }
@@ -50,7 +50,7 @@ static std::pair<std::string, std::string> get_env_variable_no_log(
         env_variable.c_str(), env_temp.get(), MAX_ENV_VAR_LENGTH);
     if (status == 0)
     {
-        error_message_stream << "Could not retreive environment variable for '"
+        error_message_stream << "Could not retrieve environment variable for '"
                              << env_variable << "'";
         return std::make_pair(std::string(), error_message_stream.str());
     }
