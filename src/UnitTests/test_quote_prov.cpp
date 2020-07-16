@@ -427,10 +427,11 @@ void RunQuoteProviderTests(bool caching_enabled = false)
             CURL_TOLERANCE);
 
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
+        constexpr int PERMISSION_CHECK_TEST_TOLERANCE =
+            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
         assert(
             duration_local_verification <
-            (NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE) +
-               (NUMBER_VERIFICATION_CURL_CALLS * CURL_FILESYSTEM_TOLERANCE));
+            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
     }
 }
 
