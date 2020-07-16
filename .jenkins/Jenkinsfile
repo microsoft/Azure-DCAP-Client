@@ -14,7 +14,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
                 cleanWs()
                 checkout scm
 				
-				def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -48,7 +48,7 @@ def ACCContainerTest(String label, String version) {
                 cleanWs()
                 checkout scm
 				
-				def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -85,7 +85,7 @@ def ACCTestOeRelease(String label, String version) {
                 cleanWs()
                 checkout scm
 				
-				def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
