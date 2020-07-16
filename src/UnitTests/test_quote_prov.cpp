@@ -420,8 +420,10 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         // Ensure that there is a signficiant enough difference between the cert
         // fetch to the end point and cert fetch to local cache and that local
         // cache call is fast enough
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
+            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
         assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
-        assert(duration_local_cert < CURL_TOLERANCE);
+        assert(duration_local_cert < (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
         assert(
             fabs(duration_curl_verification - duration_local_verification) >
             CURL_TOLERANCE);
@@ -429,7 +431,7 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
         assert(
             duration_local_verification <
-            (NUMBER_VERIFICATION_CURL_CALLS * (CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE)));
+            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
     }
 }
 
