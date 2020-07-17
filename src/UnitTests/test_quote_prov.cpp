@@ -378,8 +378,10 @@ static void GetRootCACrlTest()
 // 2) The windows console is synchronous and quite slow relative to the linux console.
 #if defined __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
+constexpr auto CURL_FILESYSTEM_TOLERANCE = 0;
 #else
 constexpr auto CURL_TOLERANCE = 0.04;
+constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.025;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -418,8 +420,10 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         // Ensure that there is a signficiant enough difference between the cert
         // fetch to the end point and cert fetch to local cache and that local
         // cache call is fast enough
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
+            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
         assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
-        assert(duration_local_cert < CURL_TOLERANCE);
+        assert(duration_local_cert < (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
         assert(
             fabs(duration_curl_verification - duration_local_verification) >
             CURL_TOLERANCE);
@@ -427,7 +431,7 @@ void RunQuoteProviderTests(bool caching_enabled = false)
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
         assert(
             duration_local_verification <
-            NUMBER_VERIFICATION_CURL_CALLS * CURL_TOLERANCE);
+            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
     }
 }
 
@@ -550,7 +554,7 @@ void make_folder(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
     assert(0 == mkdir(foldername.c_str(), permission));
-#else 
+#else
     assert(CreateDirectoryA(foldername.c_str(), NULL));
     set_access(foldername, permission);
 #endif
