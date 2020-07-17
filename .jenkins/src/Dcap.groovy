@@ -1,5 +1,6 @@
 #!/usr/bin/groovy
 // Licensed under the MIT License.
+//This file contains common Jenkins pipeline functions to be used by Jenkinsfile and build_docker_images.Jenkinsfile
 
 String dockerBuildArgs(String... args) {
     String argumentString = ""
