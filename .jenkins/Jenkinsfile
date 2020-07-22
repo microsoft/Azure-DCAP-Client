@@ -1,11 +1,8 @@
-// common lib definition
-@Library("OpenEnclaveCommon") _
-oe = new jenkins.common.Openenclave()
 
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
 
-DOCKER_REGISTRY = "oejenkinscidockerregistry.azurecr.io"
+DOCKER_REGISTRY = "dcapdockerciregistry.azurecr.io"
 
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
@@ -13,8 +10,11 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
+			
                 cleanWs()
                 checkout scm
+				
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -33,7 +33,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
                         ninja -v
                         LD_LIBRARY_PATH=${WORKSPACE}/src/Linux ctest --output-on-failure
                        """
-                oe.Run(compiler, task)
+                dcap.Run(compiler, task)
             }
         }
     }
@@ -44,8 +44,11 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
+			
                 cleanWs()
                 checkout scm
+				
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -68,7 +71,7 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -78,8 +81,11 @@ def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
+			
                 cleanWs()
                 checkout scm
+				
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
@@ -100,7 +106,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                oe.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -111,6 +117,7 @@ def DCAPBuildTest(String label, String build_type) {
     stage("${label} ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
+			
                 cleanWs()
                 checkout scm
                 bat """
