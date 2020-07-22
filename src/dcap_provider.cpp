@@ -87,7 +87,7 @@ static std::string get_env_variable(std::string env_variable)
     auto retval = get_env_variable_no_log(env_variable);
     if (!retval.second.empty())
     {
-        log(SGX_QL_LOG_INFO, retval.second.c_str());
+        log(SGX_QL_LOG_WARNING, retval.second.c_str());
     }
     return retval.first;
 }
@@ -304,7 +304,7 @@ sgx_plat_error_t get_raw_header(
     {
         *out_header = *raw_header;
         log(SGX_QL_LOG_INFO,
-            "raw_header %s:[%s]\n",
+            "raw_header %s:[%s]",
             header_item.c_str(),
             raw_header->c_str());
     }
@@ -326,14 +326,14 @@ sgx_plat_error_t get_unescape_header(
     if (result != SGX_PLAT_ERROR_OK)
     {
         log(SGX_QL_LOG_INFO,
-            "Failed to escape header %s\n",
+            "Failed to escape header %s",
             header_item.c_str());
         return result;
     }
 
     *unescape_header = curl.unescape(raw_header);
     log(SGX_QL_LOG_INFO,
-        "unescape_header %s:[%s]\n",
+        "unescape_header %s:[%s]",
         header_item.c_str(),
         unescape_header->c_str());
     return result;
@@ -502,7 +502,7 @@ static std::string build_cert_chain(const curl_easy& curl)
     const std::string chain =
         curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
 
-    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]\n", chain.c_str());
+    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
     return leaf_cert + chain;
 }
 
