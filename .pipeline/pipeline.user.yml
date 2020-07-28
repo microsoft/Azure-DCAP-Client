@@ -1,0 +1,20 @@
+static_analysis_options:
+  policheck_options:
+    files_to_scan:
+      - exclude:
+          - '3rdparty/*'
+
+# This below configuration is used as a base template for CDPx, other than being a requirement no functionality
+version:
+  name: "open-enclave"
+  major: 0
+  minor: 8
+
+environment:
+  host:
+    os: 'linux'
+    flavor: "ubuntu"
+    version: "16.04"
+  runtime:
+    provider: 'appcontainer'
+    image: 'cdpxlinux.azurecr.io/legacy/global/ubuntu-1604-all:1.0'
