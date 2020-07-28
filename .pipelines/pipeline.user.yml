@@ -6,7 +6,7 @@ static_analysis_options:
 
 # This below configuration is used as a base template for CDPx, other than being a requirement no functionality
 version:
-  name: "open-enclave"
+  name: "Azure-DCAP-Client"
   major: 0
   minor: 8
 

@@ -27,7 +27,7 @@ build:
     logs:
     - include:
       - '**/*.log'
-    name: Build OpenEnclave
+    name: Build Azure-DCAP-Client
 package:
   commands:
   - !!buildcommand
@@ -40,4 +40,4 @@ package:
     logs:
     - include:
       - '**/*.log'
-    name: Package OpenEnclave
+    name: Package Azure-DCAP-Client
