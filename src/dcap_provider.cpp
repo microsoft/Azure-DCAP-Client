@@ -28,6 +28,8 @@
 #include <winsock.h>
 #endif
 
+using namespace std;
+
 // External function names are dictated by Intel
 // ReSharper disable CppInconsistentNaming
 
@@ -70,6 +72,8 @@ static char ROOT_CRL_NAME[] =
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
 
+static const string CACHE_CONTROL_MAX_AGE = "max-age=";
+
 enum class CollateralTypes
 {
     TcbInfo,
@@ -79,8 +83,6 @@ enum class CollateralTypes
     PckCrl,
     PckRootCrl
 };
-
-using namespace std;
 
 static std::string get_env_variable(std::string env_variable)
 {
@@ -209,14 +211,22 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
 {
     time_t max_age = 0;
     tm* max_age_s = localtime(&max_age);
-    string match = "max-age=";
-    size_t index = cache_control.find(match);
+    size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
     int cache_time_seconds = 0;
+    constexpr int MAX_CACHE_TIME_SECONDS = 86400;
     if (index != string::npos)
     {
         try 
         {
-            cache_time_seconds = stoi(cache_control.substr(index + match.length()));
+            cache_time_seconds = stoi(cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
+            if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
+            {
+                log(SGX_QL_LOG_ERROR,
+                    "Caching control '%d' larger than maximum '%d' seconds",
+                    cache_time_seconds,
+                    MAX_CACHE_TIME_SECONDS);
+                return false;
+            }
         }
         catch (std::invalid_argument e)
         {
@@ -324,7 +334,7 @@ sgx_plat_error_t get_unescape_header(
     if (result != SGX_PLAT_ERROR_OK)
     {
         log(SGX_QL_LOG_INFO,
-            "Failed to escape header %s",
+            "Failed to get unescape header %s",
             header_item.c_str());
         return result;
     }
@@ -763,7 +773,7 @@ static std::string get_issuer_chain_cache_name(std::string url)
 static quote3_error_t get_collateral(
     CollateralTypes collateral_type,
     std::string url,
-    const char issuer_chain_header[],
+    const char *issuer_chain_header,
     std::vector<uint8_t>& response_body,
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
@@ -798,14 +808,12 @@ static quote3_error_t get_collateral(
         auto get_issuer_chain_operation =
             get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
 
-        std::string cache_control;
-        auto get_cache_header_operation =
-            get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
-
         retval = convert_to_intel_error(get_issuer_chain_operation);
 
         if (retval == SGX_QL_SUCCESS)
         {
+            std::string cache_control;
+            auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
             retval = convert_to_intel_error(get_cache_header_operation);
             if (retval == SGX_QL_SUCCESS)
             {
@@ -932,11 +940,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         const std::string cert_data = build_cert_chain(*curl);
 
-        // get the cache control header
-        std::string cache_control;
-        auto get_cache_header_operation = get_unescape_header(
-            *curl, headers::CACHE_CONTROL, &cache_control);
-
         // copy the null-terminator for convenience (less error-prone)
         const uint32_t cert_data_size =
             static_cast<uint32_t>(cert_data.size()) + 1;
@@ -964,9 +967,14 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         buf += cert_data_size;
         assert(buf == buf_end);
 
+        // Get the cache control header
+        std::string cache_control;
+        auto get_cache_header_operation = get_unescape_header(
+            *curl, headers::CACHE_CONTROL, &cache_control);
+
         auto retval = convert_to_intel_error(get_cache_header_operation);
         if (retval == SGX_QL_SUCCESS)
-        {
+        {            
             time_t expiry;
             if (get_cache_expiration_time(cache_control, cert_url, expiry))
             {
