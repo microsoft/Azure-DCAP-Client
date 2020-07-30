@@ -224,7 +224,6 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'",
                 cache_control.c_str(),
                 e.what());
-            cache_time_seconds = 0;
             return false;
         }
         catch (std::out_of_range e)
@@ -234,7 +233,6 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 "text: '%s' Error: '%s'",
                 cache_control.c_str(),
                 e.what());
-            cache_time_seconds = 0;
             return false;
         }
     }
