@@ -222,7 +222,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
             if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
             {
                 log(SGX_QL_LOG_ERROR,
-                    "Caching control '%d' larger than maximum '%d' seconds",
+                    "Caching control '%d' larger than maximum '%d' seconds. Collateral will not be cached",
                     cache_time_seconds,
                     MAX_CACHE_TIME_SECONDS);
                 return false;
@@ -231,7 +231,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
         catch (std::invalid_argument e)
         {
             log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'",
+                "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
                 cache_control.c_str(),
                 e.what());
             return false;
@@ -240,7 +240,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
         {
             log(SGX_QL_LOG_ERROR,
                 "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'",
+                "text: '%s' Error: '%s'. Collateral will not be cached",
                 cache_control.c_str(),
                 e.what());
             return false;
