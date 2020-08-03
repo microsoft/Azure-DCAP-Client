@@ -7,12 +7,18 @@ signing_options:
 workspace_options:
   force_workspace_wipe: true
   enable_git_long_paths: true
+  
 restore:
   commands:
+    - !!defaultcommand
+      name: 'Install Prereq' # Prerequisites
+      command: '.pipelines/LinuxPackage.sh'
 
 build:
   commands:
   - !!buildcommand
+    name: 'Build'
+    command: '.pipelines/buildLinux.cmd'
     artifacts:
     - from: build
       to: drop
