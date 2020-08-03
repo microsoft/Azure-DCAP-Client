@@ -17,4 +17,4 @@ environment:
     version: "16.04"
   runtime:
     provider: 'appcontainer'
-    image: 'cdpxlinux.azurecr.io/legacy/global/ubuntu-1604-all:1.0'
+    image: 'cdpxlinux.azurecr.io/user/azure-acc/openenclave/ubuntu/1604:1.4'

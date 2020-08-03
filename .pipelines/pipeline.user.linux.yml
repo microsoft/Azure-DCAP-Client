@@ -10,12 +10,6 @@ workspace_options:
 restore:
   commands:
     - !!defaultcommand
-      name: 'Install Ansible'
-      command: 'scripts/ansible/install-ansible.sh'
-    - !!defaultcommand
-      name: 'Install Linux External Dependencies'
-      command: 'install-prereqs.sh'
-    - !!defaultcommand
       name: 'Dry-Build SDK Packages' # This resolves node dependencies before network lockdown
       command: '.pipelines/LinuxPackage.sh'
 build:

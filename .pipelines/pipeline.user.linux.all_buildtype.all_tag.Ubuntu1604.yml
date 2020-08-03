@@ -5,5 +5,5 @@ environment:
     version: '16.04'
   runtime:
     provider: 'appcontainer'
-    image: 'cdpxtest.azurecr.io/global/ubuntu-1604-base:1.0'
+    image: 'cdpxlinux.azurecr.io/user/azure-acc/openenclave/ubuntu/1604:1.4'
     source_mode: 'link'
