@@ -9,9 +9,7 @@ workspace_options:
   enable_git_long_paths: true
 restore:
   commands:
-    - !!defaultcommand
-      name: 'Dry-Build SDK Packages' # This resolves node dependencies before network lockdown
-      command: '.pipelines/LinuxPackage.sh'
+
 build:
   commands:
   - !!buildcommand
