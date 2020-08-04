@@ -1,5 +1,1 @@
-cd ./../src/Windows
-
- ./get-prereqs.ps1
- 
- ./dll/build.ps1 -BuildType Release
+vcvars64.bat x64 && cd source\src\Windows\dll && powershell.exe -ExecutionPolicy Bypass -Command "{& [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;  \'Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\';}" && nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64
