@@ -10,9 +10,6 @@ workspace_options:
   
 restore:
   commands:
-    - !!defaultcommand
-      name: 'Install Prereq' # Prerequisites
-      command: '.pipelines/LinuxPackage.sh'
 
 build:
   commands:
