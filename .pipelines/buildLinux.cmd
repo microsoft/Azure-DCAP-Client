@@ -1,6 +1,9 @@
 #!/bin/bash
 
-cd %~dp0/../src/Linux/
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo $DIR
+
+cd $DIR/../src/Linux/
 
 sudo apt-get install libssl-dev
 sudo apt install libcurl4-openssl-dev
