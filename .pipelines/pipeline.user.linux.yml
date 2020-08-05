@@ -22,5 +22,4 @@ build:
       include:
       - '*.deb'
       - '**/*.log'
-    command: '.pipelines/LinuxPackage.sh'
-    name: Build OE Linux
+    name: Build Azure DCAP Linux
