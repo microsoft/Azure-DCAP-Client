@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sudo apt-get purge az-dcap-client -y
 sudo apt-get update
 sudo apt-get install sudo libcurl4-openssl-dev wget -y
