@@ -12,6 +12,18 @@ workspace_options:
   enable_git_long_paths: true
   show_global_sub_tasks: true
   show_user_sub_tasks: true
+  
+restore:
+  commands:
+    # This step will copy a folder over.
+    - !!defaultcommand
+      name: 'Copy Dependencies'
+      command: 'build/Phase1/copy.cmd'
+    # This step will install dependencies like OE-SDK
+    - !!defaultcommand
+      name: 'Install Dependencies'
+      command: 'build/Phase1/install-dep.cmd'   
+  
 build:
   commands:
   - !!buildcommand
