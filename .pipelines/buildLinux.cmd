@@ -5,9 +5,9 @@ echo $DIR
 
 cd $DIR/../src/Linux/
 
-sudo apt-get install libssl-dev
-sudo apt install libcurl4-openssl-dev
-sudo apt-get install pkg-config
+apt-get install libssl-dev
+apt install libcurl4-openssl-dev
+apt-get install pkg-config
 
 git submodule update –recursive –init
 
@@ -15,4 +15,4 @@ git submodule update –recursive –init
 
 make
 
-sudo make install
+make install
