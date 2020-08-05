@@ -15,10 +15,6 @@ workspace_options:
   
 restore:
   commands:
-    # This step will copy a folder over.
-    - !!defaultcommand
-      name: 'Copy Dependencies'
-      command: 'build/Phase1/copy.cmd'
     # This step will install dependencies like OE-SDK
     - !!defaultcommand
       name: 'Install Dependencies'
