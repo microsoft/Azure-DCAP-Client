@@ -1,1 +1,3 @@
-vcvars64.bat x64 && cd source\src\Windows\dll && powershell.exe -ExecutionPolicy Bypass -Command "{& [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;  \'Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\';}" && nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64
+
+REM Enable cmake context and build binaries for signing
+vcvars64.bat && msbuild -p:Configuration=Release /p:Platform=x64 "%~dp0\..\src\Windows\dcap_provider.sln"
