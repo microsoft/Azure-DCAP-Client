@@ -28,6 +28,8 @@
 #include <winsock.h>
 #endif
 
+using namespace std;
+
 // External function names are dictated by Intel
 // ReSharper disable CppInconsistentNaming
 
@@ -70,6 +72,8 @@ static char ROOT_CRL_NAME[] =
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
 
+static const string CACHE_CONTROL_MAX_AGE = "max-age=";
+
 enum class CollateralTypes
 {
     TcbInfo,
@@ -85,7 +89,7 @@ static std::string get_env_variable(std::string env_variable)
     auto retval = get_env_variable_no_log(env_variable);
     if (!retval.second.empty())
     {
-        log(SGX_QL_LOG_ERROR, retval.second.c_str());
+        log(SGX_QL_LOG_WARNING, retval.second.c_str());
     }
     return retval.first;
 }
@@ -203,34 +207,52 @@ static inline quote3_error_t fill_qpl_string_buffer(
 //
 // Determine time cache should invalidate for given collateral
 //
-bool get_cache_expiration_time(CollateralTypes collateral_type, time_t &expiration_time)
+bool get_cache_expiration_time(const string &cache_control, const string &url, time_t &expiration_time)
 {
     time_t max_age = 0;
     tm* max_age_s = localtime(&max_age);
-
-    switch(collateral_type)
+    size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
+    int cache_time_seconds = 0;
+    constexpr int MAX_CACHE_TIME_SECONDS = 86400;
+    if (index != string::npos)
     {
-        case CollateralTypes::TcbInfo:
-        case CollateralTypes::QeIdentity:
-        case CollateralTypes::QveIdentity:
+        try 
         {
-            max_age_s->tm_hour += 12;
-            break;
+            cache_time_seconds = stoi(cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
+            if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
+            {
+                log(SGX_QL_LOG_ERROR,
+                    "Caching control '%d' larger than maximum '%d' seconds. Collateral will not be cached",
+                    cache_time_seconds,
+                    MAX_CACHE_TIME_SECONDS);
+                return false;
+            }
         }
-        case CollateralTypes::PckCert:
-        case CollateralTypes::PckCrl:
-        case CollateralTypes::PckRootCrl:
+        catch (std::invalid_argument e)
         {
-            max_age_s->tm_mday += 1;
-            break;
+            log(SGX_QL_LOG_ERROR,
+                "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
+                cache_control.c_str(),
+                e.what());
+            return false;
         }
-        default:
+        catch (std::out_of_range e)
         {
+            log(SGX_QL_LOG_ERROR,
+                "Invalid argument thrown when parsing cache-control. Header "
+                "text: '%s' Error: '%s'. Collateral will not be cached",
+                cache_control.c_str(),
+                e.what());
             return false;
         }
     }
 
+    max_age_s->tm_sec += cache_time_seconds;
     expiration_time = time(nullptr) + mktime(max_age_s);
+    log(SGX_QL_LOG_INFO,
+        "Caching collateral '%s' for '%d' seconds",
+        url.c_str(),
+        cache_time_seconds);
     return true;
 }
 
@@ -290,7 +312,7 @@ sgx_plat_error_t get_raw_header(
     {
         *out_header = *raw_header;
         log(SGX_QL_LOG_INFO,
-            "raw_header %s:[%s]\n",
+            "raw_header %s:[%s]",
             header_item.c_str(),
             raw_header->c_str());
     }
@@ -310,10 +332,16 @@ sgx_plat_error_t get_unescape_header(
 
     result = get_raw_header(curl, header_item, &raw_header);
     if (result != SGX_PLAT_ERROR_OK)
+    {
+        log(SGX_QL_LOG_INFO,
+            "Failed to get unescape header %s",
+            header_item.c_str());
         return result;
+    }
+
     *unescape_header = curl.unescape(raw_header);
     log(SGX_QL_LOG_INFO,
-        "unescape_header %s:[%s]\n",
+        "unescape_header %s:[%s]",
         header_item.c_str(),
         unescape_header->c_str());
     return result;
@@ -482,7 +510,7 @@ static std::string build_cert_chain(const curl_easy& curl)
     const std::string chain =
         curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
 
-    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]\n", chain.c_str());
+    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
     return leaf_cert + chain;
 }
 
@@ -745,7 +773,7 @@ static std::string get_issuer_chain_cache_name(std::string url)
 static quote3_error_t get_collateral(
     CollateralTypes collateral_type,
     std::string url,
-    const char header_name[],
+    const char *issuer_chain_header,
     std::vector<uint8_t>& response_body,
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
@@ -777,19 +805,25 @@ static quote3_error_t get_collateral(
         const auto curl_operation = curl_easy::create(url, request_body);
         curl_operation->perform();
         response_body = curl_operation->get_body();
-        auto get_header_operation =
-            get_unescape_header(*curl_operation, header_name, &issuer_chain);
+        auto get_issuer_chain_operation =
+            get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
 
-        retval = convert_to_intel_error(get_header_operation);
+        retval = convert_to_intel_error(get_issuer_chain_operation);
 
         if (retval == SGX_QL_SUCCESS)
         {
-            // Update the cache if needed
-            time_t expiry = 0;
-            if (get_cache_expiration_time(collateral_type, expiry))
+            std::string cache_control;
+            auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
+            retval = convert_to_intel_error(get_cache_header_operation);
+            if (retval == SGX_QL_SUCCESS)
             {
-                local_cache_add(url, expiry, response_body.size(), response_body.data());
-                local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
+                // Update the cache 
+                time_t expiry = 0;
+                if (get_cache_expiration_time(cache_control, url, expiry))
+                {
+                    local_cache_add(url, expiry, response_body.size(), response_body.data());
+                    local_cache_add(issuer_chain_cache_name, expiry, issuer_chain.size(), issuer_chain.c_str());
+                }
             }
         }
 
@@ -933,10 +967,19 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         buf += cert_data_size;
         assert(buf == buf_end);
 
-        time_t expiry;
-        if (get_cache_expiration_time(CollateralTypes::PckCert, expiry))
-        {
-            local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+        // Get the cache control header
+        std::string cache_control;
+        auto get_cache_header_operation = get_unescape_header(
+            *curl, headers::CACHE_CONTROL, &cache_control);
+
+        auto retval = convert_to_intel_error(get_cache_header_operation);
+        if (retval == SGX_QL_SUCCESS)
+        {            
+            time_t expiry;
+            if (get_cache_expiration_time(cache_control, cert_url, expiry))
+            {
+                local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+            }
         }
     }
     catch (std::bad_alloc&)
@@ -1493,15 +1536,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         }
 
         // Get QE Identity & Issuer Chain
-        std::string header_name;
-        std::string qe_identity_url = build_enclave_id_url(false, header_name);
+        std::string issuer_chain_header;
+        std::string qe_identity_url = build_enclave_id_url(false, issuer_chain_header);
         const auto qe_identity_operation =
             curl_easy::create(qe_identity_url, nullptr);
 
         operation_result = get_collateral(
             CollateralTypes::QeIdentity,
             qe_identity_url,
-            header_name.c_str(),
+            issuer_chain_header.c_str(),
             qe_identity,
             qe_identity_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
