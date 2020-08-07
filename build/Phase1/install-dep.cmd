@@ -21,7 +21,9 @@ nuget install %ScriptDir%\packages.config -ExcludeVersion -Outputdirectory %Pack
 
 
 
-.\%ENCLAVE_BUILD_SOURCE_ROOT%\Windows\dll\get-prereqs.ps1
+cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows\dll
+
+.\get-prereqs.ps1
 
 if %errorlevel% NEQ 0 exit /b %errorlevel%
 exit /b 0
