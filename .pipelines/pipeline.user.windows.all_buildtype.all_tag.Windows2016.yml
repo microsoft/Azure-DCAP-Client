@@ -17,7 +17,7 @@ package_sources:
   nuget:
     config_files:
       - include:
-         - "src\\Windows\\dll\\nuGet.config"
+         - "src\\Windows\\dll\\nuget.config"
     feeds:
       Toolset: https://msazure.pkgs.visualstudio.com/_packaging/Toolset/nuget/v3/index.json
       Official: https://msazure.pkgs.visualstudio.com/_packaging/Official/nuget/v3/index.json
