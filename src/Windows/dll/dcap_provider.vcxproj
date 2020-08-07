@@ -108,7 +108,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!--Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
-  </Target>
+  </Target-->
   <!--Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
     <Exec ContinueOnError="True" Command="xcopy /y ..\UnitTest\$(Platform)\$(Configuration)\dcap_provider_ut.exe $(OutDir)"/>
     <Exec Command="$(OutDir)\dcap_provider_ut.exe" />
