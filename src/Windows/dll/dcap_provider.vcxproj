@@ -106,7 +106,7 @@
     <ResourceCompile Include="dcap_provider.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
+  <!--Target Name="GetPrerequisitesFromIntel" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell ..\get-prereqs.ps1" />
   </Target>
   <!--Target Name="RunUnitTest" AfterTargets="Build" DependsOnTargets="GetPrerequisitesFromIntel;EnsureNuGetPackageBuildImports">
