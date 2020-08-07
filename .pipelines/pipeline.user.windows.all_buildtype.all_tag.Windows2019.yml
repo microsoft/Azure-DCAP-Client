@@ -13,6 +13,12 @@ workspace_options:
   show_global_sub_tasks: true
   show_user_sub_tasks: true
   
+package_sources:
+  nuget:
+    config_files:
+      - include:
+        - 'src/Windows/dll/nuget.config'  
+  
 restore:
   commands:
     # This step will install dependencies like OE-SDK
