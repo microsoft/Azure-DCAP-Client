@@ -12,7 +12,7 @@ REM Set the build VCTools directory
 SET ENCLAVE_BUILD_VCTOOLS_DIR=C:\Downloads\prereqs\VCTools
 
 REM Set the build source root directory
-SET ENCLAVE_BUILD_SOURCE_ROOT=%~dp0..\..\src\AttestationServices\Instance
+SET ENCLAVE_BUILD_SOURCE_ROOT=%~dp0..\..\src
 
 REM Set the build output directory
 if "%ENCLAVE_BUILD_OUT_OVERRIDE%"=="" (

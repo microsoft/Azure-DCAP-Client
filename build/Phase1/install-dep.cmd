@@ -18,6 +18,11 @@ if NOT "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"=="" (
 
 REM Install packages listed in packages.config
 nuget install %ScriptDir%\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
+
+
+
+powershell %ENCLAVE_BUILD_SOURCE_ROOT\Windows\dll\get-prereqs.ps1
+
 if %errorlevel% NEQ 0 exit /b %errorlevel%
 exit /b 0
 
