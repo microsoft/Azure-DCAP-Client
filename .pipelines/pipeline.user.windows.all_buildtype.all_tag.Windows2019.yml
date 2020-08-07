@@ -15,13 +15,13 @@ workspace_options:
   
 package_sources:
   nuget:
-    feeds:                                      # Use this if you use a per-person or team wide NuGet.config and don't have anything specific in your repository.
-      'name1': 'url1'                           # A feed name and a feed URL to use for automatic generation.
-      'Toolset': 'https://msazure.pkgs.visualstudio.com/_packaging/Toolset/nuget/v3/index.json'
-      'NuGet': 'https://api.nuget.org/v3/index.json'
     config_files:
       - include:
-        - 'src/Windows/dll/nuget.config'
+         - "src\\Windows\\dll\\nuGet.config"
+    feeds:
+      Toolset: https://msazure.pkgs.visualstudio.com/_packaging/Toolset/nuget/v3/index.json
+      Official: https://msazure.pkgs.visualstudio.com/_packaging/Official/nuget/v3/index.json
+      Nuget.Org: https://api.nuget.org/v3/index.json
   
 restore:
   commands:
