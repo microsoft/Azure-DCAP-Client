@@ -21,8 +21,10 @@ nuget restore "%~dp0..\..\src\Windows\dcap_provider.sln" -PackagesDirectory %Pac
 REM Install packages listed in packages.config
 nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
 
+cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows
+
 REM Invoke the Powershell packaging script
-powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command "%ENCLAVE_BUILD_SOURCE_ROOT%\Windows\get-prereqs.ps1"
+powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\get-prereqs.ps1"
 
 if %errorlevel% NEQ 0 exit /b %errorlevel%
 exit /b 0
