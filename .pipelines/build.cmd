@@ -1,4 +1,3 @@
 cd %~dp0..\src\Windows
 
-REM Enable cmake context and build binaries for signing
-vcvars64.bat && msbuild -p:Configuration=Release /p:Platform=x64 ".\dcap_provider.sln"
+powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\dll\build.ps1 -BuildType Release"
