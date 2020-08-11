@@ -5,6 +5,12 @@ VisualStudioVersion = 15.0.28307.572
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcap_provider", "dll\dcap_provider.vcxproj", "{AAA37DF8-87A5-40E9-B0DF-8919D5E92533}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcap_provider_tests", "dcap_provider_tests\dcap_provider_tests.vcxproj", "{7F43D2BD-351E-47EF-8E65-91337330AE89}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcap_provider_ut", "UnitTest\dcap_provider_ut.vcxproj", "{C356FCD3-13E4-40F1-9FDD-D2E68FA97885}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "AzureDCAPSetupProject", "AzureDCAPSetupProject\AzureDCAPSetupProject.wixproj", "{A5E8BFB6-3DBE-498F-9431-544D7C09B1F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
