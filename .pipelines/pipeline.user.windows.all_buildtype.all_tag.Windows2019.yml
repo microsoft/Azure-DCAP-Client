@@ -45,12 +45,7 @@ build:
             sign_inline: true  # This does signing a soon as this command completes
       logs:
         - include:
-            - '*.log'
-            
-    - !!defaultcommand
-      name: 'Post Build'
-      command: 'build/Phase1/post-build.cmd'
-      fail_on_stderr: true    
+            - '*.log'    
 
 package:
   commands:
