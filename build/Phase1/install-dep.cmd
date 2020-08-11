@@ -17,6 +17,9 @@ if NOT "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"=="" (
 )
 
 nuget restore "%~dp0..\..\src\Windows\dcap_provider.sln" -PackagesDirectory %PackageDir%
+nuget restore "%~dp0..\..\src\Windows\dcap_provider_tests\dcap_provider_tests.vcxproj" -PackagesDirectory %PackageDir%
+nuget restore "%~dp0..\..\src\Windows\UnitTest\dcap_provider_ut.vcxproj" -PackagesDirectory %PackageDir%
+nuget restore "%~dp0..\..\src\Windows\AzureDCAPSetupProject\AzureDCAPSetupProject.wixproj" -PackagesDirectory %PackageDir%
 
 REM Install packages listed in packages.config
 nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
