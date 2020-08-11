@@ -16,7 +16,7 @@ if NOT "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"=="" (
     SET NugetSource=-Source "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"
 )
 
-nuget restore "%~dp0..\..\src\Windows\dll\dcap_provider.vcxproj"
+nuget restore "%~dp0..\..\src\Windows\dll\dcap_provider.vcxproj" -PackagesDirectory %PackageDir%
 
 REM Install packages listed in packages.config
 nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
