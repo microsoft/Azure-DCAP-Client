@@ -16,12 +16,12 @@ if NOT "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"=="" (
     SET NugetSource=-Source "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"
 )
 
-nuget restore "%~dp0..\..\src\Windows\dcap_provider.sln" -PackagesDirectory %PackageDir%
+nuget restore "%~dp0..\..\src\Windows\dll\dcap_provider.vcxproj"
 
 REM Install packages listed in packages.config
 nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
 
-cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows
+cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows\dll
 
 REM Invoke the Powershell packaging script
 powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\get-prereqs.ps1"
