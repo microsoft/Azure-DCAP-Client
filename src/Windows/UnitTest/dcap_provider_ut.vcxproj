@@ -68,7 +68,8 @@
         $(MSBuildProjectDirectory)\..\dll\ext\intel;
         $(MSBuildProjectDirectory)\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
-        $(MSBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include
+        $(MSBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;
+		C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\VS\UnitTest\include
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

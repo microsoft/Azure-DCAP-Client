@@ -126,7 +126,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;..;..\..;..\dll;$(MsBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;$(MsBuildProjectDirectory)\..\dll;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;..;..\..;..\dll;$(MsBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;$(MsBuildProjectDirectory)\..\dll;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\VS\UnitTest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
