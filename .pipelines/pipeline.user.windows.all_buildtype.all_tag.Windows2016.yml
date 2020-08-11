@@ -36,7 +36,7 @@ build:
       name: 'Build Azure-DCAP-Client'
       command: '.pipelines/build.cmd'
       artifacts:
-        - from: 'src/Windows'
+        - from: 'src/Windows/Out/AzureDCAPClient'
           to: 'AzureDCAPClient'
           include:
             - '**/*'
