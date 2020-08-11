@@ -32,30 +32,34 @@ restore:
   
 build:
   commands:
-  - !!buildcommand
-    artifacts:
-    - signing_options:
-        profile: internal_azure_service
-        sign_inline: true
-      from: build
-      include:
-      - '**/*.exe'
-      - '**/*.dll'
-    command: .pipelines/build.cmd
-    logs:
-    - include:
-      - '**/*.log'
-    name: Build Azure-DCAP-Client
+    - !!buildcommand
+      name: 'Build Azure-DCAP-Client'
+      command: '.pipelines/build.cmd'
+      artifacts:
+        - from: 'src/Windows'
+          to: 'AzureDCAPClient'
+          include:
+            - '**/*'
+          signing_options:
+            profile: 'internal_azure_service'
+            sign_inline: true  # This does signing a soon as this command completes
+      logs:
+        - include:
+            - '*.log'
+            
+    - !!defaultcommand
+      name: 'Post Build'
+      command: 'build/Phase1/post-build.cmd'
+      fail_on_stderr: true    
+
 package:
   commands:
-  - !!buildcommand
-    artifacts:
-    - from: build
-      to: un_signed_output
-      include:
-      - '**/*.nupkg'
-    command: .pipelines/package.cmd
-    logs:
-    - include:
-      - '**/*.log'
-    name: Package Azure-DCAP-Client
+    # This step will package the artifacts
+    - !!buildcommand
+      name: 'Package Azure-DCAP-Client'
+      command: 'build/Phase1/package.cmd'
+      artifacts:
+        - from: 'src/Out/Package'
+          to: 'Nuget'
+          include:
+            - '**/*'
