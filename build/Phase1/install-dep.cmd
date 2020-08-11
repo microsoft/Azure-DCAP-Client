@@ -24,7 +24,7 @@ nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Output
 cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows\dll
 
 REM Invoke the Powershell packaging script
-powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\get-prereqs.ps1"
+powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\..\get-prereqs.ps1"
 
 if %errorlevel% NEQ 0 exit /b %errorlevel%
 exit /b 0
