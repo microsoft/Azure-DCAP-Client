@@ -12,7 +12,7 @@ workspace_options:
   enable_git_long_paths: true
   show_global_sub_tasks: true
   show_user_sub_tasks: true
-        
+  
 package_sources:
   nuget:
     config_files:
@@ -29,24 +29,22 @@ restore:
     - !!defaultcommand
       name: 'Install Dependencies'
       command: 'build/Phase1/install-dep.cmd'   
-    
+  
 build:
   commands:
     - !!buildcommand
       name: 'Build Azure-DCAP-Client'
       command: '.pipelines/build.cmd'
       artifacts:
-        - from: 'src/Windows/Out/AzureDCAPClient'
+        - from: 'src/Windows/x64/release'
           to: 'AzureDCAPClient'
           include:
             - '**/*'
           signing_options:
-            profile: 'internal_azure_service'
-            sign_inline: true  # This does signing a soon as this command completes
+            profile: 'external_distribution'
       logs:
         - include:
-            - '*.log'
-               
+            - '*.log'    
 
 package:
   commands:
@@ -59,3 +57,5 @@ package:
           to: 'Nuget'
           include:
             - '**/*'
+          signing_options:
+            profile: 'external_distribution'

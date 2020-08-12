@@ -57,5 +57,5 @@ package:
           to: 'Nuget'
           include:
             - '**/*'
-        signing_options:
-          profile: 'external_distribution'
+          signing_options:
+            profile: 'external_distribution'
