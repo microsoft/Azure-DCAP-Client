@@ -36,13 +36,12 @@ build:
       name: 'Build Azure-DCAP-Client'
       command: '.pipelines/build.cmd'
       artifacts:
-        - from: 'src/Windows'
+        - from: 'src/Windows/x64/release'
           to: 'AzureDCAPClient'
           include:
             - '**/*'
           signing_options:
-            profile: 'internal_azure_service'
-            sign_inline: true  # This does signing a soon as this command completes
+            profile: 'external_distribution'
       logs:
         - include:
             - '*.log'    
@@ -58,3 +57,5 @@ package:
           to: 'Nuget'
           include:
             - '**/*'
+        signing_options:
+          profile: 'external_distribution'
