@@ -64,7 +64,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>
-	    $(VCInstallDir)UnitTest\include;
+	    $(VCInstallDir)UnitTest;
         $(MSBuildProjectDirectory)\..\;
         $(MSBuildProjectDirectory)\..\dll\ext\intel;
         $(MSBuildProjectDirectory)\ext\intel;
