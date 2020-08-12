@@ -95,14 +95,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>
-	      $(VCInstallDir)UnitTest\include;
-		  ..;
-		  ..\..;
-		  ..\dll;
-		  C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\VS\UnitTest\include;
-		  %(AdditionalIncludeDirectories)
-	  </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;..;..\..;..\dll;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
@@ -133,7 +126,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;..;..\..;..\dll;$(MsBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;$(MsBuildProjectDirectory)\..\dll;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\VS\UnitTest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;..;..\..;..\dll;$(MsBuildProjectDirectory)\..\dll\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;$(MsBuildProjectDirectory)\..\dll;C:\Program Files (x86)Microsoft Visual Studio/2017/Professional/VC/Auxiliary/VS/UnitTest/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
