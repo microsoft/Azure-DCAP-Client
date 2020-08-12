@@ -13,8 +13,11 @@
 
 Param(
     [ValidateSet("Debug", "Release")]
-    [string]$BuildType = "Debug"
+    [string]$BuildType = "Debug",
+
+    [switch]$SkipRestore = $false
 )
+
 
 function Set-VCVariables {
     Param(
@@ -42,12 +45,14 @@ function Set-VCVariables {
 Push-Location "$PSScriptRoot"
 Write-Output 'Setting Visual Studio environment variables'
 Set-VCVariables -Version 'BuildTools'
-Write-Output 'Restore packages with nuget'
-if(-not(Test-Path .\nuget.exe)) {
-    Write-Output 'Nuget not found! Downloading...'
-    Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\nuget.exe
+if (-not($SkipRestore)) {
+    Write-Output 'Restore packages with nuget'
+    if(-not(Test-Path .\nuget.exe)) {
+        Write-Output 'Nuget not found! Downloading...'
+        Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\nuget.exe
+    }
+    .\nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages
 }
-.\nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages
 Write-Output ('Running build {0}' -f $BuildType)
-MSBuild.exe dcap_provider.vcxproj /p:Configuration=$BuildType /p:Platform=x64
+MSBuild.exe ..\dcap_provider.sln /p:Configuration=$BuildType /p:Platform=x64
 Pop-Location

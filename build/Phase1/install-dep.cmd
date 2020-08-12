@@ -19,13 +19,8 @@ if NOT "%ENCLAVE_BUILD_NUGET_SOURCE_OVERRIDE%"=="" (
 nuget restore "%~dp0..\..\src\Windows\dcap_provider.sln" -PackagesDirectory %PackageDir%
 
 REM Install packages listed in packages.config
-nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
+REM nuget install %~dp0..\..\src\Windows\dll\packages.config -ExcludeVersion -Outputdirectory %PackageDir% %NugetSource%
 
-cd %ENCLAVE_BUILD_SOURCE_ROOT%\Windows\dll
-
-REM Invoke the Powershell packaging script
-powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -Command ".\..\get-prereqs.ps1"
-
-if %errorlevel% NEQ 0 exit /b %errorlevel%
-exit /b 0
-
+REM Invoke the Powershell packaging script. This script needs to be run from the src\Windows\dll directory.
+cd %~dp0\..\..\src\Windows
+powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command "%~dp0..\..\src\Windows\get-prereqs.ps1"
