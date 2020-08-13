@@ -25,4 +25,6 @@ build:
       include:
       - '*.deb'
       - '**/*.log'
+      signing_options:
+          profile: 'external_distribution'
     name: Build Azure DCAP Linux
