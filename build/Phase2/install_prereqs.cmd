@@ -12,3 +12,14 @@ apt install build-essential
 
 apt-get install -y debhelper dh-virtualenv
 
+cd $DIR/../../src/Linux/
+
+./configure
+
+make
+
+make install
+
+dpkg-buildpackage -us -uc
+dpkg -i $DIR/../../src/az-dcap-client_*_amd64.deb
+

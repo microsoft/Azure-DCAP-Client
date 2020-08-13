@@ -18,7 +18,6 @@ build:
   commands:
   - !!buildcommand
     name: 'Build'
-    command: '.pipelines/buildLinux.cmd'
     artifacts:
     - from: build
       to: drop
