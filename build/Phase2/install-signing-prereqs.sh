@@ -8,8 +8,6 @@ apt-get install libssl-dev
 apt install libcurl4-openssl-dev
 apt-get install pkg-config
 
-git submodule update –recursive –init
-
 apt install build-essential
 
 apt-get install debhelper dh-virtualenv
