@@ -3,7 +3,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo $DIR
 
-cd $DIR/../../src/Linux/
+cd $DIR/../src/Linux/
 
 apt-get install libssl-dev
 apt install libcurl4-openssl-dev
@@ -16,4 +16,4 @@ make
 make install
 
 dpkg-buildpackage -us -uc
-dpkg -i $DIR/../../src/az-dcap-client_*_amd64.deb
+dpkg -i $DIR/../src/az-dcap-client_*_amd64.deb
