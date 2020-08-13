@@ -10,6 +10,9 @@ workspace_options:
   
 restore:
   commands:
+    - !!defaultcommand
+      name: 'Install Prerequisites'
+      command: 'build/Phase2/install-signing-prereqs.sh'
 
 build:
   commands:

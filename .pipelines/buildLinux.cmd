@@ -16,3 +16,6 @@ git submodule update –recursive –init
 make
 
 make install
+
+dpkg-buildpackage -us -uc
+dpkg -i $DIR/../src/az-dcap-client_*_amd64.deb
