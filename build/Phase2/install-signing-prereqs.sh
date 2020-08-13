@@ -10,5 +10,5 @@ apt-get install pkg-config
 
 apt install build-essential
 
-apt-get install debhelper dh-virtualenv
+apt-get install dh-virtualenv
 
