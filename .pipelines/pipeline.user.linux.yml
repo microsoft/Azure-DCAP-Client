@@ -13,15 +13,9 @@ restore:
     - !!defaultcommand
       name: 'Install Prerequisites'
       command: 'build/Phase2/install_prereqs.cmd'
-
-build:
-  commands:
-  - !!buildcommand
-    name: 'Build'
-    artifacts:
-    - from: build
-      to: drop
-      include:
-      - '*.deb'
-      - '**/*.log'
-    name: Build Azure DCAP Linux
+      artifacts:
+      - from: build
+        to: drop
+        include:
+        - '*.deb'
+        - '**/*.log'
