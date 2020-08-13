@@ -20,4 +20,5 @@ make
 
 make install
 
+dpkg-buildpackage -us -uc
 
