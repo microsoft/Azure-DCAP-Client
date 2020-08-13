@@ -5,15 +5,5 @@ echo $DIR
 
 cd $DIR/../src/Linux/
 
-apt-get install libssl-dev
-apt install libcurl4-openssl-dev
-apt-get install pkg-config
-
-./configure
-
-make
-
-make install
-
 dpkg-buildpackage -us -uc
-dpkg -i $DIR/../src/az-dcap-client_*_amd64.deb
+dpkg -i $DIR/../../src/az-dcap-client_*_amd64.deb
