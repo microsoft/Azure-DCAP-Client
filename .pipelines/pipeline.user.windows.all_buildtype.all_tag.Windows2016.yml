@@ -42,6 +42,14 @@ build:
             - '**/*'
           signing_options:
             profile: 'external_distribution'
+        # Test Configuration Files.
+        - from: 'src'
+          to: 'BuildOutputs'
+          include:
+            - 'UnitTestMap.xml'
+            - 'UnitTestsJobGroup.xml'
+            - 'uksouthtest.runsettings'
+
       logs:
         - include:
             - '*.log'    
