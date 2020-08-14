@@ -72,6 +72,6 @@ package:
             
 cloudtest_options:
   tenant_name: 'microsoftazureattestation'
-  testmap_location: '[BuildRoot]\build\BuildOutputs\UnitTestMap.xml'
+  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
   configuration: 'release'
   platform: 'x64'
