@@ -42,6 +42,12 @@ build:
             - '**/*'
           signing_options:
             profile: 'external_distribution'
+        # Test Configuration Files.
+        - from: 'src\'
+          to: 'BuildOutputs'
+          include:
+            - 'UnitTestMap.xml'
+            - 'UnitTestsJobGroup.xml'
       logs:
         - include:
             - '*.log'    
