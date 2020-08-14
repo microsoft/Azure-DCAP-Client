@@ -51,7 +51,7 @@ build:
           include:
             - 'UnitTestMap.xml'
             - 'UnitTestsJobGroup.xml'
-
+            - 'dcap_provider_ut.exe'
       logs:
         - include:
             - '*.log'    
