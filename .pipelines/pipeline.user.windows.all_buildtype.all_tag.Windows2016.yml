@@ -40,7 +40,7 @@ build:
       command: '.pipelines/build.cmd'
       artifacts:
         - from: 'src/Windows/x64/release'
-          to: 'AzureDCAPClient'
+          to: 'BuildOutputs'
           include:
             - '**/*'
           signing_options:
