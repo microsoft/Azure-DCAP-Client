@@ -43,7 +43,7 @@ build:
           signing_options:
             profile: 'external_distribution'
         # Test Configuration Files.
-        - from: 'src'
+        - from: 'src/'
           to: 'BuildOutputs'
           include:
             - 'UnitTestMap.xml'
@@ -70,6 +70,6 @@ package:
             
 cloudtest_options:
   tenant_name: 'microsoftazureattestation'
-  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
+  testmap_location: '[BuildRoot]\BuildOutputs\UnitTestMap.xml'
   configuration: 'release'
   platform: 'x64'

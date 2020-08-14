@@ -4,5 +4,5 @@
   <TestJobGroup Name="EnclaveUnitTests" TestSystem="Default"
    ConfigPath="[BuildRoot]\outputs\build\BuildOutputs\EnclaveUT\EnclaveUTJobGroup.xml"
    IsActive="true"/>-->
-  <TestJobGroup Name="AzureDCAPUnitTests" TestSystem="Default" ConfigPath="[BuildRoot]\outputs\build\BuildOutputs\UnitTestsJobGroup.xml" IsActive="true"/>
+  <TestJobGroup Name="AzureDCAPUnitTests" TestSystem="Default" ConfigPath="[BuildRoot]\BuildOutputs\UnitTestsJobGroup.xml" IsActive="true"/>
 </TestMap>
