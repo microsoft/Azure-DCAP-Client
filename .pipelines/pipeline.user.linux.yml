@@ -20,7 +20,7 @@ build:
     name: 'Build'
     command: '.pipelines/buildLinux.cmd'
     artifacts:
-    - from: build
+    - from: 'src'
       to: drop
       include:
       - '*.deb'
