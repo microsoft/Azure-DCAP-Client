@@ -30,7 +30,7 @@ function Set-VCVariables {
         $vcPath = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio $Version\VC\"
     }
     if($Version -eq "BuildTools") {
-        $vcPath = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\"
+        $vcPath = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\2017\Enterprise\VC\"
     }
     $vcVars = cmd.exe /c "`"${vcPath}\vcvarsall.bat`" $Platform & set"
     if($LASTEXITCODE -ne 0) { throw "Failed to get all VC variables" }
