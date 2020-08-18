@@ -3,7 +3,7 @@ environment:
     os: windows
   runtime:
     provider: appcontainer
-    image: cdpxwin1809.azurecr.io/user/azure-acc:1.7
+    image: cdpxwin1809.azurecr.io/global/vse2019:latest
     
 artifact_publish_options:
   publish_to_legacy_artifacts: true
