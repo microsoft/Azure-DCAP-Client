@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 #include "pch.h"
 
-#include "../../../dcap_provider.h"
+#include "../../dcap_provider.h"
 #include "../../local_cache.h"
 #include "../ext/intel/sgx_ql_lib_common.h"
 #include "../../UnitTests/unit_test.h"
