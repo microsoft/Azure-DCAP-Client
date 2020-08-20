@@ -110,6 +110,7 @@ TEST(testLocalCache, InvalidParams)
     AssertException<std::runtime_error>([] { local_cache_get(""); });
 }
 
+
 TEST(testLocalCache, ThreadSafetyTest)
 {
     // Pre-fill a data vector that's of sufficient size that we
