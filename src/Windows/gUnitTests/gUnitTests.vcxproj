@@ -105,13 +105,13 @@
       <PreprocessorDefinitions>X64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-	  <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildProjectDirectory)\..\;$(SolutionDir)\ext\intel;$(MSBuildProjectDirectory)\..\..\;$(SolutionDir)packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildProjectDirectory)\..\;$(SolutionDir)\ext\intel;$(MSBuildProjectDirectory)\..\..\;$(SolutionDir)packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-	  <AdditionalDependencies>$(MSBuildThisFileDirectory)..\\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.0\lib\native\v140\windesktop\msvcstl\static\rt-dyn\x64\Debug\gtest_main.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.0\lib\native\v140\windesktop\msvcstl\static\rt-dyn\x64\Debug\gtest_main.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>

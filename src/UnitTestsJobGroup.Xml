@@ -2,7 +2,7 @@
 <!-- Test Job Group to run the Attestation Service Pre-checkin validation tests -->
 <TestJobGroup>
   <ResourceSpec>
-    <Resource type="VirtualMachine" SKU="Standard_DS4_V2" Image="OS2019WithVSConsole2019" />
+    <Resource type="VirtualMachine" SKU="Standard_DS4_V2" Image="Native_Win2016_v2" />
   </ResourceSpec>
   <Setup>
     <BuildFiles>
@@ -14,7 +14,7 @@
   </Setup>
 
   <TestJob Name="AzureDCAP.UnitTests">
-    <Execution Type="MsTest" Path="[WorkingDirectory]\gUnitTests.exe" Args="/Platform:x64"/>
+    <Execution Type="MsTest" Path="[WorkingDirectory]\gUnitTests.exe" Args="/TestAdapterPath:C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\ubawx25q.gzi /Platform:x64"/>
   </TestJob>
   <TestJob Name="AzureDCAP.DCAPTests">
     <Execution Type="MsTest" Path="[WorkingDirectory]\dcap_provider_tests.dll" Args="/Platform:x64"/>
