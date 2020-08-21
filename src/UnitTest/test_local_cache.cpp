@@ -19,10 +19,11 @@
 #include <windows.h>
 #endif
 
-#include "UnitTests/unit_test.h"
-#include "local_cache.h"
+#include "unit_test.h"
+#include "../local_cache.h"
 
 #if defined(__LINUX__)
+typedef bool boolean;
 #else
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #endif

@@ -8,9 +8,9 @@
 #endif
 
 #include "dcap_provider.h"
-#include "local_cache.h"
+#include "../local_cache.h"
 #include "sgx_ql_lib_common.h"
-#include "UnitTests/unit_test.h"
+#include "unit_test.h"
 
 #include <sys/stat.h>
 #include <chrono>
@@ -33,6 +33,7 @@
 using namespace std;
 
 #if defined(__LINUX__)
+typedef bool boolean;
 #else
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #endif
