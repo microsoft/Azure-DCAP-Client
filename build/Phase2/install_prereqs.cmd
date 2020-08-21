@@ -12,6 +12,10 @@ apt install build-essential
 
 apt-get install -y debhelper dh-virtualenv
 
+apt-get install -y libgtest-dev
+
+apt-get install -y cmake
+
 cd $DIR/../../src/Linux/
 
 ./configure
