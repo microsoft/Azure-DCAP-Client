@@ -10,7 +10,6 @@
        to their deployment location, so we force the UnitTests files to be copied to their target location instead of
        just being symlinked. -->
         <Copy Src="[BuildRoot]\outputs\build\BuildOutputs\*" Dest="[WorkingDirectory]\" IsRecursive="true" Writable="true"/>
-		<Copy Src="[BuildRoot]\outputs\build\BuildOutputs\GoogleTestAdapter\*" Dest="[WorkingDirectory]\GoogleTestAdapter\" IsRecursive="true" Writable="true"/>
     </BuildFiles>
   </Setup>
 

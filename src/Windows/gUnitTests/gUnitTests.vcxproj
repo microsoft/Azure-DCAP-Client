@@ -36,6 +36,7 @@
     <ClInclude Include="$(MSBuildProjectDirectory)\..\..\dcap_provider.h" />
     <ClInclude Include="$(MSBuildProjectDirectory)\..\..\UnitTests\unit_test.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="test_quote_prov.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dcap_provider_ut.cpp" />
