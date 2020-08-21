@@ -15,30 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="..\..\UnitTest\test_local_cache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test_local_cache.cpp">
+    <ClCompile Include="..\..\UnitTest\test_quote_prov.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="local_cache.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test_quote_prov.cpp">
+    <ClCompile Include="..\local_cache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="..\..\local_cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildProjectDirectory)\..\..\dcap_provider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\UnitTest\unit_test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dcap_provider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\local_cache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
