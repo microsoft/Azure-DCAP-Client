@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+  <!-- Project file may not be mandatory depending on how binaries get into the proper build directories. In our case here we want to make sure we publish/copy the xmls and scripts we are using for "exe" test execution -->
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Uses global package Microsoft.Build.Artifacts -->
+    <Artifact Include="*.xml; *.sh" DestinationFolder="$(DistribPath)" />
+  </ItemGroup>
+</Project>
