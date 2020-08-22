@@ -11,9 +11,6 @@ apt-get install pkg-config
 apt install build-essential
 
 apt-get install -y debhelper dh-virtualenv
- 
-# copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
-cp *.a /usr/lib
 
 cd $DIR/../../src/Linux/
 
@@ -32,4 +29,7 @@ apt-get install -y cmake
 cd /usr/src/gtest
 cmake CMakeLists.txt
 make
+
+# copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
+cp *.a /usr/lib
 
