@@ -25,6 +25,18 @@ build:
       include:
       - '*.deb'
       - '**/*.log'
+      - './GoogleTest/*'
       signing_options:
           profile: 'external_distribution'
+      # Test Configuration Files.
+      - from: 'src'
+        to: 'drop'
+        include:
+            - './Linux/GoogleTest/*'
     name: Build Azure DCAP Linux
+    
+cloudtest_options:
+  tenant_name: 'microsoftazureattestation'
+  testmap_location: '[BuildRoot]\outputs\build\GoogleTestTestMap.xml'
+  configuration: 'release'
+  platform: 'x64'

@@ -11,15 +11,6 @@ apt-get install pkg-config
 apt install build-essential
 
 apt-get install -y debhelper dh-virtualenv
-
-apt-get update -y
-apt-get install -y libgtest-dev
-
-apt-get install -y cmake
-
-cd /usr/src/gtest
-cmake CMakeLists.txt
-make
  
 # copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
 cp *.a /usr/lib
@@ -33,4 +24,12 @@ make
 make install
 
 dpkg-buildpackage -us -uc
+
+# install GoogleTest
+apt-get update -y
+apt-get install -y libgtest-dev
+apt-get install -y cmake
+cd /usr/src/gtest
+cmake CMakeLists.txt
+make
 
