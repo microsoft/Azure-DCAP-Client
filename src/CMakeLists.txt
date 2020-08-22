@@ -6,9 +6,6 @@ include_directories(${GTEST_INCLUDE_DIRS})
  
 add_definitions(-D__LINUX__)
 
-file(GLOB Dir1_Sources RELATIVE "../UnitTest" "*.cpp")
-file(GLOB Dir2_Sources RELATIVE "../Linux" "*.cpp")
-
 find_package(OpenSSL REQUIRED)
 
 # Link runTests with what we want to test and the GTest and pthread library
