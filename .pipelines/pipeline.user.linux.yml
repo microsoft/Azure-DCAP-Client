@@ -25,14 +25,14 @@ build:
       include:
       - '*.deb'
       - '**/*.log'
-      - './GoogleTest/*'
+      - './GoogleTest/**'
       signing_options:
           profile: 'external_distribution'
     # Test Configuration Files.
     - from: 'src'
       to: 'drop'
       include:
-      - './Linux/GoogleTest/*'
+      - './Linux/GoogleTest/**/**'
     name: Build Azure DCAP Linux
     
 cloudtest_options:
