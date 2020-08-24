@@ -8,20 +8,20 @@
 
   <Setup TimeoutMins="1">
     <BuildFiles>
-      <Copy Src="[BuildRoot]\outputs\build\*" Dest="[WorkingDirectory]\" IsRecursive="true" />
+      <Copy Src="[BuildRoot]\outputs\build\drop\*" Dest="[WorkingDirectory]\" IsRecursive="true" />
     </BuildFiles>
     <Scripts>
-      <Script Path="[WorkingDirectory]\setupscript.sh" />
+      <Script Path="[WorkingDirectory]\linux\GoogleTest\setupscript.sh" />
     </Scripts>
   </Setup>
 
   <TestJob Name="DCAP.UnitTests" TimeoutMins="3">
-    <Execution Type="Exe" Path="[WorkingDirectory]\runtests.sh" Parser="GoogleTest" />
+    <Execution Type="Exe" Path="[WorkingDirectory]\linux\GoogleTest\runtests.sh" Parser="GoogleTest" />
   </TestJob>
 
   <Cleanup TimeoutMins="1">
     <Scripts>
-      <Script Path="[WorkingDirectory]\cleanupscript.sh" Args="/Platform:x64" />
+      <Script Path="[WorkingDirectory]\linux\GoogleTest\cleanupscript.sh" Args="/Platform:x64" />
     </Scripts>
   </Cleanup>
 

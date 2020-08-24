@@ -37,6 +37,6 @@ build:
     
 cloudtest_options:
   tenant_name: 'microsoftazureattestation'
-  testmap_location: '[BuildRoot]\outputs\build\GoogleTestTestMap.xml'
+  testmap_location: '[BuildRoot]\outputs\build\drop\linux\GoogleTest\GoogleTestTestMap.xml'
   configuration: 'release'
   platform: 'x64'

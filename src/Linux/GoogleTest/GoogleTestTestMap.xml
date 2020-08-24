@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TestMap>
-  <TestJobGroup Name="AzureDCAPUnitTests" TestSystem="Default" ConfigPath="[BuildRoot]\outputs\build\AzureGalleryGoogleTestGroup.xml" IsActive="true"/>
+  <TestJobGroup Name="AzureDCAPUnitTests" TestSystem="Default" ConfigPath="[BuildRoot]\outputs\build\drop\linux\GoogleTest\AzureGalleryGoogleTestGroup.xml" IsActive="true"/>
 </TestMap>
