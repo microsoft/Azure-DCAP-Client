@@ -11,17 +11,17 @@
       <Copy Src="[BuildRoot]\outputs\build\drop\*" Dest="[WorkingDirectory]\" IsRecursive="true" />
     </BuildFiles>
     <Scripts>
-      <Script Path="[WorkingDirectory]\linux\GoogleTest\setupscript.sh" />
+      <Script Path="[WorkingDirectory]\Linux\GoogleTest\setupscript.sh" />
     </Scripts>
   </Setup>
 
   <TestJob Name="DCAP.UnitTests" TimeoutMins="3">
-    <Execution Type="Exe" Path="[WorkingDirectory]\linux\GoogleTest\runtests.sh" Parser="GoogleTest" />
+    <Execution Type="Exe" Path="[WorkingDirectory]\Linux\GoogleTest\runtests.sh" Parser="GoogleTest" />
   </TestJob>
 
   <Cleanup TimeoutMins="1">
     <Scripts>
-      <Script Path="[WorkingDirectory]\linux\GoogleTest\cleanupscript.sh" Args="/Platform:x64" />
+      <Script Path="[WorkingDirectory]\Linux\GoogleTest\cleanupscript.sh" Args="/Platform:x64" />
     </Scripts>
   </Cleanup>
 
