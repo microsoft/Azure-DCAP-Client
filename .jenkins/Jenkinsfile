@@ -127,40 +127,11 @@ def DCAPBuildTest(String label, String build_type) {
 					powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
                     nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-					cd ${WORKSPACE}\\src\\Windows\\dcap_provider_utests && \
-                    MSBuild.exe dcap_provider_utests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     cd ${WORKSPACE}\\src\\Windows\\UnitTest && \
                     MSBuild.exe dcap_provider_ut.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_ut.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     dcap_provider_ut.exe
-                """
-            }
-        }
-    }
-}
-
-// Test DCAP GoogleTest build process
-def DCAPUnitTest(String label, String build_type) {
-    stage("${label} ${build_type}") {
-        node("${label}") {
-            timeout(GLOBAL_TIMEOUT) {
-			
-                cleanWs()
-                checkout scm
-                bat """
-                    vcvars64.bat x64 && \
-                    cd ${WORKSPACE}\\src\\Windows && \
-					nuget.exe restore ${WORKSPACE}\\src\\Windows\\dcap_provider.sln -PackagesDirectory ${WORKSPACE}\\src\\Windows\\Packages && \
-					powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
-					cd ${WORKSPACE}\\src\\Windows\\dll && \
-					nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
-					MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-					cd ${WORKSPACE}\\src\\Windows\\dcap_provider_utests && \
-                    MSBuild.exe dcap_provider_utests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-                    xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_utests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    dcap_provider_utests.exe
                 """
             }
         }
@@ -186,8 +157,4 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
          "ACCWin 2016 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
          "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
-         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') },
-		 "ACCWin 2016 DCAP Unit Debug Test" :          { DCAPUnitTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
-         "ACCWin 2016 DCAP Unit Release Test" :        { DCAPUnitTest('SGXFLC-Windows-2016-DCAP', 'Release') },
-         "ACCWin 2019 DCAP Unit Debug Test" :          { DCAPUnitTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
-         "ACCWin 2019 DCAP Unit Release Test" :        { DCAPUnitTest('SGXFLC-Windows-2019-DCAP', 'Release') }
+         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }
