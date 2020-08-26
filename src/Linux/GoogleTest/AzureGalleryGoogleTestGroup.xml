@@ -3,7 +3,7 @@
 
   <!-- Resource spec points to an image that is defined in CloudTest policydata.json as a Linux platform image -->
   <ResourceSpec>
-    <Resource SKU="Standard_DS4_V2" Image="CTLinuxUbuntu1804"/>
+    <Resource SKU="Standard_DS4_V2" Image="CTLinuxUbuntu"/>
   </ResourceSpec>
 
   <Setup TimeoutMins="1">
