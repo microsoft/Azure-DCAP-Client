@@ -65,6 +65,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>
         $(MSBuildProjectDirectory)\..\;
+		$(MSBuildProjectDirectory)\..\ext\intel;
         $(SolutionDir)\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
         $(SolutionDir)packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include
