@@ -151,6 +151,7 @@ def DCAPUnitTest(String label, String build_type) {
 					nuget.exe restore ${WORKSPACE}\\src\\Windows\\dcap_provider.sln -PackagesDirectory ${WORKSPACE}\\src\\Windows\\Packages && \
 					powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
 					cd ${WORKSPACE}\\src\\Windows\\dll && \
+					nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
 					MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
 					cd ${WORKSPACE}\\src\\Windows\\dcap_provider_utests && \
                     MSBuild.exe dcap_provider_utests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
