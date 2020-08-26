@@ -148,7 +148,7 @@ def DCAPUnitTest(String label, String build_type) {
                 bat """
                     vcvars64.bat x64 && \
                     cd ${WORKSPACE}\\src\\Windows && \
-					powershell.exe -ExecutionPolicy Unrestricted -Command %~dp0..\\src\\Windows\\dll\\build.ps1 -BuildType Release -SkipRestore && \
+					powershell.exe -ExecutionPolicy Unrestricted -Command ${WORKSPACE}\\src\\Windows\\dll\\build.ps1 -BuildType Release -SkipRestore && \
                     xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_utests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     dcap_provider_utests.exe
