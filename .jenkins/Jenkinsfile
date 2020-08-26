@@ -123,7 +123,6 @@ def DCAPBuildTest(String label, String build_type) {
                 bat """
                     vcvars64.bat x64 && \
                     cd ${WORKSPACE}\\src\\Windows && \
-                    powershell.exe -ExecutionPolicy Bypass -Command "{& [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;  \'Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\';}" && \
 					powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
                     nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
 					cd ${WORKSPACE}\\src\\Windows\\dll && \
