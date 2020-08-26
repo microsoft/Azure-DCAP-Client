@@ -23,7 +23,7 @@
     <ProjectGuid>{DC617DB4-1ED9-4E4A-8C05-ED16A90021F0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>dcapproviderutests</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectSubType>NativeUnitTestProject</ProjectSubType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
