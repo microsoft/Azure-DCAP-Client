@@ -149,7 +149,7 @@ def DCAPUnitTest(String label, String build_type) {
                     vcvars64.bat x64 && \
                     cd ${WORKSPACE}\\src\\Windows && \
 					nuget.exe restore ${WORKSPACE}\\src\\Windows\\dcap_provider.sln -PackagesDirectory ${WORKSPACE}\\src\\Windows\\Packages && \
-					powershell.exe -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ".\get-prereqs.ps1" && \
+					powershell.exe -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command get-prereqs.ps1 && \
 					cd ${WORKSPACE}\\src\\Windows\\dll && \
 					MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
 					cd ${WORKSPACE}\\src\\Windows\\dcap_provider_utests && \
