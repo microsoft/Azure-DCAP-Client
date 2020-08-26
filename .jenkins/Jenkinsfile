@@ -138,7 +138,7 @@ def DCAPBuildTest(String label, String build_type) {
 }
 
 // Test DCAP GoogleTest build process
-def DCAPBuildTest(String label, String build_type) {
+def DCAPUnitTest(String label, String build_type) {
     stage("${label} ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
@@ -181,4 +181,8 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
          "ACCWin 2016 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
          "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
-         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }
+         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') },
+		 "ACCWin 2016 DCAP Unit Debug Test" :          { DCAPUnitTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
+         "ACCWin 2016 DCAP Unit Release Test" :        { DCAPUnitTest('SGXFLC-Windows-2016-DCAP', 'Release') },
+         "ACCWin 2019 DCAP Unit Debug Test" :          { DCAPUnitTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
+         "ACCWin 2019 DCAP Unit Release Test" :        { DCAPUnitTest('SGXFLC-Windows-2019-DCAP', 'Release') }
