@@ -68,6 +68,7 @@
 		$(MSBuildProjectDirectory)\..\ext\intel;
         $(SolutionDir)\ext\intel;
         $(MSBuildProjectDirectory)\..\..\;
+		$(MSBuildProjectDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;
         $(SolutionDir)packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include
       </AdditionalIncludeDirectories>
     </ClCompile>
