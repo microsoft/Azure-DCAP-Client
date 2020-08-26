@@ -137,6 +137,31 @@ def DCAPBuildTest(String label, String build_type) {
     }
 }
 
+// Test DCAP GoogleTest build process
+def DCAPBuildTest(String label, String build_type) {
+    stage("${label} ${build_type}") {
+        node("${label}") {
+            timeout(GLOBAL_TIMEOUT) {
+			
+                cleanWs()
+                checkout scm
+                bat """
+                    vcvars64.bat x64 && \
+                    cd ${WORKSPACE}\\src\\Windows\\dll && \
+                    powershell.exe -ExecutionPolicy Bypass -Command "{& [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;  \'Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile .\\nuget.exe\';}" && \
+                    nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
+                    MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
+                    cd ${WORKSPACE}\\src\\Windows\\dcap_provider_utests && \
+                    MSBuild.exe dcap_provider_utests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
+                    xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_utests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
+                    cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
+                    dcap_provider_utests.exe
+                """
+            }
+        }
+    }
+}
+
 parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
          "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
          "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
