@@ -60,9 +60,9 @@ def DCAPLinuxTest(String label, String version, String compiler, String build_ty
                         sudo apt-get install -y libgtest-dev
                         sudo apt-get install -y cmake
                         cd /usr/src/gtest
-                        cmake CMakeLists.txt
-                        make
-                        cp *.a /usr/lib
+                        sudo cmake CMakeLists.txt
+                        sudo make
+                        sudo cp *.a /usr/lib
                         cd ${WORKSPACE}/src/Linux
                         ./configure
                         make
@@ -181,22 +181,22 @@ def DCAPBuildTest(String label, String build_type) {
     }
 }
 
-parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
-         "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
-         "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
-         "ACC1604 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-7', 'Release') },
-         "ACC1604 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-7', 'RelWithDebInfo') },
-         "ACC1604 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1604', '16.04', 'gcc', 'Debug') },
-         "ACC1604 SGX1-FLC gcc Release" :              { ACCTest('ACC-1604', '16.04', 'gcc', 'Release') },
-         "ACC1604 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1604', '16.04', 'gcc', 'RelWithDebInfo') },
-         "ACC1804 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-7', 'Debug') },
-         "ACC1804 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-7', 'Release') },
-         "ACC1804 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-7', 'RelWithDebInfo') },
-         "ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
-         "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
-         "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
-         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
-         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
+parallel //"ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
+         //"ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
+         //"ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
+         //"ACC1604 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-7', 'Release') },
+         //"ACC1604 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-7', 'RelWithDebInfo') },
+         //"ACC1604 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1604', '16.04', 'gcc', 'Debug') },
+         //"ACC1604 SGX1-FLC gcc Release" :              { ACCTest('ACC-1604', '16.04', 'gcc', 'Release') },
+         //"ACC1604 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1604', '16.04', 'gcc', 'RelWithDebInfo') },
+         //"ACC1804 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-7', 'Debug') },
+        // "ACC1804 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-7', 'Release') },
+         //"ACC1804 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-7', 'RelWithDebInfo') },
+         //"ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
+         //"ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
+         //"ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
+         //"ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
+         //"ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
 		 "ACC1604 DCAP Linux clang-7 Release" :        { DCAPLinuxTest('ACC-1604', '16.04', 'clang-7', 'Release') },
 		 "ACC1604 DCAP gcc clang-7 Release" :          { DCAPLinuxTest('ACC-1604', '16.04', 'gcc', 'Release') },
          "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
