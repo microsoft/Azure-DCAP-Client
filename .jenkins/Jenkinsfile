@@ -39,48 +39,6 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     }
 }
 
-// Linux Google Unit Tests running on libdcap_quoteprov.so
-def DCAPLinuxTest(String label, String version, String compiler, String build_type) {
-    stage("${label} ${compiler} SGX1-FLC ${build_type}") {
-        node("${label}") {
-            timeout(GLOBAL_TIMEOUT) {
-			
-                cleanWs()
-                checkout scm
-				
-                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
-
-                // Run hardware tests using the libdcap_quoteprov.so build
-                def task = """
-				        sudo apt-get install libssl-dev
-                        sudo apt install libcurl4-openssl-dev
-                        sudo apt-get install pkg-config
-					    sudo apt install build-essential
-                        sudo apt-get update -y
-                        sudo apt-get install -y libgtest-dev
-                        sudo apt-get install -y cmake
-                        cd /usr/src/gtest
-                        sudo cmake CMakeLists.txt
-                        sudo make
-                        sudo cp *.a /usr/lib
-                        cd ${WORKSPACE}/src/Linux
-                        ./configure
-                        make
-						sudo make install
-						cd ${WORKSPACE}/src
-						mkdir GoogleTest 
-                        cp CMakeLists.txt ./GoogleTest/.
-                        cd GoogleTest
-                        cmake CMakeLists.txt
-                        make
-                        LD_LIBRARY_PATH=${WORKSPACE}/src dcap_provider_utests
-                       """
-                dcap.Run(compiler, task)
-            }
-        }
-    }
-}
-
 // Test using oetools-test Docker image with /dev/sgx mounted inside container
 def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
@@ -181,8 +139,22 @@ def DCAPBuildTest(String label, String build_type) {
     }
 }
 
-parallel "ACC1604 DCAP Linux clang-7 Release" :        { DCAPLinuxTest('ACC-1604', '16.04', 'clang-7', 'Release') },
-		 "ACC1604 DCAP gcc clang-7 Release" :          { DCAPLinuxTest('ACC-1604', '16.04', 'gcc', 'Release') },
+parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
+         "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
+         "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
+         "ACC1604 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-7', 'Release') },
+         "ACC1604 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-7', 'RelWithDebInfo') },
+         "ACC1604 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1604', '16.04', 'gcc', 'Debug') },
+         "ACC1604 SGX1-FLC gcc Release" :              { ACCTest('ACC-1604', '16.04', 'gcc', 'Release') },
+         "ACC1604 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1604', '16.04', 'gcc', 'RelWithDebInfo') },
+         "ACC1804 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-7', 'Debug') },
+         "ACC1804 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-7', 'Release') },
+         "ACC1804 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-7', 'RelWithDebInfo') },
+         "ACC1804 SGX1-FLC gcc Debug" :                { ACCTest('ACC-1804', '18.04', 'gcc', 'Debug') },
+         "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
+         "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
+         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
          "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
          "ACCWin 2016 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
          "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
