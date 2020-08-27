@@ -37,6 +37,7 @@ build:
     name: Build Azure DCAP Linux
     
 cloudtest_options:
+  pipeline_artifact_name: 'drop' 
   tenant_name: 'onebranchtest'
   testmap_location: '[BuildRoot]\outputs\build\drop\GoogleTestTestMap.xml'
   configuration: 'release'
