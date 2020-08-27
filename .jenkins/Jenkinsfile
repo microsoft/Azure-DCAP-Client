@@ -52,13 +52,13 @@ def DCAPLinuxTest(String label, String version, String compiler, String build_ty
 
                 // Run hardware tests using the libdcap_quoteprov.so build
                 def task = """
-				        apt-get install libssl-dev
-                        apt install libcurl4-openssl-dev
-                        apt-get install pkg-config
-					    apt install build-essential
-                        apt-get update -y
-                        apt-get install -y libgtest-dev
-                        apt-get install -y cmake
+				        sudo apt-get install libssl-dev
+                        sudo apt install libcurl4-openssl-dev
+                        sudo apt-get install pkg-config
+					    sudo apt install build-essential
+                        sudo apt-get update -y
+                        sudo apt-get install -y libgtest-dev
+                        sudo apt-get install -y cmake
                         cd /usr/src/gtest
                         cmake CMakeLists.txt
                         make
