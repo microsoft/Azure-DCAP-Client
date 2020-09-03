@@ -59,7 +59,7 @@ def ACCContainerTest(String label, String version) {
                 // generated az-dcap-client deb package installed
                 def task = """
                         sudo apt-get update
-                        sudo apt-get install software-properties-common
+                        sudo apt-get install -y software-properties-common
                         sudo apt-get purge az-dcap-client -y
                         curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
                         sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
@@ -92,7 +92,7 @@ def ACCTestOeRelease(String label, String version) {
                 // the currently generated az-dcap-client deb package installed
                 def task = """
                         sudo apt-get update
-                        sudo apt-get install software-properties-common
+                        sudo apt-get install -y software-properties-common
                         sudo apt-get purge az-dcap-client -y
                         curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
                         sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
