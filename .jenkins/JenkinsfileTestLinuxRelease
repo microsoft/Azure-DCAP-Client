@@ -58,11 +58,13 @@ def ACCContainerTest(String label, String version) {
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
-				        sudo apt-get purge az-dcap-client -y
-						curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-						sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
-						sudo apt-get update
-						sudo apt-get upgrade -y az-dcap-client	
+                        sudo apt-get update
+                        sudo apt-get install software-properties-common
+                        sudo apt-get purge az-dcap-client -y
+                        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+                        sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
+                        sudo apt-get update
+                        sudo apt-get upgrade -y az-dcap-client	
                         mkdir -p ${WORKSPACE}/openenclave/build
                         cd ${WORKSPACE}/openenclave/build
                         git submodule update --recursive --init
@@ -89,11 +91,13 @@ def ACCTestOeRelease(String label, String version) {
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt-get update
+                        sudo apt-get install software-properties-common
                         sudo apt-get purge az-dcap-client -y
-						curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-						sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
-						sudo apt-get update
-						sudo apt-get upgrade -y az-dcap-client
+                        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+                        sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
+                        sudo apt-get update
+                        sudo apt-get upgrade -y az-dcap-client
                         sudo apt-get update
                         sudo apt-get install -y open-enclave
                         . /opt/openenclave/share/openenclave/openenclaverc
