@@ -75,7 +75,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildProjectDirectory)\..\;$(SolutionDir)\ext\intel;$(MSBuildProjectDirectory)\..\..\;$(SolutionDir)\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\ext\intel;$(SolutionDir)\ext\intel;$(MSBuildProjectDirectory)\..\..\;$(SolutionDir)\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
