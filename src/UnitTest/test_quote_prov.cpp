@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#if defined(__LINUX__)
 #include <gtest/gtest.h>
-#else
-#include "CppUnitTest.h"
-#endif
 
 #include "dcap_provider.h"
 #include "../local_cache.h"
@@ -35,7 +31,6 @@ using namespace std;
 #if defined(__LINUX__)
 typedef bool boolean;
 #else
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #endif
 
 #if defined __LINUX__
@@ -781,7 +776,6 @@ extern void QuoteProvTests()
 #endif
 }
 
-#if defined(__LINUX__)
 TEST(testQuoteProv, quoteProviderTestsDataFromService)
 {
    
@@ -795,7 +789,11 @@ TEST(testQuoteProv, quoteProviderTestsDataFromService)
     SetupEnvironment("");
     ASSERT_TRUE(RunQuoteProviderTests());
 
+#if defined __LINUX__
     dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
 
 }
 
@@ -811,7 +809,11 @@ TEST(testQuoteProv, quoteProviderTestsV1Collateral)
     SetupEnvironment("v1");
     ASSERT_TRUE(RunQuoteProviderTests());
 
+#if defined __LINUX__
     dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
 }
 
 TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
@@ -827,7 +829,11 @@ TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(GetQveIdentityTest());
 
+#if defined __LINUX__
     dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
 }
 
 TEST(testQuoteProv, testWithoutLogging)
@@ -844,7 +850,11 @@ TEST(testQuoteProv, testWithoutLogging)
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(GetQveIdentityTest());
 
+#if defined __LINUX__
     dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
 }
 
 TEST(testQuoteProv, testRestrictAccessToFilesystem)
@@ -858,74 +868,9 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
     //
     ASSERT_TRUE(RunCachePermissionTests(&library));
 
+#if defined __LINUX__
     dlclose(library);
-}
 #else
-namespace testQuoteProv
-{
-
-	TEST_CLASS(testQuoteProv){
-		public :
-
-			TEST_METHOD(quoteProviderTestsDataFromService){
-
-				libary_type_t library = LoadFunctions();
-				Assert::IsTrue(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-				SetupEnvironment("");
-                Assert::IsTrue(RunQuoteProviderTests());
-
-                FreeLibrary(library);
-			}
-
-			TEST_METHOD(quoteProviderTestsV1Collateral)
-            {
-                libary_type_t library = LoadFunctions();
-                Assert::IsTrue(
-                    SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-                SetupEnvironment("v1");
-                Assert::IsTrue(RunQuoteProviderTests());
-
-                FreeLibrary(library);
-            }
-
-			TEST_METHOD(quoteProviderTestsV2Collateral)
-            {
-                libary_type_t library = LoadFunctions();
-                Assert::IsTrue(
-                    SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-                SetupEnvironment("v2");
-                Assert::IsTrue(RunQuoteProviderTests());
-                Assert::IsTrue(GetQveIdentityTest());
-
-                FreeLibrary(library);
-            }
-
-			TEST_METHOD(testWithoutLogging)
-            {
-                libary_type_t library = LoadFunctions();
-                Assert::IsTrue(
-                    SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-                ReloadLibrary(&library, false);
-                Assert::IsTrue(RunQuoteProviderTests());
-                Assert::IsTrue(GetQveIdentityTest());
-
-                FreeLibrary(library);
-            }
-
-			TEST_METHOD(testRestrictAccessToFilesystem)
-            {
-                libary_type_t library = LoadFunctions();
-                Assert::IsTrue(
-                    SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-				Assert::IsTrue(RunCachePermissionTests(&library));
-
-                FreeLibrary(library);
-            }
-	};
-}
+    FreeLibrary(library);
 #endif
+}

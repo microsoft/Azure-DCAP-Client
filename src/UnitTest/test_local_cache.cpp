@@ -2,11 +2,7 @@
 // Licensed under the MIT License.
 
 
-#if defined(__LINUX__)
 #include <gtest/gtest.h>
-#else
-#include "CppUnitTest.h"
-#endif
 
 #undef NDEBUG // ensure that asserts are never compiled out
 #include <cassert>
@@ -25,7 +21,6 @@
 #if defined(__LINUX__)
 typedef bool boolean;
 #else
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #endif
 
 static time_t now()
@@ -225,7 +220,6 @@ static boolean ThreadSafetyTest()
     return true;
 }
 
-#if defined(__LINUX__)
 TEST(testLocalCache, AddGetItem)
 {
     local_cache_clear();
@@ -257,43 +251,4 @@ TEST(testLocalCache, ThreadSafetyTest)
 {
     ASSERT_TRUE(ThreadSafetyTest());
 }
-#else
-namespace testLocalCache
-{
-TEST_CLASS(testLocalCache){
-    public :
-
-        TEST_METHOD(testAddGetItem){
-			local_cache_clear();
-			Assert::IsTrue( AddGetItem() );
-		}
-
-		TEST_METHOD(testOverwriteCacheEntry)
-        {
-            Assert::IsTrue(OverwriteCacheEntry());
-        }
-
-		TEST_METHOD(testVerifyClearCache)
-        {
-            Assert::IsTrue(VerifyClearCache());
-        }
-
-	    TEST_METHOD(testVerifyExpiryWorks)
-        {
-            Assert::IsTrue(VerifyExpiryWorks());
-        }
-
-	    TEST_METHOD(testInvalidParams)
-        {
-            Assert::IsTrue(InvalidParams());
-        }
-
-	    TEST_METHOD(testThreadSafety)
-        {
-            Assert::IsTrue(ThreadSafetyTest());
-        }
-
-    };
-}
-#endif
 
