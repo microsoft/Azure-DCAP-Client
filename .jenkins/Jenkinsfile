@@ -123,12 +123,11 @@ def DCAPBuildTest(String label, String build_type) {
                 bat """
                     vcvars64.bat x64 && \
                     cd ${WORKSPACE}\\src\\Windows && \
+					nuget.exe restore dcap_provider.sln -PackagesDirectory packages && \
                     powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
                     cd ${WORKSPACE}\\src\\Windows\\dll && \
-                    nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     cd ${WORKSPACE}\\src\\Windows\\UnitTests && \
-                    nuget.exe restore UnitTests.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe UnitTests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
                     xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTests\\x64\\${build_type}\\UnitTests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
