@@ -127,12 +127,12 @@ def DCAPBuildTest(String label, String build_type) {
                     cd ${WORKSPACE}\\src\\Windows\\dll && \
                     nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-                    cd ${WORKSPACE}\\src\\Windows\\UnitTest && \
+                    cd ${WORKSPACE}\\src\\Windows\\UnitTests && \
                     nuget.exe restore dcap_provider_ut.vcxproj -PackagesDirectory packages && \
                     MSBuild.exe dcap_provider_ut.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-                    xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTest\\x64\\${build_type}\\dcap_provider_ut.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
+                    xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTests\\x64\\${build_type}\\UnitTests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
                     cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    dcap_provider_ut.exe
+                    UnitTests.exe
                 """
             }
         }
