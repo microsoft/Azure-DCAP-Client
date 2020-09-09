@@ -16,10 +16,10 @@ PROVIDER_OBJ = $(PROVIDER_SRC:.cpp=.o)
 PROVIDER_LIB = libdcap_quoteprov.so # this name is dictated by Intel
 PROVIDER_LDFLAGS = -shared $(shell curl-config --libs) `pkg-config --libs openssl`
 
-TEST_SUITE = tests
-TEST_SUITE_SRC = ../UnitTests/main.cpp
-TEST_SUITE_SRC += ../UnitTests/test_local_cache.cpp
-TEST_SUITE_SRC += ../UnitTests/test_quote_prov.cpp
+TEST_SUITE = dcap_provider_utests
+TEST_SUITE_SRC = ../UnitTest/main.cpp
+TEST_SUITE_SRC += ../UnitTest/test_local_cache.cpp
+TEST_SUITE_SRC += ../UnitTest/test_quote_prov.cpp
 TEST_SUITE_SRC += local_cache.cpp
 TEST_SUITE_OBJ = $(TEST_SUITE_SRC:.cpp=.o)
 TEST_SUITE_LDFLAGS = -ldl `pkg-config --libs openssl`
