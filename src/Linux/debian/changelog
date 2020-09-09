@@ -1,3 +1,13 @@
+az-dcap-client (1.7) stable; urgency=medium
+  * Use the Cache-Control header to determine how long collateral should be cached for. Cleanup of error handling logs in Windows
+
+ -- Derek Schumacher <deschuma@microsoft.com>  Wed, 09 Sep 2020 9:42:00 -0700
+
+az-dcap-client (1.6) stable; urgency=medium
+  * Fix crash in preivous version when no logging was enabled
+
+ -- Derek Schumacher <deschuma@microsoft.com>  Thu, 04 Jun 2020 2:45:00 -0700
+
 az-dcap-client (1.2) unstable; urgency=medium
   * Added Quote verification support
   * Added an MSI installer
