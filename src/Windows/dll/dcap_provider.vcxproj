@@ -45,7 +45,7 @@
       <SDLCheck>true</SDLCheck>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\..\;$(MSBuildProjectDirectory)\..\ext\intel;$(SolutionDir)\ext\intel;$(MSBuildProjectDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProjectDirectory);$(MSBuildProjectDirectory)\..\;$(MSBuildProjectDirectory)\..\..\;$(MSBuildProjectDirectory)\..\ext\intel;$(SolutionDir)\ext\intel;$(SolutionDir)\packages\Microsoft.Windows.ImplementationLibrary.1.0.190716.2\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
