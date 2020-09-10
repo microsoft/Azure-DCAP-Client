@@ -6,9 +6,9 @@ prefix = /usr/local
 INCLUDES = -I##CURLINC## -I. -I.. -Iext/intel
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-    CFLAGS = -fPIC -std=c++14 -g -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+    CFLAGS = -fPIC -std=c++14 -g -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
 else
-    CFLAGS = -fPIC -std=c++14 -Wall -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+    CFLAGS = -fPIC -std=c++14 -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
 endif
 
 PROVIDER_SRC = ../dcap_provider.cpp ../logging.cpp curl_easy.cpp local_cache.cpp init.cpp
@@ -17,12 +17,12 @@ PROVIDER_LIB = libdcap_quoteprov.so # this name is dictated by Intel
 PROVIDER_LDFLAGS = -shared $(shell curl-config --libs) `pkg-config --libs openssl`
 
 TEST_SUITE = tests
-TEST_SUITE_SRC = ../UnitTests/main.cpp
-TEST_SUITE_SRC += ../UnitTests/test_local_cache.cpp
-TEST_SUITE_SRC += ../UnitTests/test_quote_prov.cpp
+TEST_SUITE_SRC = ../UnitTest/main.cpp
+TEST_SUITE_SRC += ../UnitTest/test_local_cache.cpp
+TEST_SUITE_SRC += ../UnitTest/test_quote_prov.cpp
 TEST_SUITE_SRC += local_cache.cpp
 TEST_SUITE_OBJ = $(TEST_SUITE_SRC:.cpp=.o)
-TEST_SUITE_LDFLAGS = -ldl `pkg-config --libs openssl`
+TEST_SUITE_LDFLAGS = -ldl `pkg-config --libs openssl` -l gtest -l pthread
 
 .cpp.o:
 	g++ $(CFLAGS) -c $< -o $@
