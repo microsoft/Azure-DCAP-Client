@@ -9,6 +9,7 @@ This library requires libcurl built with OpenSSL support and package config.
 
 Install Google Test
 # install GoogleTest
+```
 sudo apt-get update -y
 sudo apt-get install -y libgtest-dev
 sudo apt-get install -y cmake
@@ -18,6 +19,7 @@ make
 
 # copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
 cp *.a /usr/lib
+```
 
 Additionally, if you used the standard git clone command to pull down the repo without initializing the submodule, you may have to run the following to initialize the submodule:
 
