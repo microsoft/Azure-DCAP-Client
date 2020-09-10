@@ -14,7 +14,7 @@
   </Setup>
 
   <TestJob Name="AzureDCAP.UnitTests">
-    <Execution Type="MsTest" Path="[WorkingDirectory]\dcap_provider_utests.dll" Args="/Platform:x64"/>
+    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64"/>
   </TestJob>
   <TestJob Name="AzureDCAP.DCAPTests">
     <Execution Type="MsTest" Path="[WorkingDirectory]\dcap_provider_tests.dll" Args="/Platform:x64"/>
