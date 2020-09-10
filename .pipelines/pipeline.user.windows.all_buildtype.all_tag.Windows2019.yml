@@ -82,9 +82,9 @@ test:
           include:
             - "**/Release.trx"
             
-cloudtest_options:
-  pipeline_artifact_name: 'drop' 
-  tenant_name: 'microsoftazureattestation'
-  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
-  configuration: 'release'
-  platform: 'x64'            
+#cloudtest_options:
+#  pipeline_artifact_name: 'drop' 
+#  tenant_name: 'microsoftazureattestation'
+#  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
+#  configuration: 'release'
+#  platform: 'x64'            
