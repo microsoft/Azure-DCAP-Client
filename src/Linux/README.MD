@@ -8,7 +8,7 @@ This library requires libcurl built with OpenSSL support and package config.
 * `sudo apt-get install pkg-config`
 
 Install Google Test
-# install GoogleTest
+## install GoogleTest
 ```
 sudo apt-get update -y
 sudo apt-get install -y libgtest-dev
