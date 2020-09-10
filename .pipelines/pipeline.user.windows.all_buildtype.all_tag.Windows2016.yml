@@ -69,22 +69,22 @@ package:
           signing_options:
             profile: 'external_distribution'
             
-test:
-  commands:
-    - !!testcommand
-      name: 'Test'
-      command: 'build/Phase1/test.cmd'
-      fail_on_stderr: true
-      testresults:
-        - title: 'Unit Tests Release'
-          type: 'vstest'
-          from: 'src/Windows/x64/release'
-          include:
-            - "**/Release.trx"
+#test:
+#  commands:
+#    - !!testcommand
+#      name: 'Test'
+#      command: 'build/Phase1/test.cmd'
+#      fail_on_stderr: true
+#      testresults:
+#        - title: 'Unit Tests Release'
+#          type: 'vstest'
+#          from: 'src/Windows/x64/release'
+#          include:
+#            - "**/Release.trx"
             
-#cloudtest_options:
-#  pipeline_artifact_name: 'drop' 
-#  tenant_name: 'microsoftazureattestation'
-#  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
-#  configuration: 'release'
-#  platform: 'x64'            
+cloudtest_options:
+  pipeline_artifact_name: 'drop' 
+  tenant_name: 'microsoftazureattestation'
+  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
+  configuration: 'release'
+  platform: 'x64'            
