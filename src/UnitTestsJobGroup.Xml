@@ -14,9 +14,6 @@
   </Setup>
 
   <TestJob Name="AzureDCAP.UnitTests">
-    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64 /TestAdapterPath:"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions" "/>
-  </TestJob>
-  <TestJob Name="AzureDCAP.DCAPTests">
-    <Execution Type="MsTest" Path="[WorkingDirectory]\dcap_provider_tests.dll" Args="/Platform:x64"/>
+    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64 /TestAdapterPath:[WorkingDirectory]\GoogleTestAdapter "/>
   </TestJob>
 </TestJobGroup>
