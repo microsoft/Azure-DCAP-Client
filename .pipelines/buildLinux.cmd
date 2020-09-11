@@ -5,9 +5,3 @@ echo $DIR
 
 dpkg -i $DIR/../src/az-dcap-client_*_amd64.deb
 
-cd $DIR/../src
-mkdir GoogleTest 
-cp CMakeLists.txt ./GoogleTest/.
-cd GoogleTest
-cmake CMakeLists.txt
-make
