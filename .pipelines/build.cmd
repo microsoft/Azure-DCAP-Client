@@ -7,7 +7,5 @@ powershell -ExecutionPolicy Unrestricted -Command %~dp0..\src\Windows\dll\build.
 
 cd %~dp0..\src\Windows\x64\Release
 
-mkdir GoogleTestAdapter
-
-cp -r %~dp0..\src\Windows\packages\GoogleTestAdapter.0.18.0\build\_common .\GoogleTestAdapter
+cp -r %~dp0..\src\Windows\packages\GoogleTestAdapter.0.18.0\build\_common GoogleTestAdapter /E /H /C /I
  
