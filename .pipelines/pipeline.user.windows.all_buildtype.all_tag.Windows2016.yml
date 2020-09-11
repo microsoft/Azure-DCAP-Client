@@ -42,7 +42,7 @@ build:
         - from: 'src/Windows/x64/release'
           to: 'BuildOutputs'
           include:
-            - '**/*'
+            - '**/**/**/*'
           signing_options:
             profile: 'external_distribution'
         # Test Configuration Files.
@@ -50,11 +50,7 @@ build:
           to: 'BuildOutputs'
           include:
             - 'UnitTestMap.xml'
-            - 'UnitTestsJobGroup.xml'
-        - from: 'src\Windows\packages\GoogleTestAdapter.0.18.0\build\_common'
-          to: 'BuildOutputs\GoogleTestAdapter'
-          include:
-            - '**/**'          
+            - 'UnitTestsJobGroup.xml'          
       logs:
         - include:
             - '*.log'    
