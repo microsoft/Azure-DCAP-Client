@@ -50,7 +50,8 @@ build:
           to: 'BuildOutputs'
           include:
             - 'UnitTestMap.xml'
-            - 'UnitTestsJobGroup.xml'          
+            - 'UnitTestsJobGroup.xml'  
+            - '.\Windows\packages\GoogleTestAdapter.0.18.0\build\_common\**\*'            
       logs:
         - include:
             - '*.log'    
