@@ -63,7 +63,7 @@ package:
       name: 'Package Azure-DCAP-Client'
       command: 'build/Phase1/package.cmd'
       artifacts:
-        - from: 'src/Out/Package'
+        - from: 'src/Windows/build/native'
           to: 'Nuget'
           include:
             - '**/*'
