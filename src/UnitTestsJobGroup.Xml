@@ -14,6 +14,6 @@
   </Setup>
 
   <TestJob Name="AzureDCAP.UnitTests">
-    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64 /TestAdapterPath:[WorkingDirectory]\GoogleTestAdapter /Logger:TRX "/>
+    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64 /TestAdapterPath:[WorkingDirectory]\Windows\packages\GoogleTestAdapter.0.18.0\build\_common /Logger:TRX "/>
   </TestJob>
 </TestJobGroup>
