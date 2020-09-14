@@ -1,5 +1,5 @@
 static_analysis_options:
-  binskim_options:
+  policheck_options:
     files_to_scan:
       - exclude:
-        - '3rdparty/*'
+          - '3rdparty/*'
