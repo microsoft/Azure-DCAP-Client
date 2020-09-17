@@ -4,6 +4,8 @@ GLOBAL_TIMEOUT = 240
 
 DOCKER_REGISTRY = "dcapdockerciregistry.azurecr.io"
 
+GROOVY_FILE = "/.jenkins/src/Dcap.groovy"
+
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def ACCTest(String label, String version, String compiler, String build_type) {
@@ -14,7 +16,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
                 cleanWs()
                 checkout scm
 				
-                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+                def dcap = load pwd() + GROOVY_FILE
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
@@ -48,7 +50,7 @@ def ACCContainerTest(String label, String version) {
                 cleanWs()
                 checkout scm
 				
-                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+                def dcap = load pwd() + GROOVY_FILE
 
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
