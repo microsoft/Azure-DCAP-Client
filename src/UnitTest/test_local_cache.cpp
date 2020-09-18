@@ -15,7 +15,6 @@
 #include <windows.h>
 #endif
 
-#include "unit_test.h"
 #include "../local_cache.h"
 
 #if defined(__LINUX__)
@@ -33,16 +32,13 @@ static time_t now()
 //
 static boolean AddGetItem()
 {
-    TEST_START();
-
     static const std::vector<uint8_t> data = {8, 6, 7, 5, 3, 0, 9};
     local_cache_add(__FUNCTION__, now() + 60, data.size(), data.data());
 
     auto retrieved = local_cache_get(__FUNCTION__);
-    assert(retrieved != nullptr);
-    assert(*retrieved == data);
+    EXPECT_TRUE(retrieved != nullptr);
+    EXPECT_TRUE(*retrieved == data);
 
-    TEST_PASSED();
     return true;
 }
 
@@ -51,8 +47,6 @@ static boolean AddGetItem()
 //
 static boolean OverwriteCacheEntry()
 {
-    TEST_START();
-
     static const std::vector<uint8_t> data1 = {1, 1, 1, 1};
     local_cache_add(__FUNCTION__, now() + 60, data1.size(), data1.data());
 
@@ -60,9 +54,8 @@ static boolean OverwriteCacheEntry()
     local_cache_add(__FUNCTION__, now() + 60, data2.size(), data2.data());
 
     auto retrieved = local_cache_get(__FUNCTION__);
-    assert(*retrieved == data2);
+    EXPECT_TRUE(*retrieved == data2);
 
-    TEST_PASSED();
     return true;
 }
 
@@ -71,16 +64,13 @@ static boolean OverwriteCacheEntry()
 //
 static boolean VerifyClearCache()
 {
-    TEST_START();
-
     static const uint8_t data[] = "stuff goes here";
     local_cache_add(__FUNCTION__, now() + 60, sizeof(data), data);
 
-    assert(nullptr != local_cache_get(__FUNCTION__));
+    EXPECT_TRUE(nullptr != local_cache_get(__FUNCTION__));
     local_cache_clear();
-    assert(nullptr == local_cache_get(__FUNCTION__));
+    EXPECT_TRUE(nullptr == local_cache_get(__FUNCTION__));
 
-    TEST_PASSED();
     return true;
 }
 
@@ -90,8 +80,6 @@ static boolean VerifyClearCache()
 //
 static boolean VerifyExpiryWorks()
 {
-    TEST_START();
-
     int expiry_seconds = 2;
 
     // add an entry with expiry shortly in the future
@@ -99,7 +87,7 @@ static boolean VerifyExpiryWorks()
     local_cache_add(__FUNCTION__, now() + expiry_seconds, sizeof(data), data);
 
     // ensure the data is there
-    assert(nullptr != local_cache_get(__FUNCTION__));
+    EXPECT_TRUE(nullptr != local_cache_get(__FUNCTION__));
 
     // wait for expiry, after which the data should be gone
 
@@ -109,9 +97,7 @@ static boolean VerifyExpiryWorks()
     Sleep(expiry_seconds * 1000);
 #endif
 
-    assert(nullptr == local_cache_get(__FUNCTION__));
-
-    TEST_PASSED();
+    EXPECT_TRUE(nullptr == local_cache_get(__FUNCTION__));
 
     return true;
 }
@@ -128,7 +114,7 @@ static void AssertException(void (*function)())
         return;
     }
 
-    assert(!"Expected exception was not thrown");
+    ASSERT_TRUE(!"Expected exception was not thrown");
 }
 
 //
@@ -136,8 +122,6 @@ static void AssertException(void (*function)())
 //
 static boolean InvalidParams()
 {
-    TEST_START();
-
     static const uint8_t data[] = "test data";
 
     AssertException<std::runtime_error>(
@@ -151,7 +135,6 @@ static boolean InvalidParams()
 
     AssertException<std::runtime_error>([] { local_cache_get(""); });
 
-    TEST_PASSED();
     return true;
 }
 
@@ -161,8 +144,6 @@ static boolean InvalidParams()
 //
 static boolean ThreadSafetyTest()
 {
-    TEST_START();
-
     // Pre-fill a data vector that's of sufficient size that we
     // are likely to get conflicts between threads.
     std::vector<uint8_t> data(64 * 1024);
@@ -185,8 +166,8 @@ static boolean ThreadSafetyTest()
         for (unsigned i = 0; i < THREAD_LOOP_COUNT; ++i)
         {
             auto retrieved = local_cache_get(ID);
-            assert(retrieved != nullptr);
-            assert(*retrieved == data);
+            EXPECT_TRUE(retrieved != nullptr);
+            EXPECT_TRUE(*retrieved == data);
         }
     };
 
@@ -216,7 +197,6 @@ static boolean ThreadSafetyTest()
         t.join();
     }
 
-    TEST_PASSED();
     return true;
 }
 

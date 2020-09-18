@@ -6,7 +6,6 @@
 #include "dcap_provider.h"
 #include "../local_cache.h"
 #include "sgx_ql_lib_common.h"
-#include "unit_test.h"
 
 #include <sys/stat.h>
 #include <chrono>
@@ -151,50 +150,50 @@ static void* LoadFunctions()
     sgx_ql_free_revocation_info =
         reinterpret_cast<sgx_ql_free_revocation_info_t>(
             dlsym(library, "sgx_ql_free_revocation_info"));
-    assert(sgx_ql_free_revocation_info);
+    EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
     sgx_ql_get_revocation_info = reinterpret_cast<sgx_ql_get_revocation_info_t>(
         dlsym(library, "sgx_ql_get_revocation_info"));
-    assert(sgx_ql_get_revocation_info);
+    EXPECT_NE(sgx_ql_get_revocation_info, nullptr);
 
     sgx_ql_free_quote_config = reinterpret_cast<sgx_ql_free_quote_config_t>(
         dlsym(library, "sgx_ql_free_quote_config"));
-    assert(sgx_ql_free_quote_config);
+    EXPECT_NE(sgx_ql_free_quote_config, nullptr);
 
     sgx_ql_get_quote_config = reinterpret_cast<sgx_ql_get_quote_config_t>(
         dlsym(library, "sgx_ql_get_quote_config"));
-    assert(sgx_ql_get_quote_config);
+    EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
     sgx_ql_set_logging_function =
         reinterpret_cast<sgx_ql_set_logging_function_t>(
             dlsym(library, "sgx_ql_set_logging_function"));
-    assert(sgx_ql_set_logging_function);
+    EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
     sgx_ql_free_quote_verification_collateral =
         reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
-    assert(sgx_ql_free_quote_verification_collateral);
+    EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         dlsym(library, "sgx_ql_free_qve_identity"));
-    assert(sgx_ql_free_qve_identity);
+    EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
 
     sgx_ql_free_root_ca_crl = reinterpret_cast<sgx_ql_free_root_ca_crl_t>(
         dlsym(library, "sgx_ql_free_root_ca_crl"));
-    assert(sgx_ql_free_root_ca_crl);
+    EXPECT_NE(sgx_ql_free_root_ca_crl, nullptr);
 
     sgx_ql_get_quote_verification_collateral =
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_get_quote_verification_collateral"));
-    assert(sgx_ql_get_quote_verification_collateral);
+    EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         dlsym(library, "sgx_ql_get_qve_identity"));
-    assert(sgx_ql_get_qve_identity);
+    EXPECT_NE(sgx_ql_get_qve_identity, nullptr);
 
     sgx_ql_get_root_ca_crl = reinterpret_cast<sgx_ql_get_root_ca_crl_t>(
         dlsym(library, "sgx_ql_get_root_ca_crl"));
-    assert(sgx_ql_get_root_ca_crl);
+    EXPECT_NE(sgx_ql_get_root_ca_crl, nullptr);
     return library;
 }
 #else
@@ -212,52 +211,52 @@ static HINSTANCE LoadFunctions()
     sgx_ql_free_revocation_info =
         reinterpret_cast<sgx_ql_free_revocation_info_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_free_revocation_info"));
-    assert(sgx_ql_free_revocation_info);
+    EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
     sgx_ql_get_revocation_info = reinterpret_cast<sgx_ql_get_revocation_info_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_revocation_info"));
-    assert(sgx_ql_get_revocation_info);
+    EXPECT_NE(sgx_ql_get_revocation_info, nullptr);
 
     sgx_ql_free_quote_config = reinterpret_cast<sgx_ql_free_quote_config_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_free_quote_config"));
-    assert(sgx_ql_free_quote_config);
+    EXPECT_NE(sgx_ql_free_quote_config, nullptr);
 
     sgx_ql_get_quote_config = reinterpret_cast<sgx_ql_get_quote_config_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_quote_config"));
-    assert(sgx_ql_get_quote_config);
+    EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
     sgx_ql_set_logging_function =
         reinterpret_cast<sgx_ql_set_logging_function_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_set_logging_function"));
-    assert(sgx_ql_set_logging_function);
+    EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
     sgx_ql_free_quote_verification_collateral =
         reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             GetProcAddress(
                 hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
-    assert(sgx_ql_free_quote_verification_collateral);
+    EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_free_qve_identity"));
-    assert(sgx_ql_free_qve_identity);
+    EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
 
     sgx_ql_free_root_ca_crl = reinterpret_cast<sgx_ql_free_root_ca_crl_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_free_root_ca_crl"));
-    assert(sgx_ql_free_root_ca_crl);
+    EXPECT_NE(sgx_ql_free_root_ca_crl, nullptr);
 
     sgx_ql_get_quote_verification_collateral =
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
             GetProcAddress(
                 hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
-    assert(sgx_ql_get_quote_verification_collateral);
+    EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_qve_identity"));
-    assert(sgx_ql_get_qve_identity);
+    EXPECT_NE(sgx_ql_get_qve_identity, nullptr);
 
     sgx_ql_get_root_ca_crl = reinterpret_cast<sgx_ql_get_root_ca_crl_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_root_ca_crl"));
-    assert(sgx_ql_get_root_ca_crl);
+    EXPECT_NE(sgx_ql_get_root_ca_crl, nullptr);
 
     return hLibCapdll;
 }
@@ -268,14 +267,14 @@ static HINSTANCE LoadFunctions()
 //
 static void GetCertsTest()
 {
-    TEST_START();
+    boolean TEST_SUCCESS = false;
 
     sgx_ql_config_t* config = nullptr;
     // Get the cert data
     Log(SGX_QL_LOG_INFO, "Calling sgx_ql_get_quote_config");
-    assert(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
+    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&id, &config));
     Log(SGX_QL_LOG_INFO, "sgx_ql_get_quote_config returned");
-    assert(nullptr != config);
+    ASSERT_TRUE(nullptr != config);
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
@@ -284,17 +283,19 @@ static void GetCertsTest()
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
     constexpr sgx_isv_svn_t pcesvn_mapped = 5;
-    assert(
+    ASSERT_TRUE(
         0 ==
         memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
-    assert(pcesvn_mapped == config->cert_pce_isv_svn);
-    assert(SGX_QL_CONFIG_VERSION_1 == config->version);
-    assert(0 < config->cert_data_size);
-    assert(nullptr != config->p_cert_data);
+    ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
+    ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
+    ASSERT_TRUE(0 < config->cert_data_size);
+    ASSERT_TRUE(nullptr != config->p_cert_data);
 
-    assert(SGX_QL_SUCCESS == sgx_ql_free_quote_config(config));
+    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_free_quote_config(config));
 
-    TEST_PASSED();
+    TEST_SUCCESS = true;
+
+    ASSERT_TRUE(TEST_SUCCESS);
 }
 
 //
@@ -302,7 +303,7 @@ static void GetCertsTest()
 //
 static void GetCrlTest()
 {
-    TEST_START();
+    boolean TEST_SUCCESS = false;
 
     // This is the CRL DP used by Intel for leaf certs
     static const char* TEST_CRL_URL =
@@ -317,18 +318,20 @@ static void GetCrlTest()
         &TEST_CRL_URL};
 
     sgx_ql_revocation_info_t* output;
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
+    ASSERT_TRUE(
+        SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
 
-    assert(0 < output->tcb_info_size);
-    assert(nullptr != output->tcb_info);
+    ASSERT_TRUE(0 < output->tcb_info_size);
+    ASSERT_TRUE(nullptr != output->tcb_info);
 
-    assert(1 == output->crl_count);
-    assert(0 < output->crls[0].crl_data_size);
-    assert(nullptr != output->crls[0].crl_data);
+    ASSERT_TRUE(1 == output->crl_count);
+    ASSERT_TRUE(0 < output->crls[0].crl_data_size);
+    ASSERT_TRUE(nullptr != output->crls[0].crl_data);
 
     sgx_ql_free_revocation_info(output);
 
-    TEST_PASSED();
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
 }
 
 //
@@ -336,57 +339,61 @@ static void GetCrlTest()
 //
 static void GetVerificationCollateralTest()
 {
-    TEST_START();
+    boolean TEST_SUCCESS = false;
 
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
         TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
-    assert(SGX_QL_SUCCESS == result);
-    assert(collateral != nullptr);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    ASSERT_TRUE(collateral != nullptr);
 
-    assert(collateral->version == 1);
-    assert(collateral->pck_crl != nullptr);
-    assert(collateral->pck_crl_size > 0);
-    assert(collateral->pck_crl_issuer_chain != nullptr);
-    assert(collateral->pck_crl_issuer_chain_size > 0);
+    ASSERT_TRUE(collateral->version == 1);
+    ASSERT_TRUE(collateral->pck_crl != nullptr);
+    ASSERT_TRUE(collateral->pck_crl_size > 0);
+    ASSERT_TRUE(collateral->pck_crl_issuer_chain != nullptr);
+    ASSERT_TRUE(collateral->pck_crl_issuer_chain_size > 0);
 
-    assert(collateral->qe_identity != nullptr);
-    assert(collateral->qe_identity_size > 0);
-    assert(collateral->qe_identity_issuer_chain != nullptr);
-    assert(collateral->qe_identity_issuer_chain_size > 0);
+    ASSERT_TRUE(collateral->qe_identity != nullptr);
+    ASSERT_TRUE(collateral->qe_identity_size > 0);
+    ASSERT_TRUE(collateral->qe_identity_issuer_chain != nullptr);
+    ASSERT_TRUE(collateral->qe_identity_issuer_chain_size > 0);
 
-    assert(collateral->root_ca_crl != nullptr);
-    assert(collateral->root_ca_crl_size > 0);
+    ASSERT_TRUE(collateral->root_ca_crl != nullptr);
+    ASSERT_TRUE(collateral->root_ca_crl_size > 0);
 
-    assert(collateral->tcb_info != nullptr);
-    assert(collateral->tcb_info_size > 0);
-    assert(collateral->tcb_info_issuer_chain != nullptr);
-    assert(collateral->tcb_info_size > 0);
+    ASSERT_TRUE(collateral->tcb_info != nullptr);
+    ASSERT_TRUE(collateral->tcb_info_size > 0);
+    ASSERT_TRUE(collateral->tcb_info_issuer_chain != nullptr);
+    ASSERT_TRUE(collateral->tcb_info_size > 0);
 
     // Make sure all collateral is terminated with a null character
-    assert(collateral->pck_crl[collateral->pck_crl_size - 1] == '\0');
-    assert(
+    ASSERT_TRUE(collateral->pck_crl[collateral->pck_crl_size - 1] == '\0');
+    ASSERT_TRUE(
         collateral
             ->pck_crl_issuer_chain[collateral->pck_crl_issuer_chain_size - 1] ==
         '\0');
-    assert(collateral->qe_identity[collateral->qe_identity_size - 1] == '\0');
-    assert(
+    ASSERT_TRUE(
+        collateral->qe_identity[collateral->qe_identity_size - 1] == '\0');
+    ASSERT_TRUE(
         collateral->qe_identity_issuer_chain
             [collateral->qe_identity_issuer_chain_size - 1] == '\0');
-    assert(collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
-    assert(collateral->tcb_info[collateral->tcb_info_size - 1] == '\0');
-    assert(
+    ASSERT_TRUE(
+        collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
+    ASSERT_TRUE(
+        collateral->tcb_info[collateral->tcb_info_size - 1] == '\0');
+    ASSERT_TRUE(
         collateral->tcb_info_issuer_chain
             [collateral->tcb_info_issuer_chain_size - 1] == '\0');
 
     sgx_ql_free_quote_verification_collateral(collateral);
 
-    TEST_PASSED();
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
 }
 
 static boolean GetQveIdentityTest()
 {
-    TEST_START();
+    boolean TEST_SUCCESS = false;
 
     char* qve_identity = nullptr;
     uint32_t qve_identity_size;
@@ -397,38 +404,39 @@ static boolean GetQveIdentityTest()
         &qve_identity_size,
         &qve_identity_issuer_chain,
         &qve_identity_issuer_chain_size);
-    assert(SGX_QL_SUCCESS == result);
-    assert(qve_identity != nullptr);
-    assert(qve_identity_issuer_chain != nullptr);
-    assert(qve_identity_size > 0);
-    assert(qve_identity_issuer_chain_size > 0);
+    EXPECT_TRUE(SGX_QL_SUCCESS == result);
+    EXPECT_TRUE(qve_identity != nullptr);
+    EXPECT_TRUE(qve_identity_issuer_chain != nullptr);
+    EXPECT_TRUE(qve_identity_size > 0);
+    EXPECT_TRUE(qve_identity_issuer_chain_size > 0);
 
-    assert(qve_identity[qve_identity_size - 1] == '\0');
-    assert(
+    EXPECT_TRUE(qve_identity[qve_identity_size - 1] == '\0');
+    EXPECT_TRUE(
         qve_identity_issuer_chain[qve_identity_issuer_chain_size - 1] == '\0');
 
     sgx_ql_free_qve_identity(qve_identity, qve_identity_issuer_chain);
 
-    TEST_PASSED();
-    return true;
+    TEST_SUCCESS = true;
+    return TEST_SUCCESS;
 }
 
 static void GetRootCACrlTest()
 {
-    TEST_START();
+    boolean TEST_SUCCESS = false;
 
     char* root_ca_crl = nullptr;
     uint16_t root_ca_crl_size;
     quote3_error_t result =
         sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
-    assert(SGX_QL_SUCCESS == result);
-    assert(root_ca_crl != nullptr);
-    assert(root_ca_crl_size > 0);
-    assert(root_ca_crl[root_ca_crl_size - 1] == '\0');
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    ASSERT_TRUE(root_ca_crl != nullptr);
+    ASSERT_TRUE(root_ca_crl_size > 0);
+    ASSERT_TRUE(root_ca_crl[root_ca_crl_size - 1] == '\0');
 
     sgx_ql_free_root_ca_crl(root_ca_crl);
 
-    TEST_PASSED();
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
 }
 
 // The Windows tolerance is 40ms while the Linux is about 2ms. That's for two
@@ -483,16 +491,17 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
         // cache call is fast enough
         constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
             CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
-        assert(fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
-        assert(
+        EXPECT_TRUE(
+            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        EXPECT_TRUE(
             duration_local_cert <
             (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
-        assert(
+        EXPECT_TRUE(
             fabs(duration_curl_verification - duration_local_verification) >
             CURL_TOLERANCE);
 
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
-        assert(
+        EXPECT_TRUE(
             duration_local_verification <
             (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
     }
@@ -510,7 +519,7 @@ void ReloadLibrary(libary_type_t* library, bool set_logging_callback = true)
 #endif
     if (set_logging_callback)
     {
-        assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+        ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
     }
 }
 
@@ -595,7 +604,8 @@ Cleanup:
         error_message << "Setting folder permissions failed. Last error: ";
         error_message << lastError;
         Log(SGX_QL_LOG_ERROR, error_message.str().c_str());
-        assert(false);
+
+        FAIL() << "We shouldn't get here.";
     }
 }
 #endif
@@ -603,7 +613,7 @@ Cleanup:
 void allow_access(std::string foldername)
 {
 #if defined __LINUX__
-    assert(0 == chmod(foldername.c_str(), 0700));
+    ASSERT_TRUE(0 == chmod(foldername.c_str(), 0700));
 #else
     set_access(
         foldername,
@@ -617,9 +627,9 @@ void allow_access(std::string foldername)
 void make_folder(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
-    assert(0 == mkdir(foldername.c_str(), permission));
+    ASSERT_TRUE(0 == mkdir(foldername.c_str(), permission));
 #else
-    assert(CreateDirectoryA(foldername.c_str(), NULL));
+    ASSERT_TRUE(CreateDirectoryA(foldername.c_str(), NULL));
     set_access(foldername, permission);
 #endif
 }
@@ -627,7 +637,7 @@ void make_folder(std::string foldername, permission_type_t permission)
 void change_permission(std::string foldername, permission_type_t permission)
 {
 #if defined __LINUX__
-    assert(0 == chmod(foldername.c_str(), permission));
+    ASSERT_TRUE(0 == chmod(foldername.c_str(), permission));
 #else
     set_access(foldername, permission);
 #endif
@@ -650,15 +660,14 @@ void remove_folder(std::string foldername)
     auto delete_command = "rm -rf " + foldername;
 #else
     auto delete_command = "del /s /q " + foldername + "\\*";
-    assert(0 == system(delete_command.c_str()));
+    ASSERT_TRUE(0 == system(delete_command.c_str()));
     delete_command = "rmdir /s /q " + foldername;
 #endif
-    assert(0 == system(delete_command.c_str()));
+    ASSERT_TRUE(0 == system(delete_command.c_str()));
 }
 
 boolean RunCachePermissionTests(libary_type_t* library)
 {
-    TEST_START();
 #if defined __LINUX__
     auto permission_folder = "./test_permission";
     int permissions[] = {0700, 0400, 0200, 0000};
@@ -670,7 +679,7 @@ boolean RunCachePermissionTests(libary_type_t* library)
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
         {GENERIC_WRITE, DENY_ACCESS}};
-    assert(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
+    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
     // Create the parent folder before the library runs
@@ -700,7 +709,6 @@ boolean RunCachePermissionTests(libary_type_t* library)
         remove_folder(permission_folder);
     }
 
-    TEST_PASSED();
     return true;
 }
 
@@ -720,59 +728,14 @@ void SetupEnvironment(std::string version)
     std::stringstream version_var;
     if (!version.empty())
     {
-        assert(SetEnvironmentVariableA(
+        EXPECT_TRUE(SetEnvironmentVariableA(
             "AZDCAP_COLLATERAL_VERSION", version.c_str()));
     }
-    assert(SetEnvironmentVariableA(
+    EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
         "https://global.acccache.azure.net/sgx/certificates"));
-    assert(
+    EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
-#endif
-}
-
-extern void QuoteProvTests()
-{
-    libary_type_t library = LoadFunctions();
-
-    assert(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironment("");
-    RunQuoteProviderTests();
-
-    //
-    // Get the V1 collateral specifically
-    //
-    SetupEnvironment("v1");
-    RunQuoteProviderTests();
-
-    //
-    // Get the V2 data from the service
-    //
-    SetupEnvironment("v2");
-    RunQuoteProviderTests();
-    GetQveIdentityTest();
-
-    //
-    // Run tests without logging to make sure library can operate
-    // even if logging callback isn't set
-    //
-    ReloadLibrary(&library, false);
-    RunQuoteProviderTests();
-    GetQveIdentityTest();
-    //
-    // Run tests to make sure libray can operate
-    // even if access to filesystem is restricted
-    //
-    RunCachePermissionTests(&library);
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
 #endif
 }
 
