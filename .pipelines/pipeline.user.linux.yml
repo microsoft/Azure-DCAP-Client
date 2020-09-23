@@ -1,0 +1,37 @@
+artifact_publish_options:
+  publish_to_legacy_artifacts: false # Default is always true
+  publish_to_pipeline_artifacts: true # Default is always false
+  publish_to_cloudvault_artifacts: false # Default is always true
+signing_options:
+  codesign_validation_glob_pattern: ''
+  codesign_validation_break_build: ''
+workspace_options:
+  force_workspace_wipe: true
+  enable_git_long_paths: true
+  
+restore:
+  commands:
+    - !!defaultcommand
+      name: 'Install Prerequisites'
+      command: 'build/Phase2/install_prereqs.cmd'
+
+build:
+  commands:
+  - !!buildcommand
+    name: 'Build'
+    command: '.pipelines/buildLinux.cmd'
+    artifacts:
+    - from: 'src'
+      to: drop
+      include:
+      - '*.deb'
+      - '**/*.log'
+      signing_options:
+          profile: 'external_distribution'
+    
+#cloudtest_options:
+#  pipeline_artifact_name: 'drop' 
+#  tenant_name: 'microsoftazureattestation'
+#  testmap_location: '[BuildRoot]\outputs\build\drop\GoogleTestTestMap.xml'
+#  configuration: 'release'
+#  platform: 'x64'

@@ -1,0 +1,9 @@
+environment:
+  host:
+    os: 'linux'
+    flavor: 'ubuntu'
+    version: '16.04'
+  runtime:
+    provider: 'appcontainer'
+    image: 'cdpxlinux.azurecr.io/user/azure-acc/openenclave/ubuntu/1604:1.4'
+    source_mode: 'link'

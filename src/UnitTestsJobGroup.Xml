@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Test Job Group to run the Attestation Service Pre-checkin validation tests -->
+<TestJobGroup>
+  <ResourceSpec>
+    <Resource type="VirtualMachine" SKU="Standard_DS4_V2" Image="OS2019WithVSConsole2019" />
+  </ResourceSpec>
+  <Setup>
+    <BuildFiles>
+       <!-- The fakes assemblies used by the UnitTests.dll test library don't work if the test binaries are symlinked
+       to their deployment location, so we force the UnitTests files to be copied to their target location instead of
+       just being symlinked. -->
+        <Copy Src="[BuildRoot]\outputs\build\BuildOutputs\*" Dest="[WorkingDirectory]\" IsRecursive="true" Writable="true"/>
+    </BuildFiles>
+  </Setup>
+
+  <TestJob Name="AzureDCAP.UnitTests">
+    <Execution Type="MsTest" Path="[WorkingDirectory]\UnitTests.exe" Args="/Platform:x64 /TestAdapterPath:[WorkingDirectory]\Windows\packages\GoogleTestAdapter.0.18.0\build\_common /Logger:TRX "/>
+  </TestJob>
+</TestJobGroup>

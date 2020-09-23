@@ -60,21 +60,13 @@ def ACCContainerTest(String label, String version) {
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
-				
-                        sudo apt-get update -y
-                        sudo apt-get install -y libgtest-dev
-                        sudo apt-get install -y cmake
-                        cd /usr/src/gtest
-                        sudo cmake CMakeLists.txt
-                        sudo make
-                        sudo cp *.a /usr/lib	
-						
-                        sudo apt-get purge az-dcap-client -y 
                         sudo apt-get update
-                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
-                        cd ${WORKSPACE}/src/Linux
-                        dpkg-buildpackage -us -uc
-                        sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
+                        sudo apt-get install -y software-properties-common
+                        sudo apt-get purge az-dcap-client -y
+                        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+                        sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
+                        sudo apt-get update
+                        sudo apt-get upgrade -y az-dcap-client	
                         mkdir -p ${WORKSPACE}/openenclave/build
                         cd ${WORKSPACE}/openenclave/build
                         git submodule update --recursive --init
@@ -96,26 +88,18 @@ def ACCTestOeRelease(String label, String version) {
                 cleanWs()
                 checkout scm
 				
-                def dcap = load pwd() + GROOVY_FILE
+                def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
-				
-                        sudo apt-get update -y
-                        sudo apt-get install -y libgtest-dev
-                        sudo apt-get install -y cmake
-                        cd /usr/src/gtest
-                        sudo cmake CMakeLists.txt
-                        sudo make
-                        sudo cp *.a /usr/lib
-						
-                        sudo apt-get purge az-dcap-client -y
                         sudo apt-get update
-                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
-                        cd ${WORKSPACE}/src/Linux
-                        dpkg-buildpackage -us -uc
-                        sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
+                        sudo apt-get install -y software-properties-common
+                        sudo apt-get purge az-dcap-client -y
+                        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+                        sudo apt-add-repository https://packages.microsoft.com/ubuntu/${version}/prod
+                        sudo apt-get update
+                        sudo apt-get upgrade -y az-dcap-client
                         sudo apt-get update
                         sudo apt-get install -y open-enclave
                         . /opt/openenclave/share/openenclave/openenclaverc
@@ -127,34 +111,6 @@ def ACCTestOeRelease(String label, String version) {
                         done
                        """
                 dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
-            }
-        }
-    }
-}
-
-// Test DCAP build process
-def DCAPBuildTest(String label, String build_type) {
-    stage("${label} ${build_type}") {
-        node("${label}") {
-            timeout(GLOBAL_TIMEOUT) {
-			
-                cleanWs()
-                checkout scm
-                bat """
-                    vcvars64.bat x64 && \
-                    cd ${WORKSPACE}\\src\\Windows && \
-					nuget.exe restore dcap_provider.sln -PackagesDirectory packages && \
-                    powershell -ExecutionPolicy Unrestricted -NoLogo -NonInteractive -Command ${WORKSPACE}\\src\\Windows\\get-prereqs.ps1 && \
-                    cd ${WORKSPACE}\\src\\Windows\\dll && \
-					nuget.exe restore dcap_provider.vcxproj -PackagesDirectory packages && \
-                    MSBuild.exe dcap_provider.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-                    cd ${WORKSPACE}\\src\\Windows\\UnitTests && \
-					nuget.exe restore UnitTests.vcxproj -PackagesDirectory packages && \
-                    MSBuild.exe UnitTests.vcxproj /p:Configuration=${build_type};Platform=x64 && \
-                    xcopy /y /c ${WORKSPACE}\\src\\Windows\\UnitTests\\x64\\${build_type}\\UnitTests.exe ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    cd ${WORKSPACE}\\src\\Windows\\dll\\x64\\${build_type} && \
-                    UnitTests.exe
-                """
             }
         }
     }
@@ -175,8 +131,4 @@ parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC1804 SGX1-FLC gcc Release" :              { ACCTest('ACC-1804', '18.04', 'gcc', 'Release') },
          "ACC1804 SGX1-FLC gcc RelWithDebInfo" :       { ACCTest('ACC-1804', '18.04', 'gcc', 'RelWithDebInfo') },
          "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
-         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
-         "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
-         "ACCWin 2016 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
-         "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
-         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') }
