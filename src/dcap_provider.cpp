@@ -71,6 +71,7 @@ static char ROOT_CRL_NAME[] =
     "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
+static char PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform";
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
@@ -736,7 +737,7 @@ static std::string build_enclave_id_url(
     }
 
     // If QVE and V1 is specified, don't create a URL
-    if (qve && version != "v2")
+    if (qve && version == "v1")
     {
         return "";
     }
@@ -1459,8 +1460,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
-            log(SGX_QL_LOG_ERROR, "Platform CA CRL is not supported");
-            return SGX_QL_ERROR_INVALID_PARAMETER;
+            requested_ca = PLATFORM_CRL_NAME;
         }
 
         if (requested_ca.empty())
