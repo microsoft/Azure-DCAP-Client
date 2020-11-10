@@ -349,25 +349,10 @@ static void GetCertsTestICXV3()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-//
-// Fetches and validates revocation data for SGX
-//
-static void GetCrlTest()
+static inline void VerifyCrlOutput(
+    sgx_ql_get_revocation_info_params_t params)
 {
     boolean TEST_SUCCESS = false;
-
-    // This is the CRL DP used by Intel for leaf certs
-    static const char* TEST_CRL_URL =
-        "https://api.trustedservices.intel.com/sgx/certification/v1/"
-        "pckcrl?ca=processor";
-
-    sgx_ql_get_revocation_info_params_t params = {
-        SGX_QL_REVOCATION_INFO_VERSION_1,
-        sizeof(TEST_FMSPC),
-        TEST_FMSPC,
-        1,
-        &TEST_CRL_URL};
-
     sgx_ql_revocation_info_t* output;
     ASSERT_TRUE(
         SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
@@ -383,6 +368,26 @@ static void GetCrlTest()
 
     TEST_SUCCESS = true;
     ASSERT_TRUE(TEST_SUCCESS);
+}
+
+//
+// Fetches and validates revocation data for SGX
+//
+static void GetCrlTest()
+{
+    // This is the CRL DP used by Intel for leaf certs
+    static const char* TEST_CRL_URL =
+        "https://api.trustedservices.intel.com/sgx/certification/v1/"
+        "pckcrl?ca=processor";
+
+    sgx_ql_get_revocation_info_params_t params = {
+        SGX_QL_REVOCATION_INFO_VERSION_1,
+        sizeof(TEST_FMSPC),
+        TEST_FMSPC,
+        1,
+        &TEST_CRL_URL};
+
+    VerifyCrlOutput(params);
 }
 
 //
@@ -404,91 +409,12 @@ static void GetCrlTestICXV3()
         1,
         &TEST_CRL_URL};
 
-    sgx_ql_revocation_info_t* output;
-    ASSERT_TRUE(
-        SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
-
-    ASSERT_TRUE(0 < output->tcb_info_size);
-    ASSERT_TRUE(nullptr != output->tcb_info);
-
-    ASSERT_TRUE(1 == output->crl_count);
-    ASSERT_TRUE(0 < output->crls[0].crl_data_size);
-    ASSERT_TRUE(nullptr != output->crls[0].crl_data);
-
-    sgx_ql_free_revocation_info(output);
-
-    TEST_SUCCESS = true;
-    ASSERT_TRUE(TEST_SUCCESS);
+    VerifyCrlOutput(params);
 }
 
-//
-// Fetches and validates verification APIs of QPL
-//
-static void GetVerificationCollateralTest()
+static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
 {
     boolean TEST_SUCCESS = false;
-
-    sgx_ql_qve_collateral_t* collateral = nullptr;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral(
-        TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
-    ASSERT_TRUE(collateral != nullptr);
-
-    ASSERT_TRUE(collateral->version == 1);
-    ASSERT_TRUE(collateral->pck_crl != nullptr);
-    ASSERT_TRUE(collateral->pck_crl_size > 0);
-    ASSERT_TRUE(collateral->pck_crl_issuer_chain != nullptr);
-    ASSERT_TRUE(collateral->pck_crl_issuer_chain_size > 0);
-
-    ASSERT_TRUE(collateral->qe_identity != nullptr);
-    ASSERT_TRUE(collateral->qe_identity_size > 0);
-    ASSERT_TRUE(collateral->qe_identity_issuer_chain != nullptr);
-    ASSERT_TRUE(collateral->qe_identity_issuer_chain_size > 0);
-
-    ASSERT_TRUE(collateral->root_ca_crl != nullptr);
-    ASSERT_TRUE(collateral->root_ca_crl_size > 0);
-
-    ASSERT_TRUE(collateral->tcb_info != nullptr);
-    ASSERT_TRUE(collateral->tcb_info_size > 0);
-    ASSERT_TRUE(collateral->tcb_info_issuer_chain != nullptr);
-    ASSERT_TRUE(collateral->tcb_info_size > 0);
-
-    // Make sure all collateral is terminated with a null character
-    ASSERT_TRUE(collateral->pck_crl[collateral->pck_crl_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral
-            ->pck_crl_issuer_chain[collateral->pck_crl_issuer_chain_size - 1] ==
-        '\0');
-    ASSERT_TRUE(
-        collateral->qe_identity[collateral->qe_identity_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral->qe_identity_issuer_chain
-            [collateral->qe_identity_issuer_chain_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral->tcb_info[collateral->tcb_info_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral->tcb_info_issuer_chain
-            [collateral->tcb_info_issuer_chain_size - 1] == '\0');
-
-    sgx_ql_free_quote_verification_collateral(collateral);
-
-    TEST_SUCCESS = true;
-    ASSERT_TRUE(TEST_SUCCESS);
-}
-
-//
-// Fetches and validates verification APIs of QPL
-//
-static void GetVerificationCollateralTestICXV3()
-{
-    boolean TEST_SUCCESS = false;
-
-    sgx_ql_qve_collateral_t* collateral = nullptr;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral(
-        ICX_TEST_FMSPC, sizeof(ICX_TEST_FMSPC), "platform", &collateral);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
     ASSERT_TRUE(collateral != nullptr);
 
     ASSERT_TRUE(collateral->version == 1);
@@ -532,6 +458,31 @@ static void GetVerificationCollateralTestICXV3()
 
     TEST_SUCCESS = true;
     ASSERT_TRUE(TEST_SUCCESS);
+}
+
+
+//
+// Fetches and validates verification APIs of QPL
+//
+static void GetVerificationCollateralTest()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral(
+        TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateral(collateral);
+}
+
+//
+// Fetches and validates verification APIs of QPL
+//
+static void GetVerificationCollateralTestICXV3()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral(
+        ICX_TEST_FMSPC, sizeof(ICX_TEST_FMSPC), "platform", &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateral(collateral);
 }
 
 static boolean GetQveIdentityTest()
@@ -604,6 +555,36 @@ static inline float MeasureFunction(measured_function_t func)
            1000000;
 }
 
+static inline void VerifyDurationChecks(
+    float duration_local_cert,
+    float duration_local_verification,
+    float duration_curl_cert,
+    float duration_curl_verification,
+    bool caching_enabled = false)
+{
+    if (caching_enabled)
+    {
+        // Ensure that there is a signficiant enough difference between the cert
+        // fetch to the end point and cert fetch to local cache and that local
+        // cache call is fast enough
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
+            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
+        EXPECT_TRUE(
+            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        EXPECT_TRUE(
+            duration_local_cert <
+            (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
+        EXPECT_TRUE(
+            fabs(duration_curl_verification - duration_local_verification) >
+            CURL_TOLERANCE);
+
+        constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
+        EXPECT_TRUE(
+            duration_local_verification <
+            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
+    }
+}
+
 boolean RunQuoteProviderTests(bool caching_enabled = false)
 {
     local_cache_clear();
@@ -627,27 +608,12 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     auto duration_local_verification =
         MeasureFunction(GetVerificationCollateralTest);
 
-    if (caching_enabled)
-    {
-        // Ensure that there is a signficiant enough difference between the cert
-        // fetch to the end point and cert fetch to local cache and that local
-        // cache call is fast enough
-        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
-            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
-        EXPECT_TRUE(
-            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
-        EXPECT_TRUE(
-            duration_local_cert <
-            (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
-        EXPECT_TRUE(
-            fabs(duration_curl_verification - duration_local_verification) >
-            CURL_TOLERANCE);
-
-        constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
-        EXPECT_TRUE(
-            duration_local_verification <
-            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
-    }
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification,
+        duration_curl_cert,
+        duration_curl_verification,
+        caching_enabled);
     return true;
 }
 
@@ -674,27 +640,12 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     auto duration_local_verification =
         MeasureFunction(GetVerificationCollateralTest);
 
-    if (caching_enabled)
-    {
-        // Ensure that there is a signficiant enough difference between the cert
-        // fetch to the end point and cert fetch to local cache and that local
-        // cache call is fast enough
-        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
-            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
-        EXPECT_TRUE(
-            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
-        EXPECT_TRUE(
-            duration_local_cert <
-            (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
-        EXPECT_TRUE(
-            fabs(duration_curl_verification - duration_local_verification) >
-            CURL_TOLERANCE);
-
-        constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
-        EXPECT_TRUE(
-            duration_local_verification <
-            (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
-    }
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification,
+        duration_curl_cert,
+        duration_curl_verification,
+        caching_enabled);
     return true;
 }
 
@@ -907,7 +858,7 @@ void SetupEnvironment(std::string version)
 #if defined __LINUX__
     setenv(
         "AZDCAP_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certificates",
+        "https://americas.test.acccache.azure.net/sgx/certificates",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -1033,12 +984,14 @@ TEST(testQuoteProv, testWithoutLogging)
 TEST(testQuoteProv, testRestrictAccessToFilesystem)
 {
     libary_type_t library = LoadFunctions();
-    SetupEnvironment("v2");
+
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
 
     //
     // Get the data from the service
     //
+    SetupEnvironment("v2");
+    ReloadLibrary(&library, false);
     ASSERT_TRUE(RunCachePermissionTests(&library));
 
 #if defined __LINUX__

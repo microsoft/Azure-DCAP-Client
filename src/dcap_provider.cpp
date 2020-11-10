@@ -71,7 +71,7 @@ static char ROOT_CRL_NAME[] =
     "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
-static char PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform";
+static char PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
