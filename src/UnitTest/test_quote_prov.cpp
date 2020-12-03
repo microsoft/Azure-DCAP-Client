@@ -395,8 +395,6 @@ static void GetCrlTest()
 //
 static void GetCrlTestICXV3()
 {
-    boolean TEST_SUCCESS = false;
-
     // This is the CRL DP used by Intel for leaf certs
     static const char* TEST_CRL_URL =
         "https://sbx.api.trustedservices.intel.com/sgx/certification/v3/"
