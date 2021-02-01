@@ -1465,7 +1465,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
             requested_ca = PLATFORM_CRL_NAME;
-            root_crl_name = SBX_ROOT_CRL_NAME;
+           // root_crl_name = SBX_ROOT_CRL_NAME;
         }
 
         if (requested_ca.empty())

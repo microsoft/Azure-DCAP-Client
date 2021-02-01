@@ -1026,7 +1026,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     // Get the data from the service
     //
     SetupEnvironment("v3");
-  //  ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(GetQveIdentityTest());
 
