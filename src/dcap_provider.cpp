@@ -1456,7 +1456,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         }
 
         std::string requested_ca;
-        std::string root_crl_name = SBX_ROOT_CRL_NAME;
+        std::string root_crl_name = ROOT_CRL_NAME;
         if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
         {
             requested_ca = PROCESSOR_CRL_NAME;
@@ -1506,7 +1506,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+            build_pck_crl_url(root_crl_name, API_VERSION);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
