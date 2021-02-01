@@ -1757,7 +1757,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
 
         std::string root_ca_crl_url =
             build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
-        if (icx_test = true)
+        if (icx_test == true)
         {
             std::string root_ca_crl_url =
                 build_pck_crl_url(SBX_ROOT_CRL_NAME, API_VERSION);
