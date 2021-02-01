@@ -75,6 +75,7 @@ typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     uint32_t* p_qve_identity_issuer_chain_size);
 
 typedef quote3_error_t (*sgx_ql_get_root_ca_crl_t)(
+    bool icx_test,
     char** pp_root_ca_crl,
     uint16_t* p_root_ca_crl_size);
 
@@ -599,7 +600,26 @@ static void GetRootCACrlTest()
     char* root_ca_crl = nullptr;
     uint16_t root_ca_crl_size;
     quote3_error_t result =
-        sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
+        sgx_ql_get_root_ca_crl(false, &root_ca_crl, &root_ca_crl_size);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    ASSERT_TRUE(root_ca_crl != nullptr);
+    ASSERT_TRUE(root_ca_crl_size > 0);
+    ASSERT_TRUE(root_ca_crl[root_ca_crl_size - 1] == '\0');
+
+    sgx_ql_free_root_ca_crl(root_ca_crl);
+
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
+}
+
+static void GetRootCACrlICXTest()
+{
+    boolean TEST_SUCCESS = false;
+
+    char* root_ca_crl = nullptr;
+    uint16_t root_ca_crl_size;
+    quote3_error_t result =
+        sgx_ql_get_root_ca_crl(true, &root_ca_crl, &root_ca_crl_size);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     ASSERT_TRUE(root_ca_crl != nullptr);
     ASSERT_TRUE(root_ca_crl_size > 0);
@@ -699,14 +719,14 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
 {
     local_cache_clear();
 
-    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
+    /*auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
 
     auto duration_curl_verification =
-        MeasureFunction(GetVerificationCollateralTestICXV3);
+        MeasureFunction(GetVerificationCollateralTestICXV3);*/
 
-    GetRootCACrlTest();
-    
+    GetRootCACrlICXTest();
+    /*
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
@@ -723,7 +743,7 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
-        caching_enabled);
+        caching_enabled);*/
     return true;
 }
 
