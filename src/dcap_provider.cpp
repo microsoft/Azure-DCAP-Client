@@ -1456,7 +1456,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         }
 
         std::string requested_ca;
-        std::string root_crl_name = ROOT_CRL_NAME;
+        std::string root_crl_name = SBX_ROOT_CRL_NAME;
         if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
         {
             requested_ca = PROCESSOR_CRL_NAME;
