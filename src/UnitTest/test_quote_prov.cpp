@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "dcap_provider.h"
 #include "../local_cache.h"
+#include "dcap_provider.h"
 #include "sgx_ql_lib_common.h"
 
 #include <sys/stat.h>
@@ -98,21 +98,90 @@ static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 
 // Test FMSPC
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
+static constexpr uint8_t ICX_TEST_FMSPC[] =
+    {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
 
 // Test input (choose an arbitrary Azure server)
 static uint8_t qe_id[16] = {
-	0x00, 0xfb, 0xe6, 0x73, 0x33, 0x36, 0xea, 0xf7, 
-	0xa4, 0xe3, 0xd8, 0xb9, 0x66, 0xa8, 0x2e, 0x64
-};
+    0x00,
+    0xfb,
+    0xe6,
+    0x73,
+    0x33,
+    0x36,
+    0xea,
+    0xf7,
+    0xa4,
+    0xe3,
+    0xd8,
+    0xb9,
+    0x66,
+    0xa8,
+    0x2e,
+    0x64};
 
 static sgx_cpu_svn_t cpusvn = {
-	0x04, 0x04, 0x02, 0x04, 0xff, 0x80, 0x00,0x00, 
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+    0x04,
+    0x04,
+    0x02,
+    0x04,
+    0xff,
+    0x80,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00};
 
 static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
+
+static uint8_t icx_qe_id[16] = {
+    0xed,
+    0x1e,
+    0xf3,
+    0xf6,
+    0x20,
+    0x45,
+    0xd0,
+    0x37,
+    0x9c,
+    0xd6,
+    0x12,
+    0xc8,
+    0x86,
+    0x5b,
+    0x65,
+    0x37};
+
+static sgx_cpu_svn_t icx_cpusvn = {
+    0x03,
+    0x03,
+    0x02,
+    0x00,
+    0xff,
+    0xff,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00};
+
+static sgx_isv_svn_t icx_pcesvn = 10;
+
+static sgx_ql_pck_cert_id_t icx_id =
+    {icx_qe_id, sizeof(icx_qe_id), &icx_cpusvn, &icx_pcesvn, 0};
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
@@ -279,8 +348,22 @@ static void GetCertsTest()
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
     constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
-		0x04, 0x04, 0x02, 0x04, 0x01, 0x80, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        0x04,
+        0x04,
+        0x02,
+        0x04,
+        0x01,
+        0x80,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00};
 
     constexpr sgx_isv_svn_t pcesvn_mapped = 5;
     ASSERT_TRUE(
@@ -298,8 +381,57 @@ static void GetCertsTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-static inline void VerifyCrlOutput(
-    sgx_ql_get_revocation_info_params_t params)
+//
+// Fetches and validates certification data for a platform
+//
+static void GetCertsTestICXV3()
+{
+    boolean TEST_SUCCESS = false;
+
+    sgx_ql_config_t* config = nullptr;
+    // Get the cert data
+    Log(SGX_QL_LOG_INFO, "Calling sgx_ql_get_quote_config");
+    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&icx_id, &config));
+    Log(SGX_QL_LOG_INFO, "sgx_ql_get_quote_config returned");
+    ASSERT_TRUE(nullptr != config);
+
+    // Just sanity check a few fields. Parsing the certs would require a big
+    // dependency like OpenSSL that we don't necessarily want.
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
+        0x03,
+        0x03,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00};
+
+    constexpr sgx_isv_svn_t pcesvn_mapped = 10;
+    ASSERT_TRUE(
+        0 ==
+        memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
+    ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
+    ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
+    ASSERT_TRUE(0 < config->cert_data_size);
+    ASSERT_TRUE(nullptr != config->p_cert_data);
+
+    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_free_quote_config(config));
+
+    TEST_SUCCESS = true;
+
+    ASSERT_TRUE(TEST_SUCCESS);
+}
+
+static inline void VerifyCrlOutput(sgx_ql_get_revocation_info_params_t params)
 {
     boolean TEST_SUCCESS = false;
     sgx_ql_revocation_info_t* output;
@@ -333,6 +465,26 @@ static void GetCrlTest()
         SGX_QL_REVOCATION_INFO_VERSION_1,
         sizeof(TEST_FMSPC),
         TEST_FMSPC,
+        1,
+        &TEST_CRL_URL};
+
+    VerifyCrlOutput(params);
+}
+
+//
+// Fetches and validates revocation data for SGX
+//
+static void GetCrlTestICXV3()
+{
+    // This is the CRL DP used by Intel for leaf certs
+    static const char* TEST_CRL_URL =
+        "https://sbx.api.trustedservices.intel.com/sgx/certification/v3/"
+        "pckcrl?ca=platform";
+
+    sgx_ql_get_revocation_info_params_t params = {
+        SGX_QL_REVOCATION_INFO_VERSION_1,
+        sizeof(ICX_TEST_FMSPC),
+        ICX_TEST_FMSPC,
         1,
         &TEST_CRL_URL};
 
@@ -387,7 +539,6 @@ static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-
 //
 // Fetches and validates verification APIs of QPL
 //
@@ -396,6 +547,18 @@ static void GetVerificationCollateralTest()
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
         TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateral(collateral);
+}
+
+//
+// Fetches and validates verification APIs of QPL
+//
+static void GetVerificationCollateralTestICXV3()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral(
+        ICX_TEST_FMSPC, sizeof(ICX_TEST_FMSPC), "platform", &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
 }
@@ -532,6 +695,37 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     return true;
 }
 
+boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
+{
+    local_cache_clear();
+
+    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
+    GetCrlTestICXV3();
+
+    auto duration_curl_verification =
+        MeasureFunction(GetVerificationCollateralTestICXV3);
+
+    GetRootCACrlTest();
+    
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
+
+    GetCrlTest();
+    GetRootCACrlTest();
+
+    auto duration_local_verification =
+        MeasureFunction(GetVerificationCollateralTest);
+
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification,
+        duration_curl_cert,
+        duration_curl_verification,
+        caching_enabled);
+    return true;
+}
 
 void ReloadLibrary(libary_type_t* library, bool set_logging_callback = true)
 {
@@ -766,7 +960,6 @@ void SetupEnvironment(std::string version)
 
 TEST(testQuoteProv, quoteProviderTestsDataFromService)
 {
-   
     libary_type_t library = LoadFunctions();
 
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -782,7 +975,6 @@ TEST(testQuoteProv, quoteProviderTestsDataFromService)
 #else
     FreeLibrary(library);
 #endif
-
 }
 
 TEST(testQuoteProv, quoteProviderTestsV1Collateral)
@@ -834,7 +1026,8 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     // Get the data from the service
     //
     SetupEnvironment("v3");
-    ASSERT_TRUE(RunQuoteProviderTests());
+  //  ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -854,7 +1047,7 @@ TEST(testQuoteProv, testWithoutLogging)
     // Get the data from the service
     //
     SetupEnvironment("v2");
-	ReloadLibrary(&library, false);
+    ReloadLibrary(&library, false);
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(GetQveIdentityTest());
 
