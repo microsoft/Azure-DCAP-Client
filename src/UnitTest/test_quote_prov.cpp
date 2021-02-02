@@ -75,7 +75,7 @@ typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     uint32_t* p_qve_identity_issuer_chain_size);
 
 typedef quote3_error_t (*sgx_ql_get_root_ca_crl_t)(
-    bool icx_test,
+    bool is_sbx,
     char** pp_root_ca_crl,
     uint16_t* p_root_ca_crl_size);
 
@@ -143,6 +143,8 @@ static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
+// TODO: (ICX) Replace this platform data once we're pulling icx from
+// live
 static uint8_t icx_qe_id[16] = {
     0xed,
     0x1e,
@@ -719,31 +721,31 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
 {
     local_cache_clear();
 
-    /*auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
+    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
 
     auto duration_curl_verification =
-        MeasureFunction(GetVerificationCollateralTestICXV3);*/
+        MeasureFunction(GetVerificationCollateralTestICXV3);
 
+    // TODO: (ICX) This test can be modified back once we have icx prod cluster data to test with
     GetRootCACrlICXTest();
-    /*
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
     auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
 
-    GetCrlTest();
-    GetRootCACrlTest();
+    GetCrlTestICXV3();
+    GetRootCACrlICXTest();
 
     auto duration_local_verification =
-        MeasureFunction(GetVerificationCollateralTest);
+        MeasureFunction(GetVerificationCollateralTestICXV3);
 
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
-        caching_enabled);*/
+        caching_enabled);
     return true;
 }
 

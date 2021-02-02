@@ -73,6 +73,8 @@ static char SBX_ROOT_CRL_NAME[] =
     "https%3a%2f%2fsbx-certificates.trustedservices.intel.com%2fintelsgxrootca.der";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
+
+// TODO: (ICX) Replace this platform CRL distinction once we're pulling icx from live
 static char PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
@@ -1465,6 +1467,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
             requested_ca = PLATFORM_CRL_NAME;
+
+            // TODO: (ICX) Test and remove this root distinction once we're pulling icx from live
             root_crl_name = SBX_ROOT_CRL_NAME;
         }
 
@@ -1734,7 +1738,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
 }
 
 extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
-    bool icx_test,
+    bool is_sbx,
     char** pp_root_ca_crl,
     uint16_t* p_root_ca_crl_size)
 {
@@ -1757,7 +1761,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
 
         std::string root_ca_crl_url =
             build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
-        if (icx_test == true)
+        if (is_sbx == true)
         {
             std::string root_ca_crl_url =
                 build_pck_crl_url(SBX_ROOT_CRL_NAME, API_VERSION);
