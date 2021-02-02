@@ -75,7 +75,6 @@ typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     uint32_t* p_qve_identity_issuer_chain_size);
 
 typedef quote3_error_t (*sgx_ql_get_root_ca_crl_t)(
-    bool is_sbx,
     char** pp_root_ca_crl,
     uint16_t* p_root_ca_crl_size);
 
@@ -602,7 +601,7 @@ static void GetRootCACrlTest()
     char* root_ca_crl = nullptr;
     uint16_t root_ca_crl_size;
     quote3_error_t result =
-        sgx_ql_get_root_ca_crl(false, &root_ca_crl, &root_ca_crl_size);
+        sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     ASSERT_TRUE(root_ca_crl != nullptr);
     ASSERT_TRUE(root_ca_crl_size > 0);
@@ -621,7 +620,7 @@ static void GetRootCACrlICXTest()
     char* root_ca_crl = nullptr;
     uint16_t root_ca_crl_size;
     quote3_error_t result =
-        sgx_ql_get_root_ca_crl(true, &root_ca_crl, &root_ca_crl_size);
+        sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     ASSERT_TRUE(root_ca_crl != nullptr);
     ASSERT_TRUE(root_ca_crl_size > 0);
@@ -958,7 +957,7 @@ void SetupEnvironment(std::string version)
 #if defined __LINUX__
     setenv(
         "AZDCAP_BASE_CERT_URL",
-        "https://americas.test.acccache.azure.net/sgx/certificates",
+        "https://global.acccache.azure.net/sgx/certificates",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -974,10 +973,17 @@ void SetupEnvironment(std::string version)
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
-        "https://americas.test.acccache.azure.net/sgx/certificates"));
+        "https://global.acccache.azure.net/sgx/certificates"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
+    // TODO: (ICX) Remove when we move icx to live and prod
+    if (!version.empty() && version.compare("v3") == 0)
+    {
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_BASE_CERT_URL",
+            "https://americas.test.acccache.azure.net/sgx/certificates"));
+    }
 }
 
 TEST(testQuoteProv, quoteProviderTestsDataFromService)

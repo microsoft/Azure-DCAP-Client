@@ -1738,7 +1738,6 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
 }
 
 extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
-    bool is_sbx,
     char** pp_root_ca_crl,
     uint16_t* p_root_ca_crl_size)
 {
@@ -1761,11 +1760,6 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
 
         std::string root_ca_crl_url =
             build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
-        if (is_sbx == true)
-        {
-            std::string root_ca_crl_url =
-                build_pck_crl_url(SBX_ROOT_CRL_NAME, API_VERSION);
-        }
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 
