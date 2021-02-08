@@ -82,7 +82,7 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-8", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -126,7 +126,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-7", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-8", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -162,12 +162,12 @@ def DCAPBuildTest(String label, String build_type) {
 
 parallel "ACC1604 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1604', '16.04') },
          "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
-         "ACC1604 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-7', 'Debug') },
-         "ACC1604 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-7', 'Release') },
-         "ACC1604 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-7', 'RelWithDebInfo') },
-         "ACC1804 SGX1-FLC clang-7 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-7', 'Debug') },
-         "ACC1804 SGX1-FLC clang-7 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-7', 'Release') },
-         "ACC1804 SGX1-FLC clang-7 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-7', 'RelWithDebInfo') },
+         "ACC1604 SGX1-FLC clang-8 Debug" :            { ACCTest('ACC-1604', '16.04', 'clang-8', 'Debug') },
+         "ACC1604 SGX1-FLC clang-8 Release" :          { ACCTest('ACC-1604', '16.04', 'clang-8', 'Release') },
+         "ACC1604 SGX1-FLC clang-8 RelWithDebInfo" :   { ACCTest('ACC-1604', '16.04', 'clang-8', 'RelWithDebInfo') },
+         "ACC1804 SGX1-FLC clang-8 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-8', 'Debug') },
+         "ACC1804 SGX1-FLC clang-8 Release" :          { ACCTest('ACC-1804', '18.04', 'clang-8', 'Release') },
+         "ACC1804 SGX1-FLC clang-8 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-8', 'RelWithDebInfo') },
          "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
          "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
          "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
