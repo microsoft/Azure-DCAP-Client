@@ -963,7 +963,7 @@ void SetupEnvironment(std::string version)
     if (!version.empty())
     {
         setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
-        if (strcmp(version.c_str(),"v3") == 0)
+        if (version == "v3")
         {
             setenv(
                 "AZDCAP_BASE_CERT_URL",
