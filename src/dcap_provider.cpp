@@ -69,8 +69,13 @@ static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
 static char ROOT_CRL_NAME[] =
     "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
+static char SBX_ROOT_CRL_NAME[] =
+    "https%3a%2f%2fsbx-certificates.trustedservices.intel.com%2fintelsgxrootca.der";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
+
+// TODO: (ICX) Replace this platform CRL distinction once we're pulling icx from live
+static char PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
@@ -109,11 +114,12 @@ static std::string get_collateral_version()
     else
     {
         if (!collateral_version.compare("v1") &&
-            !collateral_version.compare("v2"))
+            !collateral_version.compare("v2") &&
+            !collateral_version.compare("v3"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values are empty, v1, or v2",
+                "Acceptable values are empty, v1, or v2 or v3",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -736,7 +742,7 @@ static std::string build_enclave_id_url(
     }
 
     // If QVE and V1 is specified, don't create a URL
-    if (qve && version != "v2")
+    if (qve && version == "v1")
     {
         return "";
     }
@@ -1452,6 +1458,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         }
 
         std::string requested_ca;
+        std::string root_crl_name = ROOT_CRL_NAME;
         if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
         {
             requested_ca = PROCESSOR_CRL_NAME;
@@ -1459,8 +1466,10 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
-            log(SGX_QL_LOG_ERROR, "Platform CA CRL is not supported");
-            return SGX_QL_ERROR_INVALID_PARAMETER;
+            requested_ca = PLATFORM_CRL_NAME;
+
+            // TODO: (ICX) Test and remove this root distinction once we're pulling icx from live
+            root_crl_name = SBX_ROOT_CRL_NAME;
         }
 
         if (requested_ca.empty())
@@ -1501,7 +1510,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+            build_pck_crl_url(root_crl_name, API_VERSION);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
