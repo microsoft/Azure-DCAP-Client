@@ -963,6 +963,13 @@ void SetupEnvironment(std::string version)
     if (!version.empty())
     {
         setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+        if (version.c_str() == "v3")
+        {
+            setenv(
+                "AZDCAP_BASE_CERT_URL",
+                "https://americas.test.acccache.azure.net/sgx/certificates",
+                1);
+        }
     }
 #else
     std::stringstream version_var;
@@ -976,7 +983,6 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
-#endif
     // TODO: (ICX) Remove when we move icx to live and prod
     if (!version.empty() && version.compare("v3") == 0)
     {
@@ -984,6 +990,7 @@ void SetupEnvironment(std::string version)
             "AZDCAP_BASE_CERT_URL",
             "https://americas.test.acccache.azure.net/sgx/certificates"));
     }
+#endif
 }
 
 TEST(testQuoteProv, quoteProviderTestsDataFromService)
