@@ -41,7 +41,7 @@ make
 If cmake needs to update, please run:
 sudo apt remove cmake
 sudo apt-get install python-pip
-pip install cmake --upgrade
+sudo pip install cmake --upgrade
 ```
 
 ## Step-by-Step
