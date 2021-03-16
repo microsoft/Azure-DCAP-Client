@@ -1,7 +1,7 @@
 az-dcap-client (1.7) stable; urgency=medium
-  * Use the Cache-Control header to determine how long collateral should be cached for. Cleanup of error handling logs in Windows
+  * Enable v3 for icx and coffelake. Use the Cache-Control header to determine how long collateral should be cached for. Cleanup of error handling logs in Windows
 
- -- Derek Schumacher <deschuma@microsoft.com>  Wed, 09 Sep 2020 9:42:00 -0700
+ -- Wei Wang <wewang3@microsoft.com>  Fri, 12 Mar 2021 4:42:00 -0700
 
 az-dcap-client (1.6) stable; urgency=medium
   * Fix crash in preivous version when no logging was enabled

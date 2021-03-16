@@ -32,6 +32,18 @@ make
 sudo make install
 ```
 
+## Run Google Test
+```
+cmake CMakeLists.txt
+make
+./dcap_provider_utests
+
+If cmake needs to update, please run:
+sudo apt remove cmake
+sudo apt-get install python-pip
+sudo pip install cmake --upgrade
+```
+
 ## Step-by-Step
 1. `./configure`
     * This pulls down prerequisites from other projects, finds correct local
