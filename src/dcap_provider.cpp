@@ -234,7 +234,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 return false;
             }
         }
-        catch (std::invalid_argument e)
+        catch (std::invalid_argument const &e)
         {
             log(SGX_QL_LOG_ERROR,
                 "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
@@ -242,7 +242,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 e.what());
             return false;
         }
-        catch (std::out_of_range e)
+        catch (std::out_of_range const &e)
         {
             log(SGX_QL_LOG_ERROR,
                 "Invalid argument thrown when parsing cache-control. Header "
@@ -450,7 +450,7 @@ static size_t safe_multiply(size_t first, size_t second)
 template <typename input_t, typename output_t>
 void safe_cast(input_t in, output_t* out)
 {
-    if (in > (std::numeric_limits<output_t>::max)())
+    if (in > static_cast<input_t>((std::numeric_limits<output_t>::max)()))
     {
         throw std::overflow_error("Integer cast overflow");
     }
