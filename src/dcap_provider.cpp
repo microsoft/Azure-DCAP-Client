@@ -234,7 +234,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 return false;
             }
         }
-        catch (std::invalid_argument& e)
+        catch (const std::invalid_argument& e)
         {
             log(SGX_QL_LOG_ERROR,
                 "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
@@ -242,7 +242,7 @@ bool get_cache_expiration_time(const string &cache_control, const string &url, t
                 e.what());
             return false;
         }
-        catch (std::out_of_range& e)
+        catch (const std::out_of_range& e)
         {
             log(SGX_QL_LOG_ERROR,
                 "Invalid argument thrown when parsing cache-control. Header "
@@ -764,7 +764,7 @@ static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
     {
         return local_cache_get(cert_url);
     }
-    catch (std::runtime_error& error)
+    catch (const std::runtime_error& error)
     {
         log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
         return nullptr;
@@ -835,7 +835,7 @@ static quote3_error_t get_collateral(
 
         return retval;
     }
-    catch (std::runtime_error& error)
+    catch (const std::runtime_error& error)
     {
         log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
@@ -844,7 +844,7 @@ static quote3_error_t get_collateral(
         // operate without caching
         return retval;
     }
-    catch (curl_easy::error& error)
+    catch (const curl_easy::error& error)
     {
         log(SGX_QL_LOG_ERROR,
             "curl error thrown, error code: %x: %s",
@@ -988,12 +988,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             }
         }
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
-    catch (curl_easy::error& error)
+    catch (const curl_easy::error& error)
     {
         log(SGX_QL_LOG_ERROR,
             "error thrown, error code: %x: %s",
@@ -1003,7 +1003,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                    ? SGX_QL_NO_PLATFORM_CERT_DATA
                    : SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (std::runtime_error& error)
+    catch (const std::runtime_error& error)
     {
         log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
@@ -1012,7 +1012,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         // operate without caching
         // return SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
@@ -1219,18 +1219,18 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
 
         assert(buffer == buffer_end);
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         return SGX_PLAT_ERROR_OUT_OF_MEMORY;
     }
-    catch (std::overflow_error& error)
+    catch (const std::overflow_error& error)
     {
         log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
         delete[] buffer;
         *pp_revocation_info = nullptr;
         return SGX_PLAT_ERROR_OVERFLOW;
     }
-    catch (curl_easy::error& error)
+    catch (const curl_easy::error& error)
     {
         log(SGX_QL_LOG_ERROR,
             "error thrown, error code: %x: %s",
@@ -1240,7 +1240,7 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
@@ -1331,17 +1331,17 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
             issuer_chain.size());
         *pp_qe_identity_info = p_qe_identity_info;
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         return SGX_PLAT_ERROR_OUT_OF_MEMORY;
     }
-    catch (std::overflow_error& error)
+    catch (const std::overflow_error& error)
     {
         log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
         *pp_qe_identity_info = nullptr;
         return SGX_PLAT_ERROR_OVERFLOW;
     }
-    catch (curl_easy::error& error)
+    catch (const curl_easy::error& error)
     {
         log(SGX_QL_LOG_ERROR,
             "error thrown, error code: %x: %s",
@@ -1351,7 +1351,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
                    ? SGX_PLAT_NO_DATA_FOUND
                    : SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
@@ -1622,19 +1622,19 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         return result;
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         sgx_ql_free_quote_verification_collateral(p_quote_collateral);
         log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
-    catch (std::overflow_error& error)
+    catch (const std::overflow_error& error)
     {
         log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
         sgx_ql_free_quote_verification_collateral(p_quote_collateral);
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
@@ -1714,21 +1714,21 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
 
         return operation_result;
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         sgx_ql_free_qve_identity(
             *pp_qve_identity, *pp_qve_identity_issuer_chain);
         log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
-    catch (std::overflow_error& error)
+    catch (const std::overflow_error& error)
     {
         log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
         sgx_ql_free_qve_identity(
             *pp_qve_identity, *pp_qve_identity_issuer_chain);
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
@@ -1784,19 +1784,19 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         *p_root_ca_crl_size = (uint16_t)bufferSize;
         return retval;
     }
-    catch (std::bad_alloc&)
+    catch (const std::bad_alloc&)
     {
         sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
         log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
-    catch (std::overflow_error& error)
+    catch (const std::overflow_error& error)
     {
         log(SGX_QL_LOG_ERROR, "Overflow error. '%s'", error.what());
         sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (std::exception& error)
+    catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
