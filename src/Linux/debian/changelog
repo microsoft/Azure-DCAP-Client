@@ -1,4 +1,4 @@
-az-dcap-client (1.7) stable; urgency=medium
+az-dcap-client (1.8) stable; urgency=medium
   * Enable Ubuntu 20.04 package and Fixed compile errors
 
  -- Wei Wang <wewang3@microsoft.com>  Fri, 19 Mar 2021 2:42:00 -0700
