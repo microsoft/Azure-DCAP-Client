@@ -73,17 +73,12 @@ build-essential package (`sudo apt install build-essential`) and dh-virtualenv
 
 The output deb file is suitable for installation on any amd64 Ubuntu system.
 
-In Ubuntu 20.04, please try this command to install dh-virtualenv:
+In Ubuntu 20.04, please run this command to install dh-virtualenv:
 ```
 sudo apt-get install software-properties-common
 sudo apt-add-repository universe
 sudo apt-get update
 sudo apt-get install virtualenv
-```
-
-You may need this to install fakeroot:
-```
-sudo apt install build-essential devscripts debhelper check libsubunit-dev fakeroot
 ```
 
 ## Troubleshooting
@@ -92,3 +87,7 @@ sudo apt install build-essential devscripts debhelper check libsubunit-dev faker
     * This can happen if the files are copied from a Windows host to a
       Linux host. Run dos2unix on all files to be sure none of them have Windows
       line-endings.
+2. You may need this to install fakeroot if you have this error "dpkg-buildpackage: error: gain-root-command 'fakeroot' not found":
+```
+sudo apt install build-essential devscripts debhelper check libsubunit-dev fakeroot
+```
