@@ -73,6 +73,18 @@ build-essential package (`sudo apt install build-essential`) and dh-virtualenv
 
 The output deb file is suitable for installation on any amd64 Ubuntu system.
 
+In Ubuntu 20.04, please run this command to install dh-virtualenv:
+```
+sudo apt-get install software-properties-common
+sudo apt-add-repository universe
+sudo apt-get update
+sudo apt-get install virtualenv
+```
+Install fakeroot:
+```
+sudo apt install build-essential devscripts debhelper check libsubunit-dev fakeroot
+```
+
 ## Troubleshooting
 
 1. You're seeing cryptic errors such as ": No such file or directory":
