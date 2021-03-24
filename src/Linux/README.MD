@@ -80,6 +80,10 @@ sudo apt-add-repository universe
 sudo apt-get update
 sudo apt-get install virtualenv
 ```
+Install fakeroot:
+```
+sudo apt install build-essential devscripts debhelper check libsubunit-dev fakeroot
+```
 
 ## Troubleshooting
 
@@ -87,7 +91,3 @@ sudo apt-get install virtualenv
     * This can happen if the files are copied from a Windows host to a
       Linux host. Run dos2unix on all files to be sure none of them have Windows
       line-endings.
-2. You may need this to install fakeroot if you have this error "dpkg-buildpackage: error: gain-root-command 'fakeroot' not found":
-```
-sudo apt install build-essential devscripts debhelper check libsubunit-dev fakeroot
-```
