@@ -563,7 +563,7 @@ static void GetCrlTest()
 //
 static void GetCrlTestICXV3(bool isProduction)
 {
-    static char* TEST_CRL_URL =
+    static const char* TEST_CRL_URL =
         "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
 
     // This is the CRL DP used by Intel for leaf certs
