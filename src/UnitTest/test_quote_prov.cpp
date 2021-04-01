@@ -563,17 +563,14 @@ static void GetCrlTest()
 //
 static void GetCrlTestICXV3(bool isProduction)
 {
-    static char* crl_url =
+    static const char* TEST_CRL_URL =
         "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
 
     // This is the CRL DP used by Intel for leaf certs
     if (!isProduction)
     {
-        crl_url = "https://sbx.api.trustedservices.intel.com/sgx/"
-                       "certification/v3/pckcrl?ca=platform&encoding=pem";
+        TEST_CRL_URL = "https://sbx.api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
     }
-
-    static const char* TEST_CRL_URL = crl_url;
 
     sgx_ql_get_revocation_info_params_t params = {
         SGX_QL_REVOCATION_INFO_VERSION_1,
