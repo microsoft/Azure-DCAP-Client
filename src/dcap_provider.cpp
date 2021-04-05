@@ -1474,11 +1474,17 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         {
             if (get_base_url() == SBX_THIM_BASE_URL)
             {
+                log(SGX_QL_LOG_INFO,
+                    "Base Endpoint was set to %s, serving SBX CRLs.",
+                    SBX_THIM_BASE_URL);
                 requested_ca = SBX_PLATFORM_CRL_NAME;
                 root_crl_name = SBX_ROOT_CRL_NAME;
             }
             else
             {
+                log(SGX_QL_LOG_INFO,
+                    "Base Endpoint was set to %s, serving intel Prod CRLs.",
+                    get_base_url());
                 requested_ca = PLATFORM_CRL_NAME;
                 root_crl_name = ROOT_CRL_NAME;
             }
