@@ -83,15 +83,15 @@ package:
 #          include:
 #            - "**/Release.trx"
             
-#cloudtest_options:
-#  pipeline_artifact_name: 'drop' 
-#  tenant_name: 'microsoftazureattestation'
-#  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
-#  configuration: 'release'
-#  platform: 'x64'    
-#  properties: 
-#    session:
-#      RetryOnFailureMode: 'TestJob'    # If the test job fails, retry the failed jobs on a new machine
+cloudtest_options:
+  pipeline_artifact_name: 'drop' 
+  tenant_name: 'microsoftazureattestation'
+  testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
+  configuration: 'release'
+  platform: 'x64'    
+  properties: 
+    session:
+      RetryOnFailureMode: 'TestJob'    # If the test job fails, retry the failed jobs on a new machine
 
 static_analysis_options:
   policheck_options:
