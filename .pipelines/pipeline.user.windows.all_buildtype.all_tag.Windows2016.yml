@@ -88,7 +88,10 @@ cloudtest_options:
   tenant_name: 'microsoftazureattestation'
   testmap_location: '[BuildRoot]\outputs\build\BuildOutputs\UnitTestMap.xml'
   configuration: 'release'
-  platform: 'x64'      
+  platform: 'x64'    
+  properties: 
+    session:
+      RetryOnFailureMode: 'TestJob'    # If the test job fails, retry the failed jobs on a new machine
 
 static_analysis_options:
   policheck_options:
