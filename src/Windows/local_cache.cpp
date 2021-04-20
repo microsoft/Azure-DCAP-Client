@@ -279,9 +279,7 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     CacheEntryHeaderV1 *header;
     char buf[sizeof(CacheEntryHeaderV1)] = { 0 };
     DWORD headerread = 0;
-
     throw_if(!ReadFile(file.get(), &buf, sizeof(CacheEntryHeaderV1), &headerread, nullptr), "Header read from local cache failed");
-
     throw_if(
         headerread != sizeof(CacheEntryHeaderV1),
         "Incomplete read of cache header");
