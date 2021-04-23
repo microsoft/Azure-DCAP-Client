@@ -69,18 +69,10 @@ static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
 static char ROOT_CRL_NAME[] =
     "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
-static char SBX_ROOT_CRL_NAME[] =
-    "https%3a%2f%2fsbx-certificates.trustedservices.intel.com%2fintelsgxrootca.der";
 static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
-
-static char SBX_PLATFORM_CRL_NAME[] = "https%3a%2f%2fsbx.api.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
 static char PLATFORM_CRL_NAME[] =
     "https%3a%2f%2fapi.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
-
-static string SBX_THIM_BASE_URL =
-    "https://sbx.test.acccache.azure.net/sgx/certificates";
-
 
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
@@ -1472,22 +1464,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
-            if (get_base_url() == SBX_THIM_BASE_URL)
-            {
-                log(SGX_QL_LOG_INFO,
-                    "Base Endpoint was set to %s, serving SBX CRLs.",
-                    SBX_THIM_BASE_URL);
-                requested_ca = SBX_PLATFORM_CRL_NAME;
-                root_crl_name = SBX_ROOT_CRL_NAME;
-            }
-            else
-            {
-                log(SGX_QL_LOG_INFO,
-                    "Base Endpoint was set to %s, serving intel Prod CRLs.",
-                    get_base_url());
-                requested_ca = PLATFORM_CRL_NAME;
-                root_crl_name = ROOT_CRL_NAME;
-            }
+			requested_ca = PLATFORM_CRL_NAME;
+            root_crl_name = ROOT_CRL_NAME;
         }
 
         if (requested_ca.empty())

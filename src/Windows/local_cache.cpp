@@ -224,12 +224,24 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
     
     wil::unique_hfile file;
     int i = 0;
+    bool retry = false;
+
     do {
         file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile));
-        Sleep(SLEEP_RETRY_MS);
+
+		retry = false;
+		if (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY)) {
+			retry = true;
+		}
+
+		if (retry == true)
+        {
+            Sleep(SLEEP_RETRY_MS);
+        }
+
         i++;
-    } while (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY));
+    } while (retry);
 
     return std::move(file);
 }
