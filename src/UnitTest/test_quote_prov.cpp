@@ -180,48 +180,11 @@ static sgx_cpu_svn_t icx_cpusvn = {
 
 static sgx_isv_svn_t icx_pcesvn = 10;
 
-static sgx_ql_pck_cert_id_t icx_id =
-    {icx_qe_id, sizeof(icx_qe_id), &icx_cpusvn, &icx_pcesvn, 0};
-static uint8_t sbx_icx_qe_id[16] = {
-    0xe2,
-    0x5e,
-    0x1e,
-    0x6d,
-    0x3e,
-    0x15,
-    0x1c,
-    0x41,
-    0x43,
-    0x8b,
-    0xe5,
-    0xbe,
-    0xff,
-    0x4d,
-    0x02,
-    0x74};
-
-static sgx_cpu_svn_t sbx_icx_cpusvn = {
-    0x01,
-    0x01,
-    0x0f,
-    0x0f,
-    0xff,
-    0xff,
-    0x00,
-    0x00,
-    0x0f,
-    0x0f,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
-
-static sgx_isv_svn_t sbx_icx_pcesvn = 10;
-
-static sgx_ql_pck_cert_id_t sbx_icx_id =
-    {sbx_icx_qe_id, sizeof(sbx_icx_qe_id), &sbx_icx_cpusvn, &sbx_icx_pcesvn, 0};
+static sgx_ql_pck_cert_id_t icx_id = {icx_qe_id,
+                                      sizeof(icx_qe_id),
+                                      &icx_cpusvn,
+                                      &icx_pcesvn,
+                                      0};
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
@@ -468,56 +431,6 @@ static void GetCertsTestICXV3()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-//
-// Fetches and validates certification data for a platform
-//
-static void GetCertsTestICXV3SBX()
-{
-    boolean TEST_SUCCESS = false;
-
-    sgx_ql_config_t* config = nullptr;
-    // Get the cert data
-    Log(SGX_QL_LOG_INFO, "Calling sgx_ql_get_quote_config");
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_get_quote_config(&sbx_icx_id, &config));
-    Log(SGX_QL_LOG_INFO, "sgx_ql_get_quote_config returned");
-    ASSERT_TRUE(nullptr != config);
-
-    // Just sanity check a few fields. Parsing the certs would require a big
-    // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
-        0x03,
-        0x03,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00};
-
-    constexpr sgx_isv_svn_t pcesvn_mapped = 10;
-    ASSERT_TRUE(
-        0 ==
-        memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
-    ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
-    ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
-    ASSERT_TRUE(0 < config->cert_data_size);
-    ASSERT_TRUE(nullptr != config->p_cert_data);
-
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_free_quote_config(config));
-
-    TEST_SUCCESS = true;
-
-    ASSERT_TRUE(TEST_SUCCESS);
-}
-
 static inline void VerifyCrlOutput(sgx_ql_get_revocation_info_params_t params)
 {
     boolean TEST_SUCCESS = false;
@@ -565,12 +478,6 @@ static void GetCrlTestICXV3(bool isProduction)
 {
     static const char* TEST_CRL_URL =
         "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
-
-    // This is the CRL DP used by Intel for leaf certs
-    if (!isProduction)
-    {
-        TEST_CRL_URL = "https://sbx.api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
-    }
 
     sgx_ql_get_revocation_info_params_t params = {
         SGX_QL_REVOCATION_INFO_VERSION_1,
@@ -703,28 +610,6 @@ static void GetRootCACrlTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-/// <summary>
-/// Placeholder for if we're able to modify sgx_ql_get_root_ca_crl to point to sbx
-/// </summary>
-static void GetRootCACrlICXTestSBX()
-{
-    boolean TEST_SUCCESS = false;
-
-    char* root_ca_crl = nullptr;
-    uint16_t root_ca_crl_size;
-    quote3_error_t result =
-        sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
-    ASSERT_TRUE(root_ca_crl != nullptr);
-    ASSERT_TRUE(root_ca_crl_size > 0);
-    ASSERT_TRUE(root_ca_crl[root_ca_crl_size - 1] == '\0');
-
-    sgx_ql_free_root_ca_crl(root_ca_crl);
-
-    TEST_SUCCESS = true;
-    ASSERT_TRUE(TEST_SUCCESS);
-}
-
 // The Windows tolerance is 40ms while the Linux is about 2ms. That's for two
 // reasons: 1) The windows system timer runs at a 10ms cadence, meaning that
 // you're not going to see 1ms or 2ms intervals. 2) The windows console is
@@ -827,37 +712,6 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
 
     GetCrlTestICXV3(true);
     GetRootCACrlTest();
-
-    auto duration_local_verification =
-        MeasureFunction(GetVerificationCollateralTestICXV3);
-
-    VerifyDurationChecks(
-        duration_local_cert,
-        duration_local_verification,
-        duration_curl_cert,
-        duration_curl_verification,
-        caching_enabled);
-    return true;
-}
-
-boolean RunQuoteProviderTestsICXV3SBX(bool caching_enabled = false)
-{
-    local_cache_clear();
-
-    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3SBX);
-    GetCrlTestICXV3(false);
-
-    auto duration_curl_verification =
-        MeasureFunction(GetVerificationCollateralTestICXV3);
-
-    GetRootCACrlICXTestSBX();
-    //
-    // Second pass: Ensure that we ONLY get data from the cache
-    //
-    auto duration_local_cert = MeasureFunction(GetCertsTestICXV3SBX);
-
-    GetCrlTestICXV3(false);
-    GetRootCACrlICXTestSBX();
 
     auto duration_local_verification =
         MeasureFunction(GetVerificationCollateralTestICXV3);
@@ -1075,7 +929,7 @@ boolean RunCachePermissionTests(libary_type_t* library)
     return true;
 }
 
-void SetupEnvironment(std::string version, bool inProduction = true)
+void SetupEnvironment(std::string version)
 {
 #if defined __LINUX__
     setenv(
@@ -1088,21 +942,11 @@ void SetupEnvironment(std::string version, bool inProduction = true)
         setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
         if (version == "v3")
         {
-            if (inProduction)
-            {
-                setenv(
-                    "AZDCAP_BASE_CERT_URL",
-                    "https://dev.test.acccache.azure.net/sgx/certificates",
-                    1);
-            }
-            else
-            {
-                setenv(
-                    "AZDCAP_BASE_CERT_URL",
-                    "https://sbx.test.acccache.azure.net/sgx/certificates",
-                    1);
-            }
-        }
+			setenv(
+				"AZDCAP_BASE_CERT_URL",
+                "https://dev.test.acccache.azure.net/sgx/certificates",
+                 1);
+         }
     }
 #else
     std::stringstream version_var;
@@ -1118,18 +962,9 @@ void SetupEnvironment(std::string version, bool inProduction = true)
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
     if (!version.empty() && version.compare("v3") == 0)
     {
-        if (inProduction)
-        {
-            EXPECT_TRUE(SetEnvironmentVariableA(
-                "AZDCAP_BASE_CERT_URL",
-                "https://dev.test.acccache.azure.net/sgx/certificates"));
-        }
-        else
-        {
-            EXPECT_TRUE(SetEnvironmentVariableA(
-                "AZDCAP_BASE_CERT_URL",
-                "https://sbx.test.acccache.azure.net/sgx/certificates"));
-        }
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_BASE_CERT_URL",
+            "https://dev.test.acccache.azure.net/sgx/certificates"));
     }
 #endif
 }
@@ -1204,13 +1039,9 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     SetupEnvironment("v3");
    // ASSERT_TRUE(RunQuoteProviderTests());
    // ASSERT_TRUE(GetQveIdentityTest());
-      ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+   ASSERT_TRUE(RunQuoteProviderTestsICXV3());
 
-    SetupEnvironment("v3", false);
-    //ASSERT_TRUE(RunQuoteProviderTestsICXV3SBX());
-    // ASSERT_TRUE(GetQveIdentityTest());
-
-#if defined __LINUX__
+ #if defined __LINUX__
     dlclose(library);
 #else
     FreeLibrary(library);
