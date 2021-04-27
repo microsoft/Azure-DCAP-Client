@@ -143,22 +143,22 @@ static sgx_isv_svn_t pcesvn = 6;
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
 static uint8_t icx_qe_id[16] = {
-    0xdf,
-    0x07,
-    0x19,
-    0x83,
-    0x48,
-    0xc7,
-    0xd8,
-    0xf0,
-    0xea,
-    0x1e,
-    0xd6,
-    0xe7,
-    0x61,
-    0xcf,
-    0x5e,
-    0x0d};
+	0x0f,
+	0xe3,
+	0x21,
+	0xfa,
+	0xa3,
+	0x1e,
+	0x76,
+	0xda,
+	0x3e,
+	0xaa,
+	0xd8,
+	0x27,
+	0xab,
+	0x69,
+	0x07,
+	0x19};
 
 static sgx_cpu_svn_t icx_cpusvn = {
     0x04,
@@ -474,7 +474,7 @@ static void GetCrlTest()
 //
 // Fetches and validates revocation data for SGX
 //
-static void GetCrlTestICXV3(bool isProduction)
+static void GetCrlTestICXV3()
 {
     static const char* TEST_CRL_URL =
         "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
@@ -699,7 +699,7 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     local_cache_clear();
 
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
-    GetCrlTestICXV3(true);
+    GetCrlTestICXV3();
 
     auto duration_curl_verification =
         MeasureFunction(GetVerificationCollateralTestICXV3);
@@ -710,7 +710,7 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     //
     auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
 
-    GetCrlTestICXV3(true);
+    GetCrlTestICXV3();
     GetRootCACrlTest();
 
     auto duration_local_verification =
@@ -937,17 +937,6 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
-    if (!version.empty())
-    {
-        setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
-        if (version == "v3")
-        {
-			setenv(
-				"AZDCAP_BASE_CERT_URL",
-                "https://dev.test.acccache.azure.net/sgx/certificates",
-                 1);
-         }
-    }
 #else
     std::stringstream version_var;
     if (!version.empty())
@@ -960,12 +949,6 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
-    if (!version.empty() && version.compare("v3") == 0)
-    {
-        EXPECT_TRUE(SetEnvironmentVariableA(
-            "AZDCAP_BASE_CERT_URL",
-            "https://dev.test.acccache.azure.net/sgx/certificates"));
-    }
 #endif
 }
 
@@ -1037,11 +1020,11 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     // Get the data from the service
     //
     SetupEnvironment("v3");
-   // ASSERT_TRUE(RunQuoteProviderTests());
-   // ASSERT_TRUE(GetQveIdentityTest());
-   ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(GetQveIdentityTest());
 
- #if defined __LINUX__
+#if defined __LINUX__
     dlclose(library);
 #else
     FreeLibrary(library);

@@ -224,7 +224,7 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
     
     wil::unique_hfile file;
     int i = 0;
-    bool retry = false;
+    bool retry;
 
     do {
         file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
@@ -235,7 +235,7 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
 			retry = true;
 		}
 
-		if (retry == true)
+		if (retry)
         {
             Sleep(SLEEP_RETRY_MS);
         }
