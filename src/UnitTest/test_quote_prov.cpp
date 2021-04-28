@@ -610,17 +610,7 @@ static void GetRootCACrlTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-// The Windows tolerance is 40ms while the Linux is about 2ms. That's for two
-// reasons: 1) The windows system timer runs at a 10ms cadence, meaning that
-// you're not going to see 1ms or 2ms intervals. 2) The windows console is
-// synchronous and quite slow relative to the linux console.
-#if defined __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
-constexpr auto CURL_FILESYSTEM_TOLERANCE = 0;
-#else
-constexpr auto CURL_TOLERANCE = 0.04;
-constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.025;
-#endif
 
 static inline float MeasureFunction(measured_function_t func)
 {
@@ -644,8 +634,7 @@ static inline void VerifyDurationChecks(
         // Ensure that there is a signficiant enough difference between the cert
         // fetch to the end point and cert fetch to local cache and that local
         // cache call is fast enough
-        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
-            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE = CURL_TOLERANCE;
         EXPECT_TRUE(
             fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
         EXPECT_TRUE(
