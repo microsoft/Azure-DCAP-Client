@@ -610,7 +610,11 @@ static void GetRootCACrlTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
+#ifdef __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
+#else
+constexpr auto CURL_TOLERANCE = 0.004;
+#endif
 
 static inline float MeasureFunction(measured_function_t func)
 {
