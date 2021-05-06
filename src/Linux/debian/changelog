@@ -1,3 +1,9 @@
+az-dcap-client (1.9) stable; urgency=medium
+  * Enable support for IceLake
+  * Fix bug causing increased latency to read from cache on Windows
+
+ -- Shiv Rajpal<shivr@microsoft.com>  Thu, 06 May 2021 12:18:22 -0700
+
 az-dcap-client (1.8) stable; urgency=medium
   * Enable Ubuntu 20.04 package and Fixed compile errors
 
