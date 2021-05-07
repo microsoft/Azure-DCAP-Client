@@ -930,7 +930,10 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
-    setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+    if (!version.empty())
+    {
+		setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+    }
 #else
     std::stringstream version_var;
     if (!version.empty())
