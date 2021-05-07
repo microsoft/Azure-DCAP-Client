@@ -3,7 +3,7 @@ Upstream-Name: az-dcap-client
 Source: https://github.com/Microsoft/Azure-DCAP-Client
 
 Files: *
-Copyright: 2018 Microsoft Corporation
+Copyright: 2021 Microsoft Corporation
 License: Azure SGX Data Center Attestation Primitives Client Library
  .
  Copyright (c) Microsoft Corporation

@@ -142,31 +142,29 @@ static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
-// TODO: (ICX) Replace this platform data once we're pulling icx from
-// live
 static uint8_t icx_qe_id[16] = {
-    0xed,
-    0x1e,
-    0xf3,
-    0xf6,
-    0x20,
-    0x45,
-    0xd0,
-    0x37,
-    0x9c,
-    0xd6,
-    0x12,
-    0xc8,
-    0x86,
-    0x5b,
-    0x65,
-    0x37};
+	0x0f,
+	0xe3,
+	0x21,
+	0xfa,
+	0xa3,
+	0x1e,
+	0x76,
+	0xda,
+	0x3e,
+	0xaa,
+	0xd8,
+	0x27,
+	0xab,
+	0x69,
+	0x07,
+	0x19};
 
 static sgx_cpu_svn_t icx_cpusvn = {
+    0x04,
+    0x04,
     0x03,
-    0x03,
-    0x02,
-    0x00,
+    0x08,
     0xff,
     0xff,
     0x00,
@@ -182,8 +180,11 @@ static sgx_cpu_svn_t icx_cpusvn = {
 
 static sgx_isv_svn_t icx_pcesvn = 10;
 
-static sgx_ql_pck_cert_id_t icx_id =
-    {icx_qe_id, sizeof(icx_qe_id), &icx_cpusvn, &icx_pcesvn, 0};
+static sgx_ql_pck_cert_id_t icx_id = {icx_qe_id,
+                                      sizeof(icx_qe_id),
+                                      &icx_cpusvn,
+                                      &icx_pcesvn,
+                                      0};
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
@@ -383,9 +384,6 @@ static void GetCertsTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-//
-// Fetches and validates certification data for a platform
-//
 static void GetCertsTestICXV3()
 {
     boolean TEST_SUCCESS = false;
@@ -400,12 +398,12 @@ static void GetCertsTestICXV3()
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
     constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
+        0x04,
+        0x04,
         0x03,
         0x03,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
+        0xff,
+        0xff,
         0x00,
         0x00,
         0x00,
@@ -478,10 +476,8 @@ static void GetCrlTest()
 //
 static void GetCrlTestICXV3()
 {
-    // This is the CRL DP used by Intel for leaf certs
     static const char* TEST_CRL_URL =
-        "https://sbx.api.trustedservices.intel.com/sgx/certification/v3/"
-        "pckcrl?ca=platform";
+        "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
 
     sgx_ql_get_revocation_info_params_t params = {
         SGX_QL_REVOCATION_INFO_VERSION_1,
@@ -565,6 +561,7 @@ static void GetVerificationCollateralTestICXV3()
     VerifyCollateral(collateral);
 }
 
+
 static boolean GetQveIdentityTest()
 {
     boolean TEST_SUCCESS = false;
@@ -613,35 +610,10 @@ static void GetRootCACrlTest()
     ASSERT_TRUE(TEST_SUCCESS);
 }
 
-static void GetRootCACrlICXTest()
-{
-    boolean TEST_SUCCESS = false;
-
-    char* root_ca_crl = nullptr;
-    uint16_t root_ca_crl_size;
-    quote3_error_t result =
-        sgx_ql_get_root_ca_crl(&root_ca_crl, &root_ca_crl_size);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
-    ASSERT_TRUE(root_ca_crl != nullptr);
-    ASSERT_TRUE(root_ca_crl_size > 0);
-    ASSERT_TRUE(root_ca_crl[root_ca_crl_size - 1] == '\0');
-
-    sgx_ql_free_root_ca_crl(root_ca_crl);
-
-    TEST_SUCCESS = true;
-    ASSERT_TRUE(TEST_SUCCESS);
-}
-
-// The Windows tolerance is 40ms while the Linux is about 2ms. That's for two
-// reasons: 1) The windows system timer runs at a 10ms cadence, meaning that
-// you're not going to see 1ms or 2ms intervals. 2) The windows console is
-// synchronous and quite slow relative to the linux console.
-#if defined __LINUX__
+#ifdef __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
-constexpr auto CURL_FILESYSTEM_TOLERANCE = 0;
 #else
-constexpr auto CURL_TOLERANCE = 0.04;
-constexpr auto CURL_FILESYSTEM_TOLERANCE = 0.025;
+constexpr auto CURL_TOLERANCE = 0.004;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -666,8 +638,7 @@ static inline void VerifyDurationChecks(
         // Ensure that there is a signficiant enough difference between the cert
         // fetch to the end point and cert fetch to local cache and that local
         // cache call is fast enough
-        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE =
-            CURL_TOLERANCE + CURL_FILESYSTEM_TOLERANCE;
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE = CURL_TOLERANCE;
         EXPECT_TRUE(
             fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
         EXPECT_TRUE(
@@ -726,15 +697,14 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     auto duration_curl_verification =
         MeasureFunction(GetVerificationCollateralTestICXV3);
 
-    // TODO: (ICX) This test can be modified back once we have icx prod cluster data to test with
-    GetRootCACrlICXTest();
+    GetRootCACrlTest();
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
     auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
 
     GetCrlTestICXV3();
-    GetRootCACrlICXTest();
+    GetRootCACrlTest();
 
     auto duration_local_verification =
         MeasureFunction(GetVerificationCollateralTestICXV3);
@@ -962,14 +932,7 @@ void SetupEnvironment(std::string version)
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
     {
-        setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
-        if (version == "v3")
-        {
-            setenv(
-                "AZDCAP_BASE_CERT_URL",
-                "https://americas.test.acccache.azure.net/sgx/certificates",
-                1);
-        }
+		setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
     }
 #else
     std::stringstream version_var;
@@ -983,13 +946,6 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
-    // TODO: (ICX) Remove when we move icx to live and prod
-    if (!version.empty() && version.compare("v3") == 0)
-    {
-        EXPECT_TRUE(SetEnvironmentVariableA(
-            "AZDCAP_BASE_CERT_URL",
-            "https://americas.test.acccache.azure.net/sgx/certificates"));
-    }
 #endif
 }
 
