@@ -51,9 +51,10 @@ static const std::map<std::string, std::string> default_values = {
 
 }; // namespace headers
 
-// New API version used to request PEM encoded CRLs
-constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
-constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
+// API version 2020-10-01 supports DER for CRL
+// API version 2020-02-12 supports PEM for CRL
+constexpr char API_VERSION_20181001[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION_20200212[] = "api-version=2020-02-12-preview";
 
 static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certificates";
@@ -62,7 +63,7 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
-static char DEFAULT_COLLATERAL_VERSION[] = "v2";
+static char DEFAULT_COLLATERAL_VERSION[] = "v3";
 static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char CRL_CA_PROCESSOR[] = "processor";
@@ -104,7 +105,7 @@ static std::string get_collateral_version()
 
     if (collateral_version.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default collateral version '%s'.",
             default_collateral_version.c_str());
         return default_collateral_version;
@@ -493,7 +494,7 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
     {
         pck_cert_url << "clientid=" << client_id << '&';
     }
-    pck_cert_url << API_VERSION_LEGACY;
+    pck_cert_url << API_VERSION_20181001;
     return pck_cert_url.str();
 }
 
@@ -679,7 +680,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    *out = build_pck_crl_url(crl_url, API_VERSION_LEGACY);
+    *out = build_pck_crl_url(crl_url, API_VERSION_20181001);
     return SGX_PLAT_ERROR_OK;
 }
 
@@ -701,7 +702,7 @@ static std::string build_tcb_info_url(const std::string& fmspc)
     {
         tcb_info_url << "clientid=" << client_id << "&";
     }
-    tcb_info_url << API_VERSION_LEGACY;
+    tcb_info_url << API_VERSION_20181001;
     return tcb_info_url.str();
 }
 
@@ -751,7 +752,7 @@ static std::string build_enclave_id_url(
     {
         qe_id_url << "clientid=" << client_id << '&';
     }
-    qe_id_url << API_VERSION_LEGACY;
+    qe_id_url << API_VERSION_20181001;
     return qe_id_url.str();
 }
 
@@ -1422,6 +1423,22 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
     try
     {
+        std::string collateral_version = get_collateral_version();
+        uint32_t version;
+        std::string api_version;
+
+        if (!collateral_version.compare("v1") ||
+            !collateral_version.compare("v2"))
+        {
+            version = 1;
+            api_version = API_VERSION_20200212;
+        }
+        else
+        {
+            version = 3;
+            api_version = API_VERSION_20181001;
+        }
+
         if (fmspc == nullptr)
         {
             log(SGX_QL_LOG_ERROR, "FMSPC is null");
@@ -1464,7 +1481,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
         {
-			requested_ca = PLATFORM_CRL_NAME;
+            requested_ca = PLATFORM_CRL_NAME;
             root_crl_name = ROOT_CRL_NAME;
         }
 
@@ -1489,7 +1506,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string qe_identity_issuer_chain;
 
         // Get PCK CRL
-        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
+        std::string pck_crl_url =
+            build_pck_crl_url(requested_ca, api_version);
         operation_result = get_collateral(
             CollateralTypes::PckCrl,
             pck_crl_url, 
@@ -1506,7 +1524,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(root_crl_name, API_VERSION);
+            build_pck_crl_url(root_crl_name, api_version);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -1567,7 +1585,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         memset(p_quote_collateral, 0, buffer_size);
 
         // Fill in the buffer contents
-        p_quote_collateral->version = 1;
+        p_quote_collateral->version = version;
         quote3_error_t result;
         result = fill_qpl_string_buffer(
             pck_issuer_chain,
@@ -1755,7 +1773,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         }
 
         std::string root_ca_crl_url =
-            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION_20200212);
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 

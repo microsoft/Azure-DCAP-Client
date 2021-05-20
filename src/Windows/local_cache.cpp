@@ -49,17 +49,17 @@ static void make_dir(const std::wstring& dirname)
 
 static void init_callback()
 {
-	const DWORD buffSize = MAX_PATH;
-	
-	auto env_home = std::make_unique<wchar_t[]>(buffSize);
-	memset(env_home.get(), 0, buffSize);
-	GetEnvironmentVariable(L"LOCALAPPDATA", env_home.get(), buffSize);
-	std::wstring wenv_home(env_home.get());
+    const DWORD buffSize = MAX_PATH;
+    
+    auto env_home = std::make_unique<wchar_t[]>(buffSize);
+    memset(env_home.get(), 0, buffSize);
+    GetEnvironmentVariable(L"LOCALAPPDATA", env_home.get(), buffSize);
+    std::wstring wenv_home(env_home.get());
 
-	auto env_azdcap_cache = std::make_unique<wchar_t[]>(buffSize);
-	memset(env_azdcap_cache.get(), 0, buffSize);
-	GetEnvironmentVariable(L"AZDCAP_CACHE", env_azdcap_cache.get(), buffSize);
-	std::wstring wenv_azdcap_cache(env_azdcap_cache.get());
+    auto env_azdcap_cache = std::make_unique<wchar_t[]>(buffSize);
+    memset(env_azdcap_cache.get(), 0, buffSize);
+    GetEnvironmentVariable(L"AZDCAP_CACHE", env_azdcap_cache.get(), buffSize);
+    std::wstring wenv_azdcap_cache(env_azdcap_cache.get());
 
     const std::wstring application_name(L"\\.az-dcap-client");
     std::wstring dirname;
@@ -98,8 +98,8 @@ static std::wstring sha256(size_t data_size, const void* data)
     std::string errorString;
     DWORD cbData = 0;
     DWORD cbHash = 0;
-	std::vector<BYTE> pbHash;
-	PBYTE pHashItr = nullptr;
+    std::vector<BYTE> pbHash;
+    PBYTE pHashItr = nullptr;
     std::string retval;
 
     //open an algorithm handle
@@ -128,7 +128,7 @@ static std::wstring sha256(size_t data_size, const void* data)
     }
 
     //allocate the hash buffer on the heap
-	pbHash = std::vector<BYTE>(cbHash);
+    pbHash = std::vector<BYTE>(cbHash);
 
     //create a hash
     if (!NT_SUCCESS(status = BCryptCreateHash(
@@ -166,7 +166,7 @@ static std::wstring sha256(size_t data_size, const void* data)
         goto Cleanup;
     }
 
-	pHashItr = pbHash.data();
+    pHashItr = pbHash.data();
     retval.reserve(2 * cbHash + 1);
     for (size_t i = 0; i < cbHash; i++)
     {
@@ -178,7 +178,7 @@ static std::wstring sha256(size_t data_size, const void* data)
 Cleanup:
     throw_if(!NT_SUCCESS(status), errorString);
 
-	std::wstring wretval(retval.begin(), retval.end());
+    std::wstring wretval(retval.begin(), retval.end());
 
     return wretval;
 }
@@ -186,7 +186,7 @@ Cleanup:
 static std::wstring sha256(const std::string& input)
 {
     std::wstring retVal = sha256(input.length(), input.data());
-	return retVal;
+    return retVal;
 }
 
 static std::wstring get_file_name(const std::string& id)
@@ -230,12 +230,12 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
         file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile));
 
-		retry = false;
-		if (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY)) {
-			retry = true;
-		}
+        retry = false;
+        if (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY)) {
+            retry = true;
+        }
 
-		if (retry)
+        if (retry)
         {
             Sleep(SLEEP_RETRY_MS);
         }
@@ -314,8 +314,8 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     auto cache_entry = std::make_unique<std::vector<uint8_t>>(datasize);
 
     DWORD dataread = 0;
-	throw_if(!ReadFile(file.get(), cache_entry->data(), datasize, &dataread, nullptr), "Error reading cached file data");
-	throw_if(dataread != datasize, "Read returned fewer bytes than expected.");
+    throw_if(!ReadFile(file.get(), cache_entry->data(), datasize, &dataread, nullptr), "Error reading cached file data");
+    throw_if(dataread != datasize, "Read returned fewer bytes than expected.");
 
     return cache_entry;
 }

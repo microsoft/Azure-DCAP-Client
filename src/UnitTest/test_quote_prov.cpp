@@ -3,10 +3,6 @@
 
 #include <gtest/gtest.h>
 
-#include "../local_cache.h"
-#include "dcap_provider.h"
-#include "sgx_ql_lib_common.h"
-
 #include <sys/stat.h>
 #include <chrono>
 #include <cstdio>
@@ -24,6 +20,12 @@
 #include <windows.h>
 #include <iostream>
 #endif
+
+
+#include "../local_cache.h"
+#include "dcap_provider.h"
+#include "sgx_ql_lib_common.h"
+#include "environment.h"
 
 using namespace std;
 
@@ -143,22 +145,22 @@ static sgx_isv_svn_t pcesvn = 6;
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
 static uint8_t icx_qe_id[16] = {
-	0x0f,
-	0xe3,
-	0x21,
-	0xfa,
-	0xa3,
-	0x1e,
-	0x76,
-	0xda,
-	0x3e,
-	0xaa,
-	0xd8,
-	0x27,
-	0xab,
-	0x69,
-	0x07,
-	0x19};
+    0x0f,
+    0xe3,
+    0x21,
+    0xfa,
+    0xa3,
+    0x1e,
+    0x76,
+    0xda,
+    0x3e,
+    0xaa,
+    0xd8,
+    0x27,
+    0xab,
+    0x69,
+    0x07,
+    0x19};
 
 static sgx_cpu_svn_t icx_cpusvn = {
     0x04,
@@ -185,6 +187,13 @@ static sgx_ql_pck_cert_id_t icx_id = {icx_qe_id,
                                       &icx_cpusvn,
                                       &icx_pcesvn,
                                       0};
+
+
+static std::string get_env_variable(std::string env_variable)
+{
+    auto retval = get_env_variable_no_log(env_variable);
+    return retval.first;
+}
 
 static void Log(sgx_ql_log_level_t level, const char* message)
 {
@@ -492,9 +501,18 @@ static void GetCrlTestICXV3()
 static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
 {
     boolean TEST_SUCCESS = false;
-    ASSERT_TRUE(collateral != nullptr);
+    std::string collateral_version =
+        get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
 
-    ASSERT_TRUE(collateral->version == 1);
+    ASSERT_TRUE(collateral != nullptr);
+    if (!collateral_version.compare("v1") || !collateral_version.compare("v2"))
+    {
+        ASSERT_TRUE(collateral->version == 1);
+    }
+    else
+    {
+        ASSERT_TRUE(collateral->version == 3);
+    }
     ASSERT_TRUE(collateral->pck_crl != nullptr);
     ASSERT_TRUE(collateral->pck_crl_size > 0);
     ASSERT_TRUE(collateral->pck_crl_issuer_chain != nullptr);
@@ -543,6 +561,7 @@ static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
 static void GetVerificationCollateralTest()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
+
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
         TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
@@ -932,7 +951,7 @@ void SetupEnvironment(std::string version)
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
     {
-		setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+        setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
     }
 #else
     std::stringstream version_var;

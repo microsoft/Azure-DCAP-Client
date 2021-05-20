@@ -45,7 +45,8 @@ typedef struct _sgx_ql_crl_data_t
     char* crl_data;         // DER-encoded.
 
     uint32_t crl_issuer_chain_size; // size of issuer chain for the CRL
-    char* crl_issuer_chain;         // PEM-encoded certificate chain
+    char* crl_issuer_chain;         // PEM-encoded certificate chain for V1/V2
+                                    // DER-encoded certificate chain for V3
 } sgx_ql_crl_data_t;
 
 typedef struct _sgx_ql_revocation_info_t
