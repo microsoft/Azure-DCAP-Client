@@ -51,7 +51,7 @@ static const std::map<std::string, std::string> default_values = {
 
 }; // namespace headers
 
-// API version 2020-10-01 supports DER for CRL
+// API version 2018-10-01 supports DER for CRL
 // API version 2020-02-12 supports PEM for CRL
 constexpr char API_VERSION_20181001[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION_20200212[] = "api-version=2020-02-12-preview";
@@ -93,7 +93,7 @@ static std::string get_env_variable(std::string env_variable)
     auto retval = get_env_variable_no_log(env_variable);
     if (!retval.second.empty())
     {
-        log(SGX_QL_LOG_WARNING, retval.second.c_str());
+        log(SGX_QL_LOG_INFO, retval.second.c_str());
     }
     return retval.first;
 }
@@ -112,9 +112,9 @@ static std::string get_collateral_version()
     }
     else
     {
-        if (!collateral_version.compare("v1") &&
-            !collateral_version.compare("v2") &&
-            !collateral_version.compare("v3"))
+        if (collateral_version.compare("v1") &&
+            collateral_version.compare("v2") &&
+            collateral_version.compare("v3"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
