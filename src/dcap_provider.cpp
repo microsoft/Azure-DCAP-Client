@@ -62,7 +62,7 @@ static std::string cert_base_url = DEFAULT_CERT_URL;
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
-static char DEFAULT_COLLATERAL_VERSION[] = "v2";
+static char DEFAULT_COLLATERAL_VERSION[] = "v3";
 static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char CRL_CA_PROCESSOR[] = "processor";
@@ -104,16 +104,16 @@ static std::string get_collateral_version()
 
     if (collateral_version.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default collateral version '%s'.",
             default_collateral_version.c_str());
         return default_collateral_version;
     }
     else
     {
-        if (!collateral_version.compare("v1") &&
-            !collateral_version.compare("v2") &&
-            !collateral_version.compare("v3"))
+        if (collateral_version.compare("v1") &&
+            collateral_version.compare("v2") &&
+            collateral_version.compare("v3"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
