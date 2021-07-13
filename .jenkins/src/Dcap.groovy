@@ -85,12 +85,12 @@ def Run(String compiler, String task, String compiler_version = "") {
         default:
             c_compiler = "clang"
             cpp_compiler = "clang++"
-            compiler_version = "10"
+            compiler_version = "8"
     }
     if (compiler_version) {
         c_compiler += "-${compiler_version}"
+        cpp_compiler += "-${compiler_version}"
     }
-    
     withEnv(["CC=${c_compiler}","CXX=${cpp_compiler}"]) {
         runTask(task);
     }
