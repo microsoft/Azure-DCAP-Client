@@ -1,6 +1,6 @@
 #!/usr/bin/groovy
 // Licensed under the MIT License.
-//This file contains common Jenkins pipeline functions to be used by Jenkinsfile and build_docker_images.Jenkinsfile test change
+//This file contains common Jenkins pipeline functions to be used by Jenkinsfile and build_docker_images.Jenkinsfile
 
 String dockerBuildArgs(String... args) {
     String argumentString = ""
@@ -90,7 +90,7 @@ def Run(String compiler, String task, String compiler_version = "") {
     if (compiler_version) {
         c_compiler += "-${compiler_version}"
     }
-
+    
     withEnv(["CC=${c_compiler}","CXX=${cpp_compiler}"]) {
         runTask(task);
     }
