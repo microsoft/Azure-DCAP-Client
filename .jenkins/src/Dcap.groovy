@@ -77,10 +77,10 @@ def Run(String compiler, String task, String compiler_version = "") {
             c_compiler = "gcc"
             cpp_compiler = "g++"
             break
-        case "clang-8":
+        case "clang-10":
             c_compiler = "clang"
             cpp_compiler = "clang++"
-            compiler_version = "8"
+            compiler_version = "10"
             break
         default:
             c_compiler = "clang"
