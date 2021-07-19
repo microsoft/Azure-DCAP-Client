@@ -63,6 +63,13 @@ def runTask(String task) {
 def Run(String compiler, String task, String compiler_version = "") {
     def c_compiler
     def cpp_compiler
+
+    compiler_components = compiler.split("-")
+    if (compiler_components[0] == "clang" && compiler_components.size() > 1) {
+        compiler = "clang"
+        compiler_version = compiler_components[1]
+    }
+
     switch(compiler) {
         case "cross":
             // In this case, the compiler is set by the CMake toolchain file. As
@@ -73,16 +80,18 @@ def Run(String compiler, String task, String compiler_version = "") {
             c_compiler = "clang"
             cpp_compiler = "clang++"
             break
+        case "clang-7":
+            c_compiler = "clang"
+            cpp_compiler = "clang++"
+            compiler_version = "7"
+            break
         case "gcc":
             c_compiler = "gcc"
             cpp_compiler = "g++"
             break
-        case "clang-8":
-            c_compiler = "clang"
-            cpp_compiler = "clang++"
-            compiler_version = "8"
-            break
         default:
+            // This is needed for backwards compatibility with the old
+            // implementation of the method.
             c_compiler = "clang"
             cpp_compiler = "clang++"
             compiler_version = "8"
