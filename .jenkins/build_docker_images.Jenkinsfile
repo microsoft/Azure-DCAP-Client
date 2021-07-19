@@ -5,47 +5,46 @@ DCAPTOOLS_REPO = "https://dcapdockerciregistry.azurecr.io"
 DCAPTOOLS_REPO_CREDENTIAL_ID = "dcapdockerciregistry"
 
 def buildDockerImages() {
-    node("nonSGX") {
-        timeout(GLOBAL_TIMEOUT) {
-            stage("Checkout") {
-                cleanWs()
-                checkout scm
-            }
+	node("nonSGX") {
+		timeout(GLOBAL_TIMEOUT) {
+			stage("Checkout") {
+				cleanWs()
+				checkout scm
+			}
 			
-            def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
+			def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 			
-            stage("Build Ubuntu 18.04 Docker Image") {
-                docker.withRegistry(DCAPTOOLS_REPO, DCAPTOOLS_REPO_CREDENTIAL_ID) {
-                    azDcapTools1804 = dcap.dockerImage("oetools-18.04:${DOCKER_TAG}",
-                                                     ".jenkins/Dockerfile",
-                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
-                }
-                pubazDcapTools1804 = dcap.dockerImage("oeciteam/oetools-18.04:${DOCKER_TAG}",
-                                                    ".jenkins/Dockerfile",
-                                                    "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
-            }
-			stage("Build Ubuntu 20.04 Docker Image") {
-                docker.withRegistry(DCAPTOOLS_REPO, DCAPTOOLS_REPO_CREDENTIAL_ID) {
-                    azDcapTools2004 = dcap.dockerImage("oetools-20.04:${DOCKER_TAG}",
-                                                     ".jenkins/Dockerfile",
-                                                     "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04")
-                }
-                pubazDcapTools2004 = dcap.dockerImage("oeciteam/oetools-20.04:${DOCKER_TAG}",
-                                                    ".jenkins/Dockerfile",
-                                                    "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04")
-            }
-            stage("Push to DCAP Docker Registry") {
-                docker.withRegistry(DCAPTOOLS_REPO, DCAPTOOLS_REPO_CREDENTIAL_ID) {
-                    azDcapTools1804.push()
-                    azDcapTools2004.push()
-                    if(params.TAG_LATEST == true) {
-                        azDcapTools1804.push('latest')
-                        azDcapTools2004.push('latest')
-                    }
-                }
-            }
-        }
-    }
+			parallel "Build Ubuntu 18.04 Docker Image": {
+				stage("Build Ubuntu 18.04 Docker Image") {
+					azDcapTools1804 = dcap.dockerImage("oetools-18.04:${DOCKER_TAG}",
+														".jenkins/Dockerfile",
+														"--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
+					pubazDcapTools1804 = dcap.dockerImage("oeciteam/oetools-18.04:${DOCKER_TAG}",
+														".jenkins/Dockerfile",
+														"--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
+				}
+			},"Build Ubuntu 20.04 Docker Image":{
+				stage("Build Ubuntu 20.04 Docker Image") {
+					azDcapTools2004 = dcap.dockerImage("oetools-20.04:${DOCKER_TAG}",
+														".jenkins/Dockerfile",
+														"--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04"
+					pubazDcapTools2004 = dcap.dockerImage("oeciteam/oetools-20.04:${DOCKER_TAG}",
+														".jenkins/Dockerfile",
+														"--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04")
+				}
+			}
+			stage("Push to DCAP Docker Registry") {
+				docker.withRegistry(DCAPTOOLS_REPO, DCAPTOOLS_REPO_CREDENTIAL_ID) {
+					azDcapTools1804.push()
+					azDcapTools2004.push()
+					if(params.TAG_LATEST == true) {
+						azDcapTools1804.push('latest')
+						azDcapTools2004.push('latest')
+					}
+				}
+			}
+		}
+	}
 }
 
 buildDockerImages()
