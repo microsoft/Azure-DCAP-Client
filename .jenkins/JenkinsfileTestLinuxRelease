@@ -122,5 +122,5 @@ parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
 		 "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
          "ACC2004 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
          "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
-         "ACC1604 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1604','16.04') },
-         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') }
+         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
+		 "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') }

@@ -168,7 +168,5 @@ parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC2004 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
          "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
          "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') },
-         "ACCWin 2016 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Debug') },
-         "ACCWin 2016 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2016-DCAP', 'Release') },
          "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
          "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }
