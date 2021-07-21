@@ -74,7 +74,7 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:${version}", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
@@ -110,7 +110,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/oetools-full-${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
+                dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:${version}", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx")
             }
         }
     }
