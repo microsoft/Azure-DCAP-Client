@@ -12,10 +12,10 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
+            
                 cleanWs()
                 checkout scm
-				
+                
                 def dcap = load pwd() + GROOVY_FILE
 
                 // Clone the Open Enclave repo
@@ -46,10 +46,10 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
+            
                 cleanWs()
                 checkout scm
-				
+                
                 def dcap = load pwd() + GROOVY_FILE
 
                 // Clone the Open Enclave repo
@@ -84,10 +84,10 @@ def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-			
+            
                 cleanWs()
                 checkout scm
-				
+                
                 def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
 
                 // Run the OE samples bundled with the published OE package, having
@@ -119,8 +119,8 @@ def ACCTestOeRelease(String label, String version) {
 parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
          "ACC1804 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-10', 'Debug') },
          "ACC1804 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-10', 'RelWithDebInfo') },
-		 "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
+         "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
          "ACC2004 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
          "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
          "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
-		 "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') }
+         "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') }
