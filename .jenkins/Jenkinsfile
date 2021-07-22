@@ -67,7 +67,7 @@ def ACCContainerTest(String label, String version) {
                         cd /usr/src/gtest
                         sudo cmake CMakeLists.txt
                         sudo make
-                        sudo cp *.a /usr/lib	
+                        sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
 						
                         sudo apt-get purge az-dcap-client -y 
                         sudo apt-get update
@@ -108,7 +108,7 @@ def ACCTestOeRelease(String label, String version) {
                         cd /usr/src/gtest
                         sudo cmake CMakeLists.txt
                         sudo make
-                        sudo cp *.a /usr/lib
+                        sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
 						
                         sudo apt-get purge az-dcap-client -y
                         sudo apt-get update
