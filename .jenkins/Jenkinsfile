@@ -1,40 +1,32 @@
-
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
-
 DOCKER_REGISTRY = "dcapdockerciregistry.azurecr.io"
-
 GROOVY_FILE = "/.jenkins/src/Dcap.groovy"
-
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run hardware tests using the libdcap_quoteprov.so build
                 def task = """
-                        cd ${WORKSPACE}/src/Linux
-                        ./configure
-                        make
-                        mkdir -p ${WORKSPACE}/openenclave/build
-                        cd ${WORKSPACE}/openenclave/build
-                        git submodule update --recursive --init 
-                        cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=${build_type}
-                        ninja -v
-                        LD_LIBRARY_PATH=${WORKSPACE}/src/Linux ctest --output-on-failure
-                       """
+                    cd ${WORKSPACE}/src/Linux
+                    ./configure
+                    make
+                    mkdir -p ${WORKSPACE}/openenclave/build
+                    cd ${WORKSPACE}/openenclave/build
+                    git submodule update --recursive --init 
+                    cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=${build_type}
+                    ninja -v
+                    LD_LIBRARY_PATH=${WORKSPACE}/src/Linux ctest --output-on-failure
+                    """
                 dcap.Run(compiler, task)
             }
         }
@@ -46,86 +38,75 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
-                
-                        sudo apt-get update -y
-                        sudo apt-get install -y libgtest-dev
-                        sudo apt-get install -y cmake
-                        cd /usr/src/gtest
-                        sudo cmake CMakeLists.txt
-                        sudo make
-                        sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
-                        
-                        sudo apt-get purge az-dcap-client -y 
-                        sudo apt-get update
-                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
-                        cd ${WORKSPACE}/src/Linux
-                        dpkg-buildpackage -us -uc
-                        sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
-                        mkdir -p ${WORKSPACE}/openenclave/build
-                        cd ${WORKSPACE}/openenclave/build
-                        git submodule update --recursive --init
-                        cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-                        ninja -v
-                        ctest --output-on-failure
-                       """
+                    sudo apt-get update -y
+                    sudo apt-get install -y libgtest-dev
+                    sudo apt-get install -y cmake
+                    cd /usr/src/gtest
+                    sudo cmake CMakeLists.txt
+                    sudo make
+                    sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
+                    sudo apt-get purge az-dcap-client -y 
+                    sudo apt-get update
+                    sudo apt-get install sudo libcurl4-openssl-dev wget -y
+                    cd ${WORKSPACE}/src/Linux
+                    dpkg-buildpackage -us -uc
+                    sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
+                    mkdir -p ${WORKSPACE}/openenclave/build
+                    cd ${WORKSPACE}/openenclave/build
+                    git submodule update --recursive --init
+                    cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+                    ninja -v
+                    ctest --output-on-failure
+                    """
                 dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
             }
         }
     }
 }
 
-def ACCTestOeRelease(String label, String version) {
+def ACCTestOeRelease(String label, String version) 
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
-                
-                        sudo apt-get update -y
-                        sudo apt-get install -y libgtest-dev
-                        sudo apt-get install -y cmake
-                        cd /usr/src/gtest
-                        sudo cmake CMakeLists.txt
-                        sudo make
-                        sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
-                        
-                        sudo apt-get purge az-dcap-client -y
-                        sudo apt-get update
-                        sudo apt-get install sudo libcurl4-openssl-dev wget -y
-                        cd ${WORKSPACE}/src/Linux
-                        dpkg-buildpackage -us -uc
-                        sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
-                        sudo apt-get update
-                        sudo apt-get install -y open-enclave
-                        . /opt/openenclave/share/openenclave/openenclaverc
-                        cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
-                        for DIR in \$(find ~/samples/* -maxdepth 0 -type d); do
-                            cd \$DIR
-                            make build
-                            make run
-                        done
-                       """
+                    sudo apt-get update -y
+                    sudo apt-get install -y libgtest-dev
+                    sudo apt-get install -y cmake
+                    cd /usr/src/gtest
+                    sudo cmake CMakeLists.txt
+                    sudo make
+                    sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
+                    sudo apt-get purge az-dcap-client -y
+                    sudo apt-get update
+                    sudo apt-get install sudo libcurl4-openssl-dev wget -y
+                    cd ${WORKSPACE}/src/Linux
+                    dpkg-buildpackage -us -uc
+                    sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
+                    sudo apt-get update
+                    sudo apt-get install -y open-enclave
+                    . /opt/openenclave/share/openenclave/openenclaverc
+                    cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
+                    for DIR in \$(find ~/samples/* -maxdepth 0 -type d); do
+                        cd \$DIR
+                        make build
+                        make run
+                    done
+                    """
                 dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
             }
         }
@@ -137,7 +118,6 @@ def DCAPBuildTest(String label, String build_type) {
     stage("${label} ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
                 bat """
@@ -161,12 +141,12 @@ def DCAPBuildTest(String label, String build_type) {
 }
 
 parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
-         "ACC1804 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-10', 'Debug') },
-         "ACC1804 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-10', 'RelWithDebInfo') },
-         "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
-         "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
-         "ACC2004 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
-         "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
-         "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') },
-         "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
-         "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }
+        "ACC1804 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-1804', '18.04', 'clang-10', 'Debug') },
+        "ACC1804 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-1804', '18.04', 'clang-10', 'RelWithDebInfo') },
+        "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
+        "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
+        "ACC2004 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
+        "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
+        "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') },
+        "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
+        "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }

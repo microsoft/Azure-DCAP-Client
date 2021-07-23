@@ -30,20 +30,20 @@ def ContainerRun(String imageName, String compiler, String task, String runArgs=
 
 def azureEnvironment(String task, String imageName = "oetools-deploy:latest") {
     withCredentials([usernamePassword(credentialsId: 'SERVICE_PRINCIPAL_OSTCLAB',
-                                      passwordVariable: 'SERVICE_PRINCIPAL_PASSWORD',
-                                      usernameVariable: 'SERVICE_PRINCIPAL_ID'),
-                     string(credentialsId: 'OSCTLabSubID', variable: 'SUBSCRIPTION_ID'),
-                     string(credentialsId: 'TenantID', variable: 'TENANT_ID')]) {
+                                    passwordVariable: 'SERVICE_PRINCIPAL_PASSWORD',
+                                    usernameVariable: 'SERVICE_PRINCIPAL_ID'),
+                    string(credentialsId: 'OSCTLabSubID', variable: 'SUBSCRIPTION_ID'),
+                    string(credentialsId: 'TenantID', variable: 'TENANT_ID')]) {
         docker.withRegistry("https://oejenkinscidockerregistry.azurecr.io", "oejenkinscidockerregistry") {
             def image = docker.image(imageName)
             image.pull()
             image.inside {
                 sh """#!/usr/bin/env bash
-                      set -o errexit
-                      set -o pipefail
-                      source /etc/profile
-                      ${task}
-                   """
+                    set -o errexit
+                    set -o pipefail
+                    source /etc/profile
+                    ${task}
+                """
             }
         }
     }
@@ -63,13 +63,11 @@ def runTask(String task) {
 def Run(String compiler, String task, String compiler_version = "") {
     def c_compiler
     def cpp_compiler
-
     compiler_components = compiler.split("-")
     if (compiler_components[0] == "clang" && compiler_components.size() > 1) {
         compiler = "clang"
         compiler_version = compiler_components[1]
     }
-
     switch(compiler) {
         case "cross":
             // In this case, the compiler is set by the CMake toolchain file. As
@@ -119,17 +117,17 @@ def deleteRG(List resourceGroups, String imageName = "oetools-deploy:latest") {
 
 def emailJobStatus(String status) {
     emailext (
-      to: '$DEFAULT_RECIPIENTS',      
-      subject: "[Jenkins Job ${status}] ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-      body: """            
-            <p>               
+        to: '$DEFAULT_RECIPIENTS',
+        subject: "[Jenkins Job ${status}] ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+        body: """
+            <p>
             For additional logging details for this job please check: 
             <a href="${env.BUILD_URL}">${env.JOB_NAME} - ${env.BUILD_NUMBER}</a>
             </p>
             """,
-      recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
-      mimeType: 'text/html'     
-    )
+        recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
+        mimeType: 'text/html'
+        )
 }
 
 /**
@@ -181,5 +179,4 @@ def exec_with_retry(int max_retries = 10, int retry_timeout = 30, Closure body) 
         }
     }
 }
-
 return this
