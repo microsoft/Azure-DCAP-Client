@@ -74,7 +74,7 @@ def ACCContainerTest(String label, String version) {
     }
 }
 
-def ACCTestOeRelease(String label, String version) 
+def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
