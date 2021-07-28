@@ -12,17 +12,13 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run hardware tests using the libdcap_quoteprov.so build
                 def task = """
                         cd ${WORKSPACE}/src/Linux
@@ -46,17 +42,13 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
@@ -84,12 +76,9 @@ def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
-
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
