@@ -11,9 +11,7 @@ def buildDockerImages() {
 				cleanWs()
 				checkout scm
 			}
-			
 			def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
-			
 			parallel "Build Ubuntu 18.04 Docker Image": {
 				stage("Build Ubuntu 18.04 Docker Image") {
 					azDcapTools1804 = dcap.dockerImage("oetools-18.04:${DOCKER_TAG}",

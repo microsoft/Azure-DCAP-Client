@@ -1,28 +1,20 @@
-
 // The below timeout is set in minutes
 GLOBAL_TIMEOUT = 240
-
 DOCKER_REGISTRY = "dcapdockerciregistry.azurecr.io"
-
 GROOVY_FILE = "/.jenkins/src/Dcap.groovy"
-
 
 // Tests running on hardware with custom path to libdcap_quoteprov.so
 def ACCTest(String label, String version, String compiler, String build_type) {
     stage("${label} ${compiler} SGX1-FLC ${build_type}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run hardware tests using the libdcap_quoteprov.so build
                 def task = """
                         cd ${WORKSPACE}/src/Linux
@@ -46,17 +38,13 @@ def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + GROOVY_FILE
-
                 // Clone the Open Enclave repo
                 dir("${WORKSPACE}/openenclave") {
                     git url: 'https://github.com/Microsoft/openenclave.git'
                 }
-
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
@@ -84,12 +72,9 @@ def ACCTestOeRelease(String label, String version) {
     stage("OpenEnclave release samples ${version}") {
         node("${label}") {
             timeout(GLOBAL_TIMEOUT) {
-            
                 cleanWs()
                 checkout scm
-                
                 def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
-
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
@@ -117,10 +102,10 @@ def ACCTestOeRelease(String label, String version) {
 }
 
 parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1804', '18.04') },
-         "ACC1804 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-1804', '18.04', 'clang-10', 'Debug') },
-         "ACC1804 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-1804', '18.04', 'clang-10', 'RelWithDebInfo') },
+         "ACC1804 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-1804', '18.04', 'clang-10', 'Debug') },
+         "ACC1804 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-1804', '18.04', 'clang-10', 'RelWithDebInfo') },
          "ACC2004 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2004', '20.04') },
-         "ACC2004 SGX1-FLC clang-10 Debug" :            { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
-         "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :   { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
+         "ACC2004 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
+         "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
          "ACC1804 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-1804','18.04') },
          "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') }
