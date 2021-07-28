@@ -50,6 +50,9 @@ typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config);
 
+typedef quote3_error_t (*sgx_ql_set_logging_callback_t)(
+    sgx_ql_logging_function_t logger);
+
 typedef quote3_error_t (*sgx_ql_free_quote_config_t)(
     sgx_ql_config_t* p_quote_config);
 
@@ -313,6 +316,10 @@ static void* LoadFunctions()
     sgx_ql_get_root_ca_crl = reinterpret_cast<sgx_ql_get_root_ca_crl_t>(
         dlsym(library, "sgx_ql_get_root_ca_crl"));
     EXPECT_NE(sgx_ql_get_root_ca_crl, nullptr);
+
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
+            dlsym(library, "sgx_ql_set_logging_callback"));
+    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
     return library;
 }
 #else
