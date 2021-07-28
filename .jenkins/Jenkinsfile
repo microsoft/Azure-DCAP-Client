@@ -54,7 +54,7 @@ def ACCContainerTest(String label, String version) {
                         cd /usr/src/gtest
                         sudo cmake CMakeLists.txt
                         sudo make
-                        sudo cp *.a /usr/lib 2>/dev/null|| sudo cp lib/*.a /usr/lib
+                        find . ./lib -name "*.a" -exec cp -t /usr/lib {} +
                         sudo apt-get purge az-dcap-client -y 
                         sudo apt-get update
                         sudo apt-get install sudo libcurl4-openssl-dev wget -y
