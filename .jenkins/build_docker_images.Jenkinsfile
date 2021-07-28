@@ -14,19 +14,19 @@ def buildDockerImages() {
             def dcap = load pwd() + "/.jenkins/src/Dcap.groovy"
             parallel "Build Ubuntu 18.04 Docker Image": {
                 stage("Build Ubuntu 18.04 Docker Image") {
-                    azDcapTools1804 = dcap.dockerImage("oetools-18.04:${DOCKER_TAG}",
+                    azDcapTools1804 = dcap.dockerImage("dcapdockerciregistry-ubuntu18.04:${DOCKER_TAG}",
                                                         ".jenkins/Dockerfile",
                                                         "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
-                    pubazDcapTools1804 = dcap.dockerImage("oeciteam/oetools-18.04:${DOCKER_TAG}",
+                    pubazDcapTools1804 = dcap.dockerImage("dcapdockerciregistry/dcapdockerciregistry-ubuntu18.04:${DOCKER_TAG}",
                                                         ".jenkins/Dockerfile",
                                                         "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=18.04")
                 }
             },"Build Ubuntu 20.04 Docker Image":{
                 stage("Build Ubuntu 20.04 Docker Image") {
-                    azDcapTools2004 = dcap.dockerImage("oetools-20.04:${DOCKER_TAG}",
+                    azDcapTools2004 = dcap.dockerImage("dcapdockerciregistry-ubuntu20.04:${DOCKER_TAG}",
                                                         ".jenkins/Dockerfile",
                                                         "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04"
-                    pubazDcapTools2004 = dcap.dockerImage("oeciteam/oetools-20.04:${DOCKER_TAG}",
+                    pubazDcapTools2004 = dcap.dockerImage("dcapdockerciregistry/dcapdockerciregistry-ubuntu20.04:${DOCKER_TAG}",
                                                         ".jenkins/Dockerfile",
                                                         "--build-arg UNAME=\$(id -un) --build-arg ubuntu_version=20.04")
                 }
