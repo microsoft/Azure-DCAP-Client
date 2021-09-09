@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Constants
 ///////////////////////////////////////////////////////////////////////////////
-static constexpr int maximum_retries = 5;
-static constexpr int initial_retry_delay_ms = 20;
+static constexpr int maximum_retries = 3;
+static constexpr int initial_retry_delay_ms = 2000;
 static constexpr WCHAR content_type_header[] =
     L"Content-Type: application/json";
 
@@ -128,7 +128,8 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 ///////////////////////////////////////////////////////////////////////////////
 std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
-    const std::string* const p_body)
+    const std::string* const p_body,
+    LPCWSTR httpVerb)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -191,7 +192,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     curl->request.reset(WinHttpOpenRequest(
         curl->connectionHandle.get(),
-        L"GET",
+        httpVerb,
         urlToRetrieve.c_str(),
         nullptr,
         WINHTTP_NO_REFERER,

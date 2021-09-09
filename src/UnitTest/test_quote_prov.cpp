@@ -458,7 +458,7 @@ static void GetCrlTest()
 {
     // This is the CRL DP used by Intel for leaf certs
     static const char* TEST_CRL_URL =
-        "https://api.trustedservices.intel.com/sgx/certification/v1/"
+        "https://api.trustedservices.intel.com/sgx/certification/v3/"
         "pckcrl?ca=processor";
 
     sgx_ql_get_revocation_info_params_t params = {
@@ -927,7 +927,11 @@ void SetupEnvironment(std::string version)
 #if defined __LINUX__
     setenv(
         "AZDCAP_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certificates",
+        "https://global.acccache.azure.net/sgx/certificates/",
+        1);
+    setenv(
+        "AZDCAP_THIM_AGENT_URL",
+        "http://169.254.169.254/metadata/THIM/sgx/getCerts?",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -943,7 +947,10 @@ void SetupEnvironment(std::string version)
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certificates"));
+        "https://global.acccache.azure.net/sgx/certificates/"));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_THIM_AGENT_URL",
+        "http://169.254.169.254/metadata/THIM/sgx/getCerts?"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
@@ -997,6 +1004,7 @@ TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
     // Get the data from the service
     //
     SetupEnvironment("v2");
+
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(GetQveIdentityTest());
 

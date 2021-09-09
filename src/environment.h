@@ -11,6 +11,7 @@
 //  modify or override these values as they can cause regressions in
 //  caching service behavior.
 #define ENV_AZDCAP_BASE_URL "AZDCAP_BASE_CERT_URL"
+#define ENV_AZDCAP_THIM_AGENT_URL "AZDCAP_THIM_AGENT_URL"
 #define ENV_AZDCAP_CLIENT_ID "AZDCAP_CLIENT_ID"
 #define ENV_AZDCAP_COLLATERAL_VER "AZDCAP_COLLATERAL_VERSION"
 #define ENV_AZDCAP_DEBUG_LOG "AZDCAP_DEBUG_LOG_LEVEL"

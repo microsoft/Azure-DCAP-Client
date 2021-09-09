@@ -54,12 +54,15 @@ static const std::map<std::string, std::string> default_values = {
 // New API version used to request PEM encoded CRLs
 constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
-
 static char DEFAULT_CERT_URL[] =
-    "https://global.acccache.azure.net/sgx/certificates";
+    "https://global.acccache.azure.net/sgx/certificates/";
 static std::string cert_base_url = DEFAULT_CERT_URL;
 
-static char DEFAULT_CLIENT_ID[] = "production_client";
+static char DEFAULT_THIM_AGENT_URL[] =
+    "http://169.254.169.254/metadata/THIM/sgx/getCerts?";
+static std::string thim_agent_base_url = DEFAULT_THIM_AGENT_URL;
+
+static char DEFAULT_CLIENT_ID[] = "Azure DCAP_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
 static char DEFAULT_COLLATERAL_VERSION[] = "v3";
@@ -133,6 +136,25 @@ static std::string get_collateral_version()
             collateral_version.c_str());
         return collateral_version;
     }
+}
+
+static std::string get_agent_base_url()
+{
+    std::string env_base_url = get_env_variable(ENV_AZDCAP_THIM_AGENT_URL);
+
+    if (env_base_url.empty())
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Using default THIM Agent base cert URL '%s'.",
+            thim_agent_base_url.c_str());
+        return thim_agent_base_url;
+    }
+
+    log(SGX_QL_LOG_INFO,
+        "Using %s envvar for base cert URL, set to '%s'.",
+        ENV_AZDCAP_THIM_AGENT_URL,
+        env_base_url.c_str());
+    return env_base_url;
 }
 
 static std::string get_base_url()
@@ -456,10 +478,9 @@ void safe_cast(input_t in, output_t* out)
     *out = static_cast<output_t>(in);
 }
 
-//
-// Build up the URL needed to fetch specific certificate information.
-//
-static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
+static void build_pck_cert_url(
+    const sgx_ql_pck_cert_id_t& pck_cert_id,
+    collateral_fetch_url* collateral_url)
 {
     const std::string qe_id =
         format_as_hex_string(pck_cert_id.p_qe3_id, pck_cert_id.qe3_id_size);
@@ -473,28 +494,34 @@ static std::string build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id)
 
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
-
     std::string version = get_collateral_version();
-    std::stringstream pck_cert_url;
-    pck_cert_url << get_base_url();
+
+    collateral_url->thim_service_url << get_base_url();
+    collateral_url->thim_service_url << "noauth/pckcertificate?";
+    collateral_url->thim_agent_url << get_agent_base_url();
+
     if (!version.empty())
     {
-        pck_cert_url << '/';
-        pck_cert_url << version;
+        collateral_url->thim_service_url << "version=" << version << '&';
+        collateral_url->thim_agent_url << "TEEVersionType=" << version << '&';
     }
-    pck_cert_url << '/' << qe_id;
-    pck_cert_url << '/' << cpu_svn;
-    pck_cert_url << '/' << pce_svn;
-    pck_cert_url << '/' << pce_id;
-    pck_cert_url << '?';
+    collateral_url->thim_service_url << "qeid=" << qe_id << '&';
+    collateral_url->thim_service_url << "cpusvn=" << cpu_svn << '&';
+    collateral_url->thim_service_url << "pcesvn=" << pce_svn << '&';
+    collateral_url->thim_service_url << "pceid=" << pce_id << '&';
+
+    collateral_url->thim_agent_url << "qeid=" << qe_id << '&';
+    collateral_url->thim_agent_url << "cpusvn=" << cpu_svn << '&';
+    collateral_url->thim_agent_url << "pcesvn=" << pce_svn << '&';
+    collateral_url->thim_agent_url << "pceid=" << pce_id;
 
     std::string client_id = get_client_id();
+
     if (!client_id.empty())
     {
-        pck_cert_url << "clientid=" << client_id << '&';
+        collateral_url->thim_service_url << "clientid=" << client_id << '&';
     }
-    pck_cert_url << API_VERSION_LEGACY;
-    return pck_cert_url.str();
+    collateral_url->thim_service_url << API_VERSION_LEGACY;
 }
 
 //
@@ -897,31 +924,80 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
     try
     {
-        const std::string cert_url = build_pck_cert_url(*p_pck_cert_id);
-        if (auto cache_hit = try_cache_get(cert_url))
+        collateral_fetch_url collateral_url;
+        build_pck_cert_url(*p_pck_cert_id, &collateral_url);
+        std::string cert_url = collateral_url.thim_service_url.str();
+        std::string thim_agent_url = collateral_url.thim_agent_url.str();
+        std::unique_ptr<curl_easy> curl;
+        bool thim_agent_success = true;
+
+        try
         {
+            curl = curl_easy::create(thim_agent_url, NULL);
             log(SGX_QL_LOG_INFO,
-                "Fetching quote config from cache: '%s'.",
-                cert_url.c_str());
-
-            *pp_quote_config =
-                (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
-            memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
-
-            // re-aligning the p_cert_data pointer
-            (*pp_quote_config)->p_cert_data =
-                (uint8_t*)(*pp_quote_config) + sizeof(sgx_ql_config_t);
-
-            return SGX_QL_SUCCESS;
+                "Fetching quote config from THIM agent server: '%s'.",
+                thim_agent_url.c_str());
+            curl->set_headers(headers::default_values);
+            curl->perform();
         }
-        
-        const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
-        const auto curl = curl_easy::create(cert_url, &eppid_json);
-        log(SGX_QL_LOG_INFO,
-            "Fetching quote config from remote server: '%s'.",
-            cert_url.c_str());
-        curl->set_headers(headers::default_values);
-        curl->perform();
+        catch (const std::bad_alloc&)
+        {
+            log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
+            thim_agent_success = false;
+            return SGX_QL_ERROR_OUT_OF_MEMORY;
+        }
+        catch (const std::runtime_error& error)
+        {
+            log(SGX_QL_LOG_WARNING,
+                "Runtime exception thrown, error: %s",
+                error.what());
+            thim_agent_success = false;
+            // Swallow adding file to cache. Library can
+            // operate without caching
+            // return SGX_QL_ERROR_UNEXPECTED;
+        }
+        catch (const std::exception& error)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Unknown exception thrown, error: %s",
+                error.what());
+            thim_agent_success = false;
+            //return SGX_QL_ERROR_UNEXPECTED;
+        }
+        catch (const curl_easy::error& error)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "error thrown, error code: %x: %s",
+                error.code,
+                error.what());
+            thim_agent_success = false;
+        }
+        if (!thim_agent_success) {
+            if (auto cache_hit = try_cache_get(cert_url))
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Fetching quote config from cache: '%s'.",
+                    cert_url.c_str());
+
+                *pp_quote_config =
+                    (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
+                memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
+
+                // re-aligning the p_cert_data pointer
+                (*pp_quote_config)->p_cert_data =
+                    (uint8_t*)(*pp_quote_config) + sizeof(sgx_ql_config_t);
+
+                return SGX_QL_SUCCESS;
+            }
+
+            const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
+            curl = curl_easy::create(cert_url, &eppid_json, L"POST");
+            log(SGX_QL_LOG_INFO,
+                "Fetching quote config from remote server: '%s'.",
+                cert_url.c_str());
+            curl->set_headers(headers::default_values);
+            curl->perform();
+        }
 
         // we better get TCB info and the cert chain, else we cannot provide the
         // required data to the caller.
@@ -977,7 +1053,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             *curl, headers::CACHE_CONTROL, &cache_control);
 
         auto retval = convert_to_intel_error(get_cache_header_operation);
-        if (retval == SGX_QL_SUCCESS)
+        if ((retval == SGX_QL_SUCCESS) and (!thim_agent_success))
         {            
             time_t expiry;
             if (get_cache_expiration_time(cache_control, cert_url, expiry))

@@ -36,7 +36,10 @@ class curl_easy
         char function[128]{};
     };
 
-    static std::unique_ptr<curl_easy> create(const std::string& url, const std::string* const p_body);
+    static std::unique_ptr<curl_easy> create(
+        const std::string& url,
+        const std::string* const p_body,
+        LPCWSTR httpVerb = L"GET");
 
     ~curl_easy();
 
