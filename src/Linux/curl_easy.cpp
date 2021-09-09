@@ -70,7 +70,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body)
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, LPCWSTR httpVerb))
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -92,7 +92,12 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
 
     if (p_body != nullptr && !p_body->empty())
     {
-        easy->set_opt_or_throw(CURLOPT_CUSTOMREQUEST, "GET");
+        if (httpVerb == L"POST") {
+            easy->set_opt_or_throw(CURLOPT_POST, 1L);
+        }
+        else {
+            easy->set_opt_or_throw(CURLOPT_HTTPGET, 1L);
+        }
         easy->set_opt_or_throw(CURLOPT_COPYPOSTFIELDS, p_body->c_str());
     }
 
