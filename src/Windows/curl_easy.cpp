@@ -129,6 +129,7 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
     const std::string* const p_body,
+    DWORD dwFlags,
     LPCWSTR httpVerb)
 {
     struct make_unique_enabler : public curl_easy
@@ -197,7 +198,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
         nullptr,
         WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES,
-        WINHTTP_FLAG_SECURE));
+        dwFlags));
 
     if (!curl->request)
     {
@@ -419,6 +420,7 @@ void curl_easy::set_headers(
         request_header_text.append(UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
     }
 }
+
 
 int8_t Int8FromHexAscii(char ch)
 {
