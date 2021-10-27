@@ -92,7 +92,8 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
 
     if (p_body != nullptr && !p_body->empty())
     {
-        if (httpVerb == L"POST") {
+        if (lstrcmpW(httpVerb, L"POST"))
+        {
             easy->set_opt_or_throw(CURLOPT_POST, 1L);
         }
         else {

@@ -295,7 +295,7 @@ bool get_cache_expiration_time(
 //
 std::string get_collateral_friendly_name(CollateralTypes collateral_type)
 {
-    switch (collateral_type)
+    switch(collateral_type)
     {
         case CollateralTypes::TcbInfo:
         {
@@ -488,7 +488,7 @@ void safe_cast(input_t in, output_t* out)
 
 static void build_pck_cert_url(
     const sgx_ql_pck_cert_id_t& pck_cert_id,
-    collateral_fetch_url* collateral_url)
+    collateral_fetch_url& collateral_url)
 {
     const std::string qe_id =
         format_as_hex_string(pck_cert_id.p_qe3_id, pck_cert_id.qe3_id_size);
@@ -504,35 +504,35 @@ static void build_pck_cert_url(
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
     std::string version = get_collateral_version();
 
-    collateral_url->thim_service_url << get_base_url();
-    collateral_url->thim_service_url << "noauth/pckcertificate?";
-    collateral_url->thim_agent_url << get_agent_base_url();
+    collateral_url.thim_service_url << get_base_url();
+    collateral_url.thim_service_url << "noauth/pckcertificate?";
+    collateral_url.thim_agent_url << get_agent_base_url();
 
     if (!version.empty())
     {
-        collateral_url->thim_service_url << "version=" << version << '&';
-        collateral_url->thim_agent_url << "version=" << version << '&';
+        collateral_url.thim_service_url << "version=" << version << '&';
+        collateral_url.thim_agent_url << "version=" << version << '&';
     }
-    collateral_url->thim_service_url << "qeid=" << qe_id << '&';
-    collateral_url->thim_service_url << "cpusvn=" << cpu_svn << '&';
-    collateral_url->thim_service_url << "pcesvn=" << pce_svn << '&';
-    collateral_url->thim_service_url << "pceid=" << pce_id << '&';
+    collateral_url.thim_service_url << "qeid=" << qe_id << '&';
+    collateral_url.thim_service_url << "cpusvn=" << cpu_svn << '&';
+    collateral_url.thim_service_url << "pcesvn=" << pce_svn << '&';
+    collateral_url.thim_service_url << "pceid=" << pce_id << '&';
 
-    collateral_url->thim_agent_url << "qeId=" << qe_id << '&';
-    collateral_url->thim_agent_url << "cpusvn=" << cpu_svn << '&';
-    collateral_url->thim_agent_url << "pcesvn=" << pce_svn << '&';
-    collateral_url->thim_agent_url << "pceid=" << pce_id << '&';
+    collateral_url.thim_agent_url << "qeId=" << qe_id << '&';
+    collateral_url.thim_agent_url << "cpusvn=" << cpu_svn << '&';
+    collateral_url.thim_agent_url << "pcesvn=" << pce_svn << '&';
+    collateral_url.thim_agent_url << "pceid=" << pce_id << '&';
 
-    collateral_url->thim_agent_url << "cid=0" << '&';
+    collateral_url.thim_agent_url << "cid=0" << '&';
 
     std::string client_id = get_client_id();
 
     if (!client_id.empty())
     {
-        collateral_url->thim_service_url << "clientid=" << client_id << '&';
+        collateral_url.thim_service_url << "clientid=" << client_id << '&';
     }
-    collateral_url->thim_service_url << API_VERSION_LEGACY;
-    collateral_url->thim_agent_url<< API_VERSION_LEGACY;
+    collateral_url.thim_service_url << API_VERSION_LEGACY;
+    collateral_url.thim_agent_url<< API_VERSION_LEGACY;
 }
 
 //
@@ -952,11 +952,11 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     try
     {
         collateral_fetch_url collateral_url;
-        build_pck_cert_url(*p_pck_cert_id, &collateral_url);
+        build_pck_cert_url(*p_pck_cert_id, collateral_url);
         std::string cert_url = collateral_url.thim_service_url.str();
         std::string thim_agent_url = collateral_url.thim_agent_url.str();
         std::unique_ptr<curl_easy> curl;
-        bool thim_agent_success = true;
+        bool thim_agent_success = false;
 
         try
         {
@@ -966,11 +966,11 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 thim_agent_url.c_str());
             curl->set_headers(headers::thimagent_metadata);
             curl->perform();
+            thim_agent_success = true;
         }
         catch (const std::bad_alloc&)
         {
             log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
-            thim_agent_success = false;
             return SGX_QL_ERROR_OUT_OF_MEMORY;
         }
         catch (const std::runtime_error& error)
@@ -978,18 +978,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             log(SGX_QL_LOG_WARNING,
                 "Runtime exception thrown, error: %s",
                 error.what());
-            thim_agent_success = false;
-            // Swallow adding file to cache. Library can
-            // operate without caching
-            // return SGX_QL_ERROR_UNEXPECTED;
         }
         catch (const std::exception& error)
         {
             log(SGX_QL_LOG_ERROR,
                 "Unknown exception thrown, error: %s",
                 error.what());
-            thim_agent_success = false;
-            // return SGX_QL_ERROR_UNEXPECTED;
         }
         catch (const curl_easy::error& error)
         {
@@ -997,7 +991,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 "error thrown, error code: %x: %s",
                 error.code,
                 error.what());
-            thim_agent_success = false;
         }
         if (!thim_agent_success)
         {
