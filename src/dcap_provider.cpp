@@ -13,6 +13,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,7 @@
 #include "environment.h"
 #include "sgx_ql_lib_common.h"
 
+
 #ifdef __LINUX__
 #include <arpa/inet.h>
 #else
@@ -28,6 +30,7 @@
 #include <winsock.h>
 #endif
 
+using nlohmann::json;
 using namespace std;
 
 // External function names are dictated by Intel
@@ -69,6 +72,10 @@ static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
 static char DEFAULT_COLLATERAL_VERSION[] = "v3";
 static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
+
+static char DEFAULT_CID[] = "";
+static std::string default_cid = DEFAULT_CID;
+
 
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
@@ -150,6 +157,25 @@ static std::string get_agent_base_url()
             "Using default THIM Agent base cert URL '%s'.",
             thim_agent_base_url.c_str());
         return thim_agent_base_url;
+    }
+
+    log(SGX_QL_LOG_INFO,
+        "Using %s envvar for base cert URL, set to '%s'.",
+        ENV_AZDCAP_THIM_AGENT_URL,
+        env_base_url.c_str());
+    return env_base_url;
+}
+
+static std::string get_cid()
+{
+    std::string env_base_url = get_env_variable(ENV_AZDCAP_CID);
+
+    if (env_base_url.empty())
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Using default THIM Agent base cert URL '%s'.",
+            default_cid.c_str());
+        return default_cid;
     }
 
     log(SGX_QL_LOG_INFO,
@@ -295,7 +321,7 @@ bool get_cache_expiration_time(
 //
 std::string get_collateral_friendly_name(CollateralTypes collateral_type)
 {
-    switch(collateral_type)
+    switch (collateral_type)
     {
         case CollateralTypes::TcbInfo:
         {
@@ -328,6 +354,33 @@ std::string get_collateral_friendly_name(CollateralTypes collateral_type)
     }
 }
 
+//
+// extract raw value from response body, if exists
+//
+sgx_plat_error_t extract_from_json(
+    nlohmann::json json,
+    const std::string& header_item,
+    std::string* out_header)
+{
+    try
+    {
+        std::string raw_header = json[header_item].get<std::string>();
+        log(SGX_QL_LOG_INFO,
+            "raw_header %s:[%s]",
+            header_item.c_str(),
+            raw_header);
+        if (out_header != nullptr)
+        {
+            *out_header = raw_header;
+        }
+    }
+    catch (exception ex)
+    {
+        log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item.c_str());
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    return SGX_PLAT_ERROR_OK;
+}
 //
 // get raw value for header_item item if exists
 //
@@ -506,6 +559,7 @@ static void build_pck_cert_url(
 
     collateral_url.thim_service_url << get_base_url();
     collateral_url.thim_service_url << "noauth/pckcertificate?";
+
     collateral_url.thim_agent_url << get_agent_base_url();
 
     if (!version.empty())
@@ -523,24 +577,39 @@ static void build_pck_cert_url(
     collateral_url.thim_agent_url << "pcesvn=" << pce_svn << '&';
     collateral_url.thim_agent_url << "pceid=" << pce_id << '&';
 
-    collateral_url.thim_agent_url << "cid=0" << '&';
+    std::string cid = get_cid();
+    if (!cid.empty())
+    {
+        collateral_url.thim_agent_url << "cid=0" << '&';
+    }
 
     std::string client_id = get_client_id();
-
     if (!client_id.empty())
     {
         collateral_url.thim_service_url << "clientid=" << client_id << '&';
     }
     collateral_url.thim_service_url << API_VERSION_LEGACY;
-    collateral_url.thim_agent_url<< API_VERSION_LEGACY;
+    collateral_url.thim_agent_url << API_VERSION_LEGACY;
 }
 
 //
 // Build a complete cert chain from a completed curl object.
 //
-static std::string build_cert_chain(const curl_easy& curl)
+static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json json)
 {
-    std::string leaf_cert(curl.get_body().begin(), curl.get_body().end());
+    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
+    std::string leaf_cert;
+    std::string chain;
+    if (!json.empty())
+    {
+        extract_from_json(json, "response", &leaf_cert);
+        extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &chain);
+    }
+    else
+    {
+        leaf_cert.assign(curl.get_body().begin(), curl.get_body().end());
+        chain = curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
+    }
 
     // The cache service does not return a newline in the response
     // response_body. Add one here so that we have a properly formatted chain.
@@ -548,9 +617,6 @@ static std::string build_cert_chain(const curl_easy& curl)
     {
         leaf_cert += "\n";
     }
-
-    const std::string chain =
-        curl.unescape(*curl.get_header(headers::PCK_CERT_ISSUER_CHAIN));
 
     log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
     return leaf_cert + chain;
@@ -599,13 +665,22 @@ static sgx_plat_error_t hex_decode(const std::string& hex_string, T* decoded)
 //  PCESVN(2 bytes)."
 //
 static sgx_plat_error_t parse_svn_values(
+    nlohmann::json json,
     const curl_easy& curl,
     sgx_ql_config_t* quote_config)
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
     std::string tcb;
-    result = get_raw_header(curl, headers::TCB_INFO, &tcb);
+    if (!json.empty())
+    {
+        result = extract_from_json(json, headers::TCB_INFO, &tcb);
+    }
+    else
+    {
+        result = get_raw_header(curl, headers::TCB_INFO, &tcb);
+    }
+
     if (result != SGX_PLAT_ERROR_OK)
         return result;
 
@@ -952,11 +1027,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     try
     {
         collateral_fetch_url collateral_url;
+        std::vector<uint8_t> response_body;
+        std::string temp;
         build_pck_cert_url(*p_pck_cert_id, collateral_url);
         std::string cert_url = collateral_url.thim_service_url.str();
         std::string thim_agent_url = collateral_url.thim_agent_url.str();
         std::unique_ptr<curl_easy> curl;
         bool thim_agent_success = false;
+        sgx_ql_config_t temp_config{};
+        nlohmann::json json_body;
 
         try
         {
@@ -967,6 +1046,23 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             curl->set_headers(headers::thimagent_metadata);
             curl->perform();
             thim_agent_success = true;
+
+            // Parse the body returned by THIM agent to extract
+            // 1. Certificate
+            // 2. TCB Info
+            // 3. Cert Chain
+            // This will be returned to the caller.
+            response_body = curl->get_body();
+            json_body = nlohmann::json::parse(response_body);
+
+            if ((extract_from_json(json_body, headers::TCB_INFO, nullptr) != SGX_PLAT_ERROR_OK) ||
+                (extract_from_json(
+                     json_body, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
+                 SGX_PLAT_ERROR_OK))
+            {
+                log(SGX_QL_LOG_ERROR, "Required HTTP headers are missing.");
+                return SGX_QL_ERROR_UNEXPECTED;
+            }
         }
         catch (const std::bad_alloc&)
         {
@@ -1019,28 +1115,28 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 cert_url.c_str());
             curl->set_headers(headers::default_values);
             curl->perform();
+
+            // we better get TCB info and the cert chain, else we cannot
+            // provide the required data to the caller.
+            if ((get_raw_header(*curl, headers::TCB_INFO, nullptr) !=
+                 SGX_PLAT_ERROR_OK) ||
+                (get_raw_header(
+                     *curl, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
+                 SGX_PLAT_ERROR_OK))
+            {
+                log(SGX_QL_LOG_ERROR, "Required HTTP headers are missing.");
+                return SGX_QL_ERROR_UNEXPECTED;
+            }
         }
 
-        // we better get TCB info and the cert chain, else we cannot provide the
-        // required data to the caller.
-        if ((get_raw_header(*curl, headers::TCB_INFO, nullptr) !=
-             SGX_PLAT_ERROR_OK) ||
-            (get_raw_header(*curl, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
-             SGX_PLAT_ERROR_OK))
-        {
-            log(SGX_QL_LOG_ERROR, "Required HTTP headers are missing.");
-            return SGX_QL_ERROR_UNEXPECTED;
-        }
-
-        // parse the SVNs into a local data structure so we can handle any parse
-        // errors before allocating the output buffer
-        sgx_ql_config_t temp_config{};
-        if (const sgx_plat_error_t err = parse_svn_values(*curl, &temp_config))
+        // parse the SVNs into a local data structure so we can handle any
+        // parse errors before allocating the output buffer
+        if (const sgx_plat_error_t err = parse_svn_values(json_body, *curl, &temp_config))
         {
             return convert_to_intel_error(err);
         }
 
-        const std::string cert_data = build_cert_chain(*curl);
+        const std::string cert_data = build_cert_chain(*curl, json_body);
 
         // copy the null-terminator for convenience (less error-prone)
         const uint32_t cert_data_size =
@@ -1051,36 +1147,38 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         uint8_t* buf = new uint8_t[buf_size];
         memset(buf, 0, buf_size);
 
-#ifndef NDEBUG
-        const uint8_t* buf_end = buf + buf_size;
-#endif
+    #ifndef NDEBUG
+            const uint8_t* buf_end = buf + buf_size;
+    #endif
 
         *pp_quote_config = reinterpret_cast<sgx_ql_config_t*>(buf);
         buf += sizeof(sgx_ql_config_t);
         assert(buf <= buf_end);
-
         (*pp_quote_config)->cert_cpu_svn = temp_config.cert_cpu_svn;
         (*pp_quote_config)->cert_pce_isv_svn = temp_config.cert_pce_isv_svn;
         (*pp_quote_config)->version = SGX_QL_CONFIG_VERSION_1;
-        (*pp_quote_config)->p_cert_data = buf;
+         (*pp_quote_config)->p_cert_data = buf;
         (*pp_quote_config)->cert_data_size = cert_data_size;
         memcpy(
             (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
         buf += cert_data_size;
         assert(buf == buf_end);
 
-        // Get the cache control header
-        std::string cache_control;
-        auto get_cache_header_operation =
-            get_unescape_header(*curl, headers::CACHE_CONTROL, &cache_control);
-
-        auto retval = convert_to_intel_error(get_cache_header_operation);
-        if ((retval == SGX_QL_SUCCESS) && (!thim_agent_success))
+        if (!thim_agent_success)
         {
-            time_t expiry;
-            if (get_cache_expiration_time(cache_control, cert_url, expiry))
+            // Get the cache control header
+            std::string cache_control;
+            auto get_cache_header_operation =
+                get_unescape_header(*curl, headers::CACHE_CONTROL, &cache_control);
+
+            auto retval = convert_to_intel_error(get_cache_header_operation);
+            if ((retval == SGX_QL_SUCCESS) && (!thim_agent_success))
             {
-                local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+                time_t expiry;
+                if (get_cache_expiration_time(cache_control, cert_url, expiry))
+                {
+                    local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+                }
             }
         }
     }
@@ -1104,9 +1202,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
             error.what());
-        // Swallow adding file to cache. Library can
-        // operate without caching
-        // return SGX_QL_ERROR_UNEXPECTED;
     }
     catch (const std::exception& error)
     {
@@ -1133,8 +1228,8 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
-    // Requests for higher versions work, but this function will ONLY return the
-    // highest version of output that it supports.
+    // Requests for higher versions work, but this function will ONLY return
+    // the highest version of output that it supports.
     if (params->version < SGX_QL_REVOCATION_INFO_VERSION_1)
     {
         log(SGX_QL_LOG_ERROR,
@@ -1547,7 +1642,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         if (*pp_quote_collateral != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Collateral pointer is not null. This memory will be allocated "
+                "Collateral pointer is not null. This memory will be "
+                "allocated "
                 "by "
                 "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;

@@ -953,6 +953,9 @@ void SetupEnvironment(std::string version)
         "http://127.0.0.1:90/metadata/THIM/sgx/certificates?"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    EXPECT_TRUE(
+        SetEnvironmentVariableA("AZDCAP_CID", "cid=0"));
+
 #endif
 }
 
