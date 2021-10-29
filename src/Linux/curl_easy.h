@@ -39,7 +39,8 @@ class curl_easy
     static std::unique_ptr<curl_easy> create(
         const std::string& url,
         const std::string* const p_body,
-        LPCWSTR httpVerb = L"GET");
+        unsigned long dwflags = 0x00800000,
+        std::wstringstd::wstring httpVerb = L"GET");
 
     ~curl_easy();
 

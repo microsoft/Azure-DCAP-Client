@@ -10,6 +10,7 @@
 #include <limits>
 #include <locale>
 #include "private.h"
+#include <string.h>
 
 #ifdef __LINUX__
 #include <openssl/err.h>
@@ -70,7 +71,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, LPCWSTR httpVerb))
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag, std::wstring httpVerb))
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -92,7 +93,7 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
 
     if (p_body != nullptr && !p_body->empty())
     {
-        if (lstrcmpW(httpVerb, L"POST"))
+        if (_wcsnicmp(httpVerb, L"POST"))
         {
             easy->set_opt_or_throw(CURLOPT_POST, 1L);
         }

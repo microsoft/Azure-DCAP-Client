@@ -597,7 +597,6 @@ static void build_pck_cert_url(
 //
 static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json json)
 {
-    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
     std::string leaf_cert;
     std::string chain;
     if (!json.empty())
@@ -1108,8 +1107,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             }
 
             const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
-            curl = curl_easy::create(
-                cert_url, &eppid_json, WINHTTP_FLAG_SECURE, L"POST");
+            curl = curl_easy::create(cert_url, &eppid_json, 0x00800000, L"POST");
             log(SGX_QL_LOG_INFO,
                 "Fetching quote config from remote server: '%s'.",
                 cert_url.c_str());
