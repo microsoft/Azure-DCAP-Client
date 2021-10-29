@@ -40,7 +40,7 @@ class curl_easy
         const std::string& url,
         const std::string* const p_body,
         unsigned long dwflags = 0x00800000,
-        std::wstringstd::wstring httpVerb = L"GET");
+        std::wstring httpVerb = L"GET");
 
     ~curl_easy();
 
