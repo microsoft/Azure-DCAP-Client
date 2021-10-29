@@ -30,7 +30,6 @@
 #include <winsock.h>
 #endif
 
-using nlohmann::json;
 using namespace std;
 
 // External function names are dictated by Intel
@@ -358,7 +357,7 @@ std::string get_collateral_friendly_name(CollateralTypes collateral_type)
 // extract raw value from response body, if exists
 //
 sgx_plat_error_t extract_from_json(
-    nlohmann::json json,
+    const nlohmann::json& json,
     const std::string& header_item,
     std::string* out_header)
 {
@@ -374,7 +373,7 @@ sgx_plat_error_t extract_from_json(
             *out_header = raw_header;
         }
     }
-    catch (exception ex)
+    catch (const exception& ex)
     {
         log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
@@ -595,7 +594,7 @@ static void build_pck_cert_url(
 //
 // Build a complete cert chain from a completed curl object.
 //
-static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json json)
+static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json& json)
 {
     std::string leaf_cert;
     std::string chain;
@@ -664,7 +663,7 @@ static sgx_plat_error_t hex_decode(const std::string& hex_string, T* decoded)
 //  PCESVN(2 bytes)."
 //
 static sgx_plat_error_t parse_svn_values(
-    nlohmann::json json,
+    const nlohmann::json& json,
     const curl_easy& curl,
     sgx_ql_config_t* quote_config)
 {
@@ -1074,12 +1073,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 "Runtime exception thrown, error: %s",
                 error.what());
         }
-        catch (const std::exception& error)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Unknown exception thrown, error: %s",
-                error.what());
-        }
         catch (const curl_easy::error& error)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1087,6 +1080,13 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 error.code,
                 error.what());
         }
+        catch (const std::exception& error)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Unknown exception thrown, error: %s",
+                error.what());
+        }
+
         if (!thim_agent_success)
         {
             if (auto cache_hit = try_cache_get(cert_url))
