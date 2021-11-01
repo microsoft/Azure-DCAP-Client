@@ -15,11 +15,18 @@
 #ifdef __LINUX__
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <unistd.h>
 #else
 #include <PathCch.h>
 #include <shlwapi.h>
 #include <strsafe.h>
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+static constexpr int maximum_retries = 3;
+static constexpr int initial_retry_delay_ms = 2000;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Local Helper Functions
@@ -71,7 +78,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag, std::wstring httpVerb))
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag, std::wstring httpVerb)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -91,15 +98,17 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
 
+    
+    if (wcscasecmp(httpVerb.c_str(), L"POST") == 0)
+    {
+        easy->set_opt_or_throw(CURLOPT_POST, 1L);
+    }
+    else
+    {
+        easy->set_opt_or_throw(CURLOPT_HTTPGET, 1L);
+    }
     if (p_body != nullptr && !p_body->empty())
     {
-        if (_wcsnicmp(httpVerb, L"POST"))
-        {
-            easy->set_opt_or_throw(CURLOPT_POST, 1L);
-        }
-        else {
-            easy->set_opt_or_throw(CURLOPT_HTTPGET, 1L);
-        }
         easy->set_opt_or_throw(CURLOPT_COPYPOSTFIELDS, p_body->c_str());
     }
 
@@ -135,14 +144,29 @@ curl_easy::~curl_easy()
 
 void curl_easy::perform() const
 {
-    CURLcode result = curl_easy_perform(handle);
-    if (result == CURLE_HTTP_RETURNED_ERROR)
+    int retry_delay = initial_retry_delay_ms;
+    int attempts = 0;
+    long http_code = 0;
+    do
     {
-        long http_code = 0;
-        curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &http_code);
-        log(SGX_QL_LOG_ERROR, "HTTP error (%zd)", http_code);
-    }
-    throw_on_error(result, "curl_easy_perform");
+        CURLcode result = curl_easy_perform(handle);
+        if ((result == CURLE_OPERATION_TIMEDOUT) && (attempts <= maximum_retries))
+	{
+	    attempts++;
+	    curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &http_code);   
+            log(SGX_QL_LOG_ERROR, "HTTP error (%zd)", http_code);
+            sleep(retry_delay);
+            retry_delay *= 2;
+            continue;
+         }
+	if (result == CURLE_HTTP_RETURNED_ERROR)
+        {
+            curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &http_code);
+            log(SGX_QL_LOG_ERROR, "HTTP error (%zd)", http_code);
+        }
+        throw_on_error(result, "curl_easy_perform");
+        return;
+    }while(true);
 }
 
 const std::vector<uint8_t>& curl_easy::get_body() const

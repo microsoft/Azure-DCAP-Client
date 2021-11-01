@@ -22,7 +22,6 @@
 #include "environment.h"
 #include "sgx_ql_lib_common.h"
 
-
 #ifdef __LINUX__
 #include <arpa/inet.h>
 #else
@@ -30,7 +29,6 @@
 #include <winsock.h>
 #endif
 
-using nlohmann::json;
 using namespace std;
 
 // External function names are dictated by Intel
@@ -48,7 +46,7 @@ constexpr char ENCLAVE_ID_ISSUER_CHAIN[] = "SGX-Enclave-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
 
-static const std::map<std::string, std::string> default_values = {
+static std::map<std::string, std::string> default_values = {
     {"Content-Type", "application/json"}};
 
 static const std::map<std::string, std::string> thimagent_metadata = {
@@ -75,7 +73,6 @@ static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char DEFAULT_CID[] = "";
 static std::string default_cid = DEFAULT_CID;
-
 
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
@@ -358,7 +355,7 @@ std::string get_collateral_friendly_name(CollateralTypes collateral_type)
 // extract raw value from response body, if exists
 //
 sgx_plat_error_t extract_from_json(
-    nlohmann::json json,
+    const nlohmann::json& json,
     const std::string& header_item,
     std::string* out_header)
 {
@@ -374,7 +371,7 @@ sgx_plat_error_t extract_from_json(
             *out_header = raw_header;
         }
     }
-    catch (exception ex)
+    catch (const exception& ex)
     {
         log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
@@ -595,14 +592,18 @@ static void build_pck_cert_url(
 //
 // Build a complete cert chain from a completed curl object.
 //
-static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json json)
+static std::string build_cert_chain(
+    const curl_easy& curl,
+    const nlohmann::json& json)
 {
     std::string leaf_cert;
     std::string chain;
+    std::string temp_chain;
     if (!json.empty())
     {
         extract_from_json(json, "response", &leaf_cert);
-        extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &chain);
+        extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
+        chain = curl.unescape(temp_chain);
     }
     else
     {
@@ -664,7 +665,7 @@ static sgx_plat_error_t hex_decode(const std::string& hex_string, T* decoded)
 //  PCESVN(2 bytes)."
 //
 static sgx_plat_error_t parse_svn_values(
-    nlohmann::json json,
+    const nlohmann::json& json,
     const curl_easy& curl,
     sgx_ql_config_t* quote_config)
 {
@@ -1054,7 +1055,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             response_body = curl->get_body();
             json_body = nlohmann::json::parse(response_body);
 
-            if ((extract_from_json(json_body, headers::TCB_INFO, nullptr) != SGX_PLAT_ERROR_OK) ||
+            if ((extract_from_json(json_body, headers::TCB_INFO, nullptr) !=
+                 SGX_PLAT_ERROR_OK) ||
                 (extract_from_json(
                      json_body, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
                  SGX_PLAT_ERROR_OK))
@@ -1074,12 +1076,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 "Runtime exception thrown, error: %s",
                 error.what());
         }
-        catch (const std::exception& error)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Unknown exception thrown, error: %s",
-                error.what());
-        }
         catch (const curl_easy::error& error)
         {
             log(SGX_QL_LOG_ERROR,
@@ -1087,6 +1083,13 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 error.code,
                 error.what());
         }
+        catch (const std::exception& error)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Unknown exception thrown, error: %s",
+                error.what());
+        }
+
         if (!thim_agent_success)
         {
             if (auto cache_hit = try_cache_get(cert_url))
@@ -1107,7 +1110,13 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             }
 
             const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
-            curl = curl_easy::create(cert_url, &eppid_json, 0x00800000, L"POST");
+            if (eppid_json.empty())
+            {
+                headers::default_values.insert(
+                    std::pair<std::string, std::string>("Content-Length", "0"));
+            }
+            curl =
+                curl_easy::create(cert_url, &eppid_json, 0x00800000, L"POST");
             log(SGX_QL_LOG_INFO,
                 "Fetching quote config from remote server: '%s'.",
                 cert_url.c_str());
@@ -1129,7 +1138,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         // parse the SVNs into a local data structure so we can handle any
         // parse errors before allocating the output buffer
-        if (const sgx_plat_error_t err = parse_svn_values(json_body, *curl, &temp_config))
+        if (const sgx_plat_error_t err =
+                parse_svn_values(json_body, *curl, &temp_config))
         {
             return convert_to_intel_error(err);
         }
@@ -1145,9 +1155,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         uint8_t* buf = new uint8_t[buf_size];
         memset(buf, 0, buf_size);
 
-    #ifndef NDEBUG
-            const uint8_t* buf_end = buf + buf_size;
-    #endif
+#ifndef NDEBUG
+        const uint8_t* buf_end = buf + buf_size;
+#endif
 
         *pp_quote_config = reinterpret_cast<sgx_ql_config_t*>(buf);
         buf += sizeof(sgx_ql_config_t);
@@ -1155,7 +1165,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         (*pp_quote_config)->cert_cpu_svn = temp_config.cert_cpu_svn;
         (*pp_quote_config)->cert_pce_isv_svn = temp_config.cert_pce_isv_svn;
         (*pp_quote_config)->version = SGX_QL_CONFIG_VERSION_1;
-         (*pp_quote_config)->p_cert_data = buf;
+        (*pp_quote_config)->p_cert_data = buf;
         (*pp_quote_config)->cert_data_size = cert_data_size;
         memcpy(
             (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
@@ -1166,8 +1176,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         {
             // Get the cache control header
             std::string cache_control;
-            auto get_cache_header_operation =
-                get_unescape_header(*curl, headers::CACHE_CONTROL, &cache_control);
+            auto get_cache_header_operation = get_unescape_header(
+                *curl, headers::CACHE_CONTROL, &cache_control);
 
             auto retval = convert_to_intel_error(get_cache_header_operation);
             if ((retval == SGX_QL_SUCCESS) && (!thim_agent_success))
@@ -1175,7 +1185,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 time_t expiry;
                 if (get_cache_expiration_time(cache_control, cert_url, expiry))
                 {
-                    local_cache_add(cert_url, expiry, buf_size, *pp_quote_config);
+                    local_cache_add(
+                        cert_url, expiry, buf_size, *pp_quote_config);
                 }
             }
         }

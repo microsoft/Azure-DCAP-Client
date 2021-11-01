@@ -967,7 +967,7 @@ void SetupEnvironment(std::string version)
         1);
     setenv(
         "AZDCAP_THIM_AGENT_URL",
-        "http://127.0.0.1:90/metadata/THIM/sgx/certificates?",
+        "http://169.254.169.254/metadata/THIM/sgx/certificates?",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
