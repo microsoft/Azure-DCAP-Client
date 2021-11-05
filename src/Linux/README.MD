@@ -17,7 +17,7 @@ sudo cmake CMakeLists.txt
 sudo make
 
 # copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
-sudo cp *.a /usr/lib
+sudo cp lib/*.a /usr/lib
 ```
 
 Additionally, if you used the standard git clone command to pull down the repo without initializing the submodule, you may have to run the following to initialize the submodule:
