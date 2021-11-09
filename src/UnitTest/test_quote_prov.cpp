@@ -101,44 +101,80 @@ static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
 static constexpr uint8_t ICX_TEST_FMSPC[] =
     {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
 
-// Test input (choose an arbitrary Azure server)
-static uint8_t qe_id[16] = {
-    0x00,
-    0xfb,
-    0xe6,
-    0x73,
-    0x33,
-    0x36,
-    0xea,
-    0xf7,
-    0xa4,
-    0xe3,
-    0xd8,
-    0xb9,
-    0x66,
-    0xa8,
-    0x2e,
-    0x64};
+ // Test input (choose an arbitrary Azure server)
+// static uint8_t qe_id[16] = {
+//    0x00,
+//    0xfb,
+//    0xe6,
+//    0x73,
+//    0x33,
+//    0x36,
+//    0xea,
+//    0xf7,
+//    0xa4,
+//    0xe3,
+//    0xd8,
+//    0xb9,
+//    0x66,
+//    0xa8,
+//    0x2e,
+//    0x64};
 
-static sgx_cpu_svn_t cpusvn = {
-    0x04,
-    0x04,
-    0x02,
-    0x04,
-    0xff,
-    0x80,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static uint8_t qe_id[16] = {0x4e,
+                            0x77,
+                            0xbd,
+                            0x62,
+                            0xf4,
+                            0x64,
+                            0x0b,
+                            0xda,
+                            0x77,
+                            0xf6,
+                            0x77,
+                            0x97,
+                            0x60,
+                            0x9c,
+                            0xd8,
+                            0xed};
 
-static sgx_isv_svn_t pcesvn = 6;
+// static sgx_cpu_svn_t cpusvn = {
+//    0x04,
+//    0x04,
+//    0x02,
+//    0x04,
+//    0xff,
+//    0x80,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00,
+//    0x00};
+
+static sgx_cpu_svn_t cpusvn = {0x04,
+                               0x04,
+                               0x02,
+                               0x04,
+                               0x01,
+                               0x80,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00};
+// static sgx_isv_svn_t pcesvn = 6;
+
+static sgx_isv_svn_t pcesvn = 5;
+
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
@@ -458,7 +494,7 @@ static void GetCrlTest()
 {
     // This is the CRL DP used by Intel for leaf certs
     static const char* TEST_CRL_URL =
-        "https://api.trustedservices.intel.com/sgx/certification/v1/"
+        "https://api.trustedservices.intel.com/sgx/certification/v3/"
         "pckcrl?ca=processor";
 
     sgx_ql_get_revocation_info_params_t params = {
@@ -927,7 +963,11 @@ void SetupEnvironment(std::string version)
 #if defined __LINUX__
     setenv(
         "AZDCAP_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certificates",
+        "https://global.acccache.azure.net/sgx/certificates/",
+        1);
+    setenv(
+        "AZDCAP_THIM_AGENT_URL",
+        "http://169.254.169.254/metadata/THIM/sgx/certificates?",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -943,9 +983,15 @@ void SetupEnvironment(std::string version)
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certificates"));
+        "https://global.acccache.azure.net/sgx/certificates/"));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_THIM_AGENT_URL",
+        "http://127.0.0.1:90/metadata/THIM/sgx/certificates?"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    EXPECT_TRUE(
+        SetEnvironmentVariableA("AZDCAP_CID", "cid=0"));
+
 #endif
 }
 
@@ -997,6 +1043,7 @@ TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
     // Get the data from the service
     //
     SetupEnvironment("v2");
+
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(GetQveIdentityTest());
 
