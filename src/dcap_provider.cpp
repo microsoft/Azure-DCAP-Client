@@ -363,7 +363,7 @@ sgx_plat_error_t extract_from_json(
     {
         std::string raw_header = json[header_item].get<std::string>();
         log(SGX_QL_LOG_INFO,
-            "raw_header %s:[%s]",
+            "header from JSON %s:[%s]",
             header_item.c_str(),
             raw_header);
         if (out_header != nullptr)
