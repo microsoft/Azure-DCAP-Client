@@ -6,6 +6,9 @@
 #define PLATFORM_QUOTE_PROVIDER_H
 
 #include <stdint.h>
+#include <sstream>
+
+using namespace std;
 
 /*****************************************************************************
  * Data types and interfaces for getting platform revocation info. This
@@ -83,6 +86,15 @@ typedef sgx_plat_error_t (*sgx_get_qe_identity_info_t)(
 
 typedef void (*sgx_free_qe_identity_info_t)(
     sgx_qe_identity_info_t* p_qe_identity_info);
+
+/*****************************************************************************
+ * Structure to pass primary and secondary base URL
+ ****************************************************************************/
+
+typedef struct _collateral_fetch_url {
+    std::stringstream primary_base_url; // URL to fetch collateral from the host agent
+    std::stringstream secondary_base_url; // URL to fetch collateral from the remote service
+} collateral_fetch_url;
 
 /*****************************************************************************
  * Data types and interfaces for configuration the platform quote provider

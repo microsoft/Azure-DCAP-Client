@@ -5,11 +5,10 @@
 #include <cassert>
 #include <cstring>
 #include <ios>
-#include <sstream>
 #include <limits>
 #include <locale>
+#include <sstream>
 #include "private.h"
-
 #include <PathCch.h>
 #include <shlwapi.h>
 #include <strsafe.h>
@@ -17,8 +16,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Constants
 ///////////////////////////////////////////////////////////////////////////////
-static constexpr int maximum_retries = 5;
-static constexpr int initial_retry_delay_ms = 20;
+static constexpr int maximum_retries = 3;
+static constexpr int initial_retry_delay_ms = 2000;
 static constexpr WCHAR content_type_header[] =
     L"Content-Type: application/json";
 
@@ -128,7 +127,9 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 ///////////////////////////////////////////////////////////////////////////////
 std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
-    const std::string* const p_body)
+    const std::string* const p_body,
+    unsigned long dwFlags,
+    std::wstring httpVerb)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -191,12 +192,12 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     curl->request.reset(WinHttpOpenRequest(
         curl->connectionHandle.get(),
-        L"GET",
+        httpVerb.c_str(),
         urlToRetrieve.c_str(),
         nullptr,
         WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES,
-        WINHTTP_FLAG_SECURE));
+        dwFlags));
 
     if (!curl->request)
     {
@@ -248,15 +249,16 @@ DWORD curl_easy::get_response_code() const
     DWORD dwSize = sizeof(dwStatusCode);
 
     // Query for the response from the current request
-    if(!WinHttpQueryHeaders(
-        request.get(),
-        WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-        WINHTTP_HEADER_NAME_BY_INDEX,
-        &dwStatusCode,
-        &dwSize,
-        WINHTTP_NO_HEADER_INDEX))
+    if (!WinHttpQueryHeaders(
+            request.get(),
+            WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+            WINHTTP_HEADER_NAME_BY_INDEX,
+            &dwStatusCode,
+            &dwSize,
+            WINHTTP_NO_HEADER_INDEX))
     {
-        throw_on_error(GetLastError(), "curl_easy::get_response_code/WinHttpQueryHeaders");
+        throw_on_error(
+            GetLastError(), "curl_easy::get_response_code/WinHttpQueryHeaders");
     }
     return dwStatusCode;
 }
@@ -271,10 +273,10 @@ void curl_easy::perform() const
         if (!WinHttpSendRequest(
                 request.get(),
                 request_header_text.c_str(),
-                (DWORD) request_header_text.size(),
-                (PVOID) request_body_data.c_str(),
-                (DWORD) request_body_data.size(),
-                (DWORD) request_body_data.size(),
+                (DWORD)request_header_text.size(),
+                (PVOID)request_body_data.c_str(),
+                (DWORD)request_body_data.size(),
+                (DWORD)request_body_data.size(),
                 0))
         {
             throw_on_error(
@@ -308,13 +310,13 @@ void curl_easy::perform() const
         }
 
         DWORD response_code = get_response_code();
-        if (response_code >= HTTP_STATUS_BAD_REQUEST && response_code <= HTTP_STATUS_SERVER_ERROR)
+        if (response_code >= HTTP_STATUS_BAD_REQUEST &&
+            response_code <= HTTP_STATUS_SERVER_ERROR)
         {
             log(SGX_QL_LOG_INFO,
                 "HTTP Error (%d) on curl->perform() request",
                 response_code);
-            throw_on_error(
-                WINHTTP_ERROR_BASE, "curl_easy::perform");
+            throw_on_error(WINHTTP_ERROR_BASE, "curl_easy::perform");
         }
         return;
     } while (true);
@@ -415,7 +417,8 @@ void curl_easy::set_headers(
     request_header_text = L"";
     for (auto kvp : header_name_values)
     {
-        request_header_text.append(UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
+        request_header_text.append(
+            UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
     }
 }
 
