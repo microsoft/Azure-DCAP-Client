@@ -254,8 +254,7 @@ DWORD curl_easy::get_response_code() const
             &dwSize,
             WINHTTP_NO_HEADER_INDEX))
     {
-        throw_on_error(
-            GetLastError(), "curl_easy::get_response_code/WinHttpQueryHeaders");
+        throw_on_error(GetLastError(), "curl_easy::get_response_code/WinHttpQueryHeaders");
     }
     return dwStatusCode;
 }
