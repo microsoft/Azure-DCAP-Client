@@ -122,7 +122,7 @@ static sgx_cpu_svn_t cpusvn = {0x04,
                                0x04,
                                0x02,
                                0x04,
-                               0xff,
+                               0x01,
                                0x80,
                                0x00,
                                0x00,
@@ -877,7 +877,7 @@ void SetupEnvironment(std::string version)
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_SECONDARY_BASE_CERT_URL",
-        "https://global.acccache.azure.net/sgx/certification"));
+        "http://localhost:5000/sgx/certification"));
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
         "http://127.0.0.1:90/metadata/THIM/sgx/certification"));

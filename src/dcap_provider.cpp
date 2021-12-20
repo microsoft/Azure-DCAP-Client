@@ -57,8 +57,8 @@ static const std::map<std::string, std::string> localhost_metadata = {
 }; // namespace headers
 
 // New API version used to request PEM encoded CRLs
-constexpr char API_VERSION_LEGACY[] = "api-version=2018-10-01-preview";
-constexpr char API_VERSION[] = "api-version=2020-02-12-preview";
+constexpr char API_VERSION_2018[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION_2020[] = "api-version=2020-02-12-preview";
 
 static char DEFAULT_CERT_URL[] =
     "http://169.254.169.254/metadata/THIM/sgx/certification";
@@ -71,7 +71,7 @@ static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string secondary_cert_url = SECONDARY_CERT_URL;
 
-static char DEFAULT_CLIENT_ID[] = "Azure_DCAP_Client";
+static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
 static char DEFAULT_COLLATERAL_VERSION[] = "v3";
@@ -123,8 +123,7 @@ static std::string get_collateral_version()
     }
     else
     {
-        if (collateral_version.compare("v1") &&
-            collateral_version.compare("v2") &&
+        if (collateral_version.compare("v2") &&
             collateral_version.compare("v3"))
         {
             log(SGX_QL_LOG_ERROR,
@@ -188,10 +187,10 @@ static std::string fetch_from_base_url()
 
 static std::string get_secondary_url()
 {
-    std::string env_base_url =
+    std::string env_secondary_url =
         get_env_variable(ENV_AZDCAP_SECONDARY_BASE_CERT_URL);
 
-    if (env_base_url.empty())
+    if (env_secondary_url.empty())
     {
         log(SGX_QL_LOG_WARNING,
             "Using default secondary base cert URL '%s'.",
@@ -202,8 +201,8 @@ static std::string get_secondary_url()
     log(SGX_QL_LOG_INFO,
         "Using %s envvar for base cert URL, set to '%s'.",
         ENV_AZDCAP_SECONDARY_BASE_CERT_URL,
-        env_base_url.c_str());
-    return env_base_url;
+        env_secondary_url.c_str());
+    return env_secondary_url;
 }
 
 static std::string get_client_id()
@@ -261,53 +260,51 @@ static inline quote3_error_t fill_qpl_string_buffer(
 }
 
 //
-// Determine time cache should invalidate for given collateral
+// Determine time cache should invalidate for given certificate
 //
 bool get_cert_cache_expiration_time(
-    const string cache_control,
+    const string& cache_control,
     const string& url,
     time_t& expiration_time)
 {
     time_t max_age = 0;
     tm* max_age_s = localtime(&max_age);
-    //size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
+    // size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
     int cache_time_seconds = 0;
+    stoi(cache_control);
     constexpr int MAX_CACHE_TIME_SECONDS = 86400;
-    if (stoi(cache_control))
+    try
     {
-        try
-        {
-            cache_time_seconds = stoi(cache_control);
-             //   cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
-            if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
-            {
-                log(SGX_QL_LOG_ERROR,
-                    "Caching control '%d' larger than maximum '%d' seconds. "
-                    "Collateral will not be cached",
-                    cache_time_seconds,
-                    MAX_CACHE_TIME_SECONDS);
-                return false;
-            }
-        }
-        catch (const std::invalid_argument& e)
+        cache_time_seconds = stoi(cache_control);
+        if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
         {
             log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
-                cache_control.c_str(),
-                e.what());
-            return false;
-        }
-        catch (const std::out_of_range& e)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
-                cache_control.c_str(),
-                e.what());
+                "Caching control '%d' larger than maximum '%d' seconds. "
+                "Collateral will not be cached",
+                cache_time_seconds,
+                MAX_CACHE_TIME_SECONDS);
             return false;
         }
     }
+    catch (const std::invalid_argument& e)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Invalid argument thrown when parsing cache-control. Header "
+            "text: '%s' Error: '%s'. Collateral will not be cached",
+            cache_control.c_str(),
+            e.what());
+        return false;
+    }
+    catch (const std::out_of_range& e)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Invalid argument thrown when parsing cache-control. Header "
+            "text: '%s' Error: '%s'. Collateral will not be cached",
+            cache_control.c_str(),
+            e.what());
+        return false;
+    }
+
     max_age_s->tm_sec += cache_time_seconds;
     expiration_time = time(nullptr) + mktime(max_age_s);
     log(SGX_QL_LOG_INFO,
@@ -418,97 +415,29 @@ std::string get_collateral_friendly_name(CollateralTypes collateral_type)
 //
 sgx_plat_error_t extract_from_json(
     const nlohmann::json& json,
-    const std::string& header_item,
+    const std::string& item,
     std::string* out_header)
 {
     try
     {
-        std::string raw_header = json[header_item];
+        std::string raw_value = json[item];
         log(SGX_QL_LOG_INFO,
-            "header from JSON %s:[%s]",
-            header_item.c_str(),
-            raw_header.c_str());
+            "Required information from JSON %s:[%s]",
+            item.c_str(),
+            raw_value.c_str());
         if (out_header != nullptr)
         {
-            *out_header = raw_header;
+            *out_header = raw_value;
         }
     }
     catch (const exception& ex)
     {
-        log(SGX_QL_LOG_ERROR, "Header '%s' is missing.", header_item.c_str());
+        log(SGX_QL_LOG_ERROR,
+            "Require information '%s' is missing.", item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
 }
-
-bool check_cache(std::string secondary_base_url, sgx_ql_config_t** pp_quote_config)
-{
-    bool fetch_from_cache = false;
-    if (auto cache_hit = try_cache_get(secondary_base_url))
-    {
-        fetch_from_cache = true;
-        log(SGX_QL_LOG_INFO,
-            "Fetching quote config from cache: '%s'.",
-            secondary_base_url.c_str());
-
-        *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
-        memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
-
-        // re-aligning the p_cert_data pointer
-        (*pp_quote_config)->p_cert_data =
-            (uint8_t*)(*pp_quote_config) + sizeof(sgx_ql_config_t);
-    }
-    return fetch_from_cache;
-}
-bool fetch_response(
-    std::string base_url,
-    std::string eppid_json,
-    unsigned long dwFlags,
-    curl_easy& curl,
-    std::map<std::string, std::string> header_value)
-{
-    bool fetch_response = false;
-    try
-    {
-        if (!eppid_json.empty())
-            curl = curl_easy::create(base_url, &eppid_json, dwFlags);
-        else
-            curl = curl_easy::create(base_url, nullptr, dwFlags);
-
-        log(SGX_QL_LOG_INFO,
-            "Fetching quote config from host agent: '%s'.",
-            base_url.c_str());
-        curl->set_headers(header_value);
-        curl->perform();
-        fetch_response = true;
-    }
-    catch (const std::bad_alloc&)
-    {
-        log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
-        return SGX_QL_ERROR_OUT_OF_MEMORY;
-    }
-    catch (const std::runtime_error& error)
-    {
-        log(SGX_QL_LOG_WARNING,
-            "Runtime exception thrown, error: %s",
-            error.what());
-    }
-    catch (const curl_easy::error& error)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "error thrown, error code: %x: %s",
-            error.code,
-            error.what());
-    }
-    catch (const std::exception& error)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Unknown exception thrown, error: %s",
-            error.what());
-    }
-    return fetch_response;
-}
-
 //
 // get raw value for header_item item if exists
 //
@@ -708,8 +637,8 @@ static void build_pck_cert_url(
     {
         collateral_url.secondary_base_url << "clientid=" << client_id << '&';
     }
-    collateral_url.secondary_base_url << API_VERSION_LEGACY;
-    collateral_url.primary_base_url << API_VERSION_LEGACY;
+    collateral_url.secondary_base_url << API_VERSION_2018;
+    collateral_url.primary_base_url << API_VERSION_2018;
 }
 
 //
@@ -904,7 +833,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    *out = build_pck_crl_url(crl_url, API_VERSION_LEGACY);
+    *out = build_pck_crl_url(crl_url, API_VERSION_2018);
     return SGX_PLAT_ERROR_OK;
 }
 
@@ -926,7 +855,7 @@ static std::string build_tcb_info_url(const std::string& fmspc)
     {
         tcb_info_url << "clientid=" << client_id << "&";
     }
-    tcb_info_url << API_VERSION_LEGACY;
+    tcb_info_url << API_VERSION_2018;
     return tcb_info_url.str();
 }
 
@@ -976,7 +905,7 @@ static std::string build_enclave_id_url(
     {
         qe_id_url << "clientid=" << client_id << '&';
     }
-    qe_id_url << API_VERSION_LEGACY;
+    qe_id_url << API_VERSION_2018;
     return qe_id_url.str();
 }
 
@@ -1015,9 +944,10 @@ static quote3_error_t get_collateral(
         std::string issuer_chain_cache_name = get_issuer_chain_cache_name(url);
         if (auto cache_hit_collateral = try_cache_get(url))
         {
-            if (auto cache_hit_issuer_chain = try_cache_get(issuer_chain_cache_name))
+            if (auto cache_hit_issuer_chain =
+                    try_cache_get(issuer_chain_cache_name))
             {
-                log(SGX_QL_LOG_INFO, 
+                log(SGX_QL_LOG_INFO,
                     "Fetching %s from cache: '%s'.",
                     friendly_name.c_str(),
                     url.c_str());
@@ -1127,6 +1057,75 @@ static std::string build_eppid_json(const sgx_ql_pck_cert_id_t& pck_cert_id)
     return json.str();
 }
 
+bool check_cache(std::string base_url, sgx_ql_config_t** pp_quote_config)
+{
+    bool fetch_from_cache = false;
+    if (auto cache_hit = try_cache_get(base_url))
+    {
+        fetch_from_cache = true;
+        log(SGX_QL_LOG_INFO,
+            "Fetching quote config from cache: '%s'.",
+            base_url.c_str());
+
+        *pp_quote_config = (sgx_ql_config_t*)(new uint8_t[cache_hit->size()]);
+        memcpy(*pp_quote_config, cache_hit->data(), cache_hit->size());
+
+        // re-aligning the p_cert_data pointer
+        (*pp_quote_config)->p_cert_data =
+            (uint8_t*)(*pp_quote_config) + sizeof(sgx_ql_config_t);
+    }
+    return fetch_from_cache;
+}
+
+bool fetch_response(
+    std::string base_url,
+    const std::string& eppid_json,
+    std::unique_ptr<curl_easy>& curl,
+    std::map<std::string, std::string> header_value,
+    unsigned long dwFlags = 0x00800000)
+{
+    bool fetch_response = false;
+    try
+    {
+        if (!eppid_json.empty())
+            curl = curl_easy::create(base_url, &eppid_json, dwFlags);
+        else
+            curl = curl_easy::create(base_url, nullptr, dwFlags);
+
+        log(SGX_QL_LOG_INFO,
+            "Fetching quote config from host agent: '%s'.",
+            base_url.c_str());
+        curl->set_headers(header_value);
+        curl->perform();
+        fetch_response = true;
+    }
+    catch (const std::bad_alloc&)
+    {
+        log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
+        return SGX_QL_ERROR_OUT_OF_MEMORY;
+    }
+    catch (const std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Runtime exception thrown, error: %s",
+            error.what());
+    }
+    catch (const curl_easy::error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "error thrown, error code: %x: %s",
+            error.code,
+            error.what());
+    }
+    catch (const std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
+    }
+    return fetch_response;
+}
+
 extern "C" quote3_error_t sgx_ql_get_quote_config(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config)
@@ -1135,18 +1134,19 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
     try
     {
+        bool fetch_response_from_primary = false;
+        bool fetch_response_from_cache = false;
+
+        sgx_ql_config_t temp_config{};
+        nlohmann::json json_body;
         collateral_fetch_url collateral_url;
         std::vector<uint8_t> response_body;
         std::unique_ptr<curl_easy> curl;
-        sgx_ql_config_t temp_config{};
-        nlohmann::json json_body;
-        bool fetch_response_from_primary = false;
-        bool fetch_from_cache = false;
-        bool fetch_from_secondary = false;
 
         build_pck_cert_url(*p_pck_cert_id, collateral_url);
         std::string primary_base_url = collateral_url.primary_base_url.str();
-        std::string secondary_base_url = collateral_url.secondary_base_url.str();
+        std::string secondary_base_url =
+            collateral_url.secondary_base_url.str();
 
         std::string fetch_from_base = fetch_from_base_url();
         transform(
@@ -1154,46 +1154,35 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             fetch_from_base.end(),
             fetch_from_base.begin(),
             ::tolower);
-
-        // Try to fetch the certificate from the primary source.
-        // If that fails, look in the local cache. If the local
-        // cache does not have the certificate as well, try retriving
-        // from the secondary source.
         try
         {
+            const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
             if (fetch_from_base.compare("true") == 0)
             {
                 fetch_response_from_primary = fetch_response(
                     primary_base_url,
-                    nullptr,
-                    0,
-                    *curl,
-                    headers::localhost_metadata);
+                    eppid_json,
+                    curl,
+                    headers::localhost_metadata,
+                    0);
             }
             if (!fetch_response_from_primary)
             {
-                if(check_cache(secondary_base_url, pp_quote_config))
+                fetch_response_from_cache =
+                    check_cache(secondary_base_url, pp_quote_config);
+                if (fetch_response_from_cache)
                     return SGX_QL_SUCCESS;
                 else
                 {
-                    const std::string eppid_json = 
-                        build_eppid_json(*p_pck_cert_id);
-                    if (eppid_json.empty())
-                    {
-                        headers::default_values.insert(
-                            std::pair<std::string, std::string>(
-                                "Content-Length", "0"));
-                    }
-                    fetch_from_secondary = fetch_response(
+                    fetch_response(
                         secondary_base_url,
                         eppid_json,
-                        0x00800000,
-                        *curl,
+                        curl,
                         headers::default_values);
                 }
             }
 
-            // Parse the body returned of the response
+            // Parse the body returned by host agent to extract
             // 1. Certificate
             // 2. TCB Info
             // 3. Cert Chain
@@ -1202,12 +1191,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             json_body = nlohmann::json::parse(response_body);
 
             if ((extract_from_json(json_body, headers::TCB_INFO, nullptr) !=
-                    SGX_PLAT_ERROR_OK) ||
+                 SGX_PLAT_ERROR_OK) ||
                 (extract_from_json(
-                        json_body, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
-                    SGX_PLAT_ERROR_OK))
+                     json_body, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
+                 SGX_PLAT_ERROR_OK))
             {
-                log(SGX_QL_LOG_ERROR, "Required information is missing.");
+                log(SGX_QL_LOG_ERROR, "Required headers are missing.");
                 return SGX_QL_ERROR_UNEXPECTED;
             }
         }
@@ -1775,7 +1764,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string qe_identity_issuer_chain;
 
         // Get PCK CRL
-        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION);
+        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION_2020);
         operation_result = get_collateral(
             CollateralTypes::PckCrl,
             pck_crl_url,
@@ -1792,7 +1781,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(root_crl_name, API_VERSION);
+            build_pck_crl_url(root_crl_name, API_VERSION_2020);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -2045,7 +2034,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         }
 
         std::string root_ca_crl_url =
-            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION);
+            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION_2020);
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 

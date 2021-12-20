@@ -72,7 +72,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag, std::wstring httpVerb)
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -92,17 +92,9 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
 
-    
-    if (wcscasecmp(httpVerb.c_str(), L"POST") == 0)
-    {
-        easy->set_opt_or_throw(CURLOPT_POST, 1L);
-    }
-    else
-    {
-        easy->set_opt_or_throw(CURLOPT_HTTPGET, 1L);
-    }
     if (p_body != nullptr && !p_body->empty())
     {
+        easy->set_opt_or_throw(CURLOPT_CUSTOMREQUEST, "GET");
         easy->set_opt_or_throw(CURLOPT_COPYPOSTFIELDS, p_body->c_str());
     }
 
