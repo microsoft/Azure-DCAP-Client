@@ -284,8 +284,7 @@ void curl_easy::perform() const
     }
 
     DWORD response_code = get_response_code();
-    if (response_code >= HTTP_STATUS_BAD_REQUEST &&
-        response_code <= HTTP_STATUS_SERVER_ERROR)
+    if (response_code >= HTTP_STATUS_BAD_REQUEST && response_code <= HTTP_STATUS_SERVER_ERROR)
     {
         log(SGX_QL_LOG_INFO,
             "HTTP Error (%d) on curl->perform() request",
@@ -390,8 +389,7 @@ void curl_easy::set_headers(
     request_header_text = L"";
     for (auto kvp : header_name_values)
     {
-        request_header_text.append(
-            UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
+        request_header_text.append(UnicodeStringFromUtf8String(kvp.first + ":" + kvp.second));
     }
 }
 

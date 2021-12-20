@@ -325,13 +325,11 @@ bool get_cache_expiration_time(
     {
         try
         {
-            cache_time_seconds = stoi(
-                cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
+            cache_time_seconds = stoi(cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
             if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
             {
                 log(SGX_QL_LOG_ERROR,
-                    "Caching control '%d' larger than maximum '%d' seconds. "
-                    "Collateral will not be cached",
+                    "Caching control '%d' larger than maximum '%d' seconds. Collateral will not be cached",
                     cache_time_seconds,
                     MAX_CACHE_TIME_SECONDS);
                 return false;
@@ -340,8 +338,7 @@ bool get_cache_expiration_time(
         catch (const std::invalid_argument& e)
         {
             log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
+                "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
                 cache_control.c_str(),
                 e.what());
             return false;
@@ -349,8 +346,7 @@ bool get_cache_expiration_time(
         catch (const std::out_of_range& e)
         {
             log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
+                "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
                 cache_control.c_str(),
                 e.what());
             return false;
@@ -1119,8 +1115,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         build_pck_cert_url(*p_pck_cert_id, collateral_url);
         std::string primary_base_url = collateral_url.primary_base_url.str();
-        std::string secondary_base_url =
-            collateral_url.secondary_base_url.str();
+        std::string secondary_base_url = collateral_url.secondary_base_url.str();
 
         std::string fetch_from_base = fetch_from_base_url();
         transform(
@@ -1280,8 +1275,8 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
-    // Requests for higher versions work, but this function will ONLY return
-    // the highest version of output that it supports.
+    // Requests for higher versions work, but this function will ONLY return the
+    // highest version of output that it supports.
     if (params->version < SGX_QL_REVOCATION_INFO_VERSION_1)
     {
         log(SGX_QL_LOG_ERROR,
@@ -1791,7 +1786,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         operation_result = get_collateral(
             CollateralTypes::QeIdentity,
-            qe_identity_url, 
+            qe_identity_url,
             issuer_chain_header.c_str(),
             qe_identity,
             qe_identity_issuer_chain);
