@@ -101,7 +101,8 @@ static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
 static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
 
 // Test input (choose an arbitrary Azure server)
-static uint8_t qe_id[16] = {0x00,
+static uint8_t qe_id[16] = {
+    0x00,
     0xfb,
     0xe6,
     0x73,
@@ -118,11 +119,12 @@ static uint8_t qe_id[16] = {0x00,
     0x2e,
     0x64};
 
-static sgx_cpu_svn_t cpusvn = {0x04,
+static sgx_cpu_svn_t cpusvn = {
+    0x04,
     0x04,
     0x02,
     0x04,
-    0x01,
+    0xff,
     0x80,
     0x00,
     0x00,
@@ -139,7 +141,8 @@ static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
-static uint8_t icx_qe_id[16] = {0x0f,
+static uint8_t icx_qe_id[16] = {
+    0x0f,
     0xe3,
     0x21,
     0xfa,
@@ -156,7 +159,8 @@ static uint8_t icx_qe_id[16] = {0x0f,
     0x07,
     0x19};
 
-static sgx_cpu_svn_t icx_cpusvn = {0x04,
+static sgx_cpu_svn_t icx_cpusvn = {
+    0x04,
     0x04,
     0x03,
     0x08,
@@ -344,7 +348,8 @@ static void GetCertsTest()
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {0x04,
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
+        0x04,
         0x04,
         0x02,
         0x04,
@@ -384,7 +389,8 @@ static void GetCertsTestICXV3()
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {0x04,
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
+        0x04,
         0x04,
         0x03,
         0x03,
@@ -610,7 +616,8 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     local_cache_clear();
     auto duration_curl_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
-    auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTest);
+    auto duration_curl_verification =
+        MeasureFunction(GetVerificationCollateralTest);
     GetRootCACrlTest();
 
     //
@@ -856,12 +863,16 @@ void SetupEnvironment(std::string version)
 {
 #if defined __LINUX__
     setenv(
+        "AZDCAP_PRIMARY_BASE_CERT_URL",
+        "http://169.254.169.254/metadata/THIM/sgx/certification",
+        1);
+    setenv(
         "ENV_AZDCAP_SECONDARY_BASE_CERT_URL",
         "https://global.acccache.azure.net/sgx/certification",
         1);
     setenv(
         "ENV_AZDCAP_BASE_URL",
-        "http://169.254.169.254/metadata/THIM/sgx/certification",
+        "https://global.acccache.azure.net/sgx/certification",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -876,11 +887,14 @@ void SetupEnvironment(std::string version)
             "AZDCAP_COLLATERAL_VERSION", version.c_str()));
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_PRIMARY_BASE_CERT_URL",
+        "http://169.254.169.254/metadata/THIM/sgx/certification"));
+    EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_SECONDARY_BASE_CERT_URL",
-        "http://localhost:5000/sgx/certification"));
+        "https://global.acccache.azure.net/sgx/certification"));
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_BASE_CERT_URL",
-        "http://127.0.0.1:90/metadata/THIM/sgx/certification"));
+        "https://global.acccache.azure.net/sgx/certification"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
@@ -889,9 +903,9 @@ void SetupEnvironment(std::string version)
 void SetupEnvironmentToReachSecondary()
 {
 #if defined __LINUX__
-    setenv("AZDCAP_FETCH_FROM_BASE_URL", "false", 1);
+    setenv("AZDCAP_FETCH_BASE_URL", "false", 1);
 #else
-    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_FETCH_FROM_BASE_URL", "false"));
+    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_FETCH_BASE_URL", "false"));
 #endif
 }
 
@@ -963,6 +977,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     SetupEnvironment("v3");
     SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__

@@ -10,12 +10,10 @@
 #include <limits>
 #include <locale>
 #include "private.h"
-#include <string.h>
 
 #ifdef __LINUX__
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <unistd.h>
 #else
 #include <PathCch.h>
 #include <shlwapi.h>
@@ -134,7 +132,7 @@ void curl_easy::perform() const
     if (result == CURLE_HTTP_RETURNED_ERROR)
     {
         long http_code = 0;
-        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &http_code);
+        curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &http_code);
         log(SGX_QL_LOG_ERROR, "HTTP error (%zd)", http_code);
     }
     throw_on_error(result, "curl_easy_perform");

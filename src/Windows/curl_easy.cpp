@@ -5,10 +5,11 @@
 #include <cassert>
 #include <cstring>
 #include <ios>
+#include <sstream>
 #include <limits>
 #include <locale>
-#include <sstream>
 #include "private.h"
+
 #include <PathCch.h>
 #include <shlwapi.h>
 #include <strsafe.h>

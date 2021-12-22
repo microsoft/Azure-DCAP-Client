@@ -16,11 +16,11 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 
-#include "environment.h"
 #include "sgx_ql_lib_common.h"
+#include "environment.h"
 
 #ifdef __LINUX__
 #include <arpa/inet.h>
@@ -46,7 +46,7 @@ constexpr char ENCLAVE_ID_ISSUER_CHAIN[] = "SGX-Enclave-Identity-Issuer-Chain";
 constexpr char REQUEST_ID[] = "Request-ID";
 constexpr char CERT_CACHE_CONTROL[] = "cacheMaxAge";
 constexpr char CACHE_CONTROL[] = "Cache-Control";
-constexpr char VERSION[] = "version";
+constexpr char JSON_VERSION[] = "version";
 
 static std::map<std::string, std::string> default_values = {
     {"Content-Type", "application/json"}};
@@ -57,15 +57,20 @@ static const std::map<std::string, std::string> localhost_metadata = {
 }; // namespace headers
 
 // New API version used to request PEM encoded CRLs
-constexpr char API_VERSION_2018[] = "api-version=2018-10-01-preview";
-constexpr char API_VERSION_2020[] = "api-version=2020-02-12-preview";
+constexpr char API_VERSION_10_2018[] = "api-version=2018-10-01-preview";
+constexpr char API_VERSION_02_2020[] = "api-version=2020-02-12-preview";
+constexpr char API_VERSION_07_2021[] = "api-version=2021-07-22-preview";
 
 static char DEFAULT_CERT_URL[] =
-    "http://169.254.169.254/metadata/THIM/sgx/certification";
+    "https://global.acccache.azure.net/sgx/certification";
 static std::string default_cert_url = DEFAULT_CERT_URL;
 
-static char DEFAULT_FETCH_FROM_BASET_URL[] = "true";
-static std::string default_fetch_from_base_url = DEFAULT_FETCH_FROM_BASET_URL;
+static char DEFAULT_FETCH_BASE_URL[] = "true";
+static std::string default_fetch_base_url = DEFAULT_FETCH_BASE_URL;
+
+static char PRIMARY_CERT_URL[] =
+    "http://169.254.169.254/metadata/THIM/sgx/certification";
+static std::string primary_cert_url = PRIMARY_CERT_URL;
 
 static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
@@ -122,7 +127,8 @@ static std::string get_collateral_version()
     }
     else
     {
-        if (collateral_version.compare("v2") &&
+        if (collateral_version.compare("v1") &&
+            collateral_version.compare("v2") &&
             collateral_version.compare("v3"))
         {
             log(SGX_QL_LOG_ERROR,
@@ -164,24 +170,44 @@ static std::string get_base_url()
     return env_base_url;
 }
 
-static std::string fetch_from_base_url()
+static std::string fetch_base_url()
 {
-    std::string env_fetch_from_base_url =
-        get_env_variable(ENV_FETCH_FROM_BASE_URL);
+    std::string env_fetch_base_url =
+        get_env_variable(ENV_FETCH_BASE_URL);
 
-    if (env_fetch_from_base_url.empty())
+    if (env_fetch_base_url.empty())
     {
         log(SGX_QL_LOG_WARNING,
-            "Using default primary base cert URL '%s'.",
-            default_fetch_from_base_url);
-        return default_fetch_from_base_url;
+            "Using default base URL '%s'.",
+            default_fetch_base_url);
+        return default_fetch_base_url;
+    }
+
+    log(SGX_QL_LOG_INFO,
+        "Using %s envvar for base URL, set to '%s'.",
+        ENV_FETCH_BASE_URL,
+        env_fetch_base_url.c_str());
+    return env_fetch_base_url;
+}
+
+static std::string get_primary_url()
+{
+    std::string env_primary_url =
+        get_env_variable(ENV_AZDCAP_PRIMARY_BASE_CERT_URL);
+
+    if (env_primary_url.empty())
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Using default secondary base cert URL '%s'.",
+            primary_cert_url.c_str());
+        return primary_cert_url;
     }
 
     log(SGX_QL_LOG_INFO,
         "Using %s envvar for base cert URL, set to '%s'.",
-        ENV_FETCH_FROM_BASE_URL,
-        env_fetch_from_base_url.c_str());
-    return env_fetch_from_base_url;
+        ENV_AZDCAP_PRIMARY_BASE_CERT_URL,
+        env_primary_url.c_str());
+    return env_primary_url;
 }
 
 static std::string get_secondary_url()
@@ -259,19 +285,21 @@ static inline quote3_error_t fill_qpl_string_buffer(
 }
 
 //
-// Determine time cache should invalidate for given certificate
+// Determine the time cache should invalidate for given certificate.
+// The new return object from the service is a string value that
+// defines certificate expiration time in seconds. In this function
+// we convert the returned value to ingeter and uses that to define 
+// the expiration time of the certificate cached locally.
 //
-bool get_cert_cache_expiration_time(const string& cache_control, const string& url, time_t& expiration_time)
+bool get_cert_cache_expiration_time(const string& cache_max_age, const string& url, time_t& expiration_time)
 {
     time_t max_age = 0;
     tm* max_age_s = localtime(&max_age);
-    // size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
     int cache_time_seconds = 0;
-    stoi(cache_control);
     constexpr int MAX_CACHE_TIME_SECONDS = 86400;
     try
     {
-        cache_time_seconds = stoi(cache_control);
+        cache_time_seconds = stoi(cache_max_age);
         if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -285,7 +313,7 @@ bool get_cert_cache_expiration_time(const string& cache_control, const string& u
     {
         log(SGX_QL_LOG_ERROR,
             "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
-            cache_control.c_str(),
+            cache_max_age.c_str(),
             e.what());
         return false;
     }
@@ -294,7 +322,7 @@ bool get_cert_cache_expiration_time(const string& cache_control, const string& u
         log(SGX_QL_LOG_ERROR,
             "Invalid argument thrown when parsing cache-control. Header "
             "text: '%s' Error: '%s'. Collateral will not be cached",
-            cache_control.c_str(),
+            cache_max_age.c_str(),
             e.what());
         return false;
     }
@@ -311,10 +339,7 @@ bool get_cert_cache_expiration_time(const string& cache_control, const string& u
 //
 // Determine time cache should invalidate for given collateral
 //
-bool get_cache_expiration_time(
-    const string& cache_control,
-    const string& url,
-    time_t& expiration_time)
+bool get_cache_expiration_time(const string& cache_control, const string& url, time_t& expiration_time)
 {
     time_t max_age = 0;
     tm* max_age_s = localtime(&max_age);
@@ -602,12 +627,9 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, collater
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
     std::string version = get_collateral_version();
     collateral_url.secondary_base_url << get_secondary_url();
-    collateral_url.primary_base_url << get_base_url();
-    if (!version.empty())
-    {
-        collateral_url.secondary_base_url << '/' << version;
-        collateral_url.primary_base_url << '/' << version;
-    }
+    collateral_url.primary_base_url << get_primary_url();
+    collateral_url.secondary_base_url << '/' << version;
+    collateral_url.primary_base_url << '/' << version;
     collateral_url.secondary_base_url << "/pckcert?";
     collateral_url.secondary_base_url << "qeid=" << qe_id << '&';
     collateral_url.secondary_base_url << "cpusvn=" << cpu_svn << '&';
@@ -625,8 +647,8 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, collater
     {
         collateral_url.secondary_base_url << "clientid=" << client_id << '&';
     }
-    collateral_url.secondary_base_url << API_VERSION_2018;
-    collateral_url.primary_base_url << API_VERSION_2018;
+    collateral_url.secondary_base_url << API_VERSION_07_2021;
+    collateral_url.primary_base_url << API_VERSION_07_2021;
 }
 
 //
@@ -786,7 +808,7 @@ static std::string build_pck_crl_url(
     std::string escaped =
         curl_easy::escape(crl_name.data(), (int)crl_name.size());
     std::string client_id = get_client_id();
-    url << get_secondary_url();
+    url << get_base_url();
     if (!version.empty())
     {
         url << "/" << version;
@@ -819,7 +841,7 @@ static sgx_plat_error_t build_pck_crl_url(
 
     int crl_size;
     safe_cast(crl_url.size(), &crl_size);
-    *out = build_pck_crl_url(crl_url, API_VERSION_2018);
+    *out = build_pck_crl_url(crl_url, API_VERSION_10_2018);
     return SGX_PLAT_ERROR_OK;
 }
 
@@ -828,7 +850,7 @@ static std::string build_tcb_info_url(const std::string& fmspc)
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
     std::stringstream tcb_info_url;
-    tcb_info_url << get_secondary_url();
+    tcb_info_url << get_base_url();
 
     if (!version.empty())
     {
@@ -841,7 +863,7 @@ static std::string build_tcb_info_url(const std::string& fmspc)
     {
         tcb_info_url << "clientid=" << client_id << "&";
     }
-    tcb_info_url << API_VERSION_2018;
+    tcb_info_url << API_VERSION_10_2018;
     return tcb_info_url.str();
 }
 
@@ -867,7 +889,7 @@ static std::string build_enclave_id_url(
     std::stringstream qe_id_url;
     expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
 
-    qe_id_url << get_secondary_url();
+    qe_id_url << get_base_url();
 
     // Select the correct issuer header name
     if (!version.empty())
@@ -891,7 +913,7 @@ static std::string build_enclave_id_url(
     {
         qe_id_url << "clientid=" << client_id << '&';
     }
-    qe_id_url << API_VERSION_2018;
+    qe_id_url << API_VERSION_10_2018;
     return qe_id_url.str();
 }
 
@@ -917,7 +939,7 @@ static std::string get_issuer_chain_cache_name(std::string url)
 static quote3_error_t get_collateral(
     CollateralTypes collateral_type,
     std::string url,
-    const char* issuer_chain_header,
+    const char *issuer_chain_header,
     std::vector<uint8_t>& response_body,
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
@@ -949,7 +971,7 @@ static quote3_error_t get_collateral(
         curl_operation = curl_easy::create(url, request_body);
         curl_operation->perform();
         response_body = curl_operation->get_body();
-        auto get_issuer_chain_operation = 
+        auto get_issuer_chain_operation =
             get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
         retval = convert_to_intel_error(get_issuer_chain_operation);
         if (retval == SGX_QL_SUCCESS)
@@ -1063,7 +1085,7 @@ bool fetch_response(
             curl = curl_easy::create(base_url, nullptr, dwFlags);
 
         log(SGX_QL_LOG_INFO,
-            "Fetching quote config from host agent: '%s'.",
+            "Fetching certificate from: '%s'.",
             base_url.c_str());
         curl->set_headers(header_value);
         curl->perform();
@@ -1117,17 +1139,20 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         std::string primary_base_url = collateral_url.primary_base_url.str();
         std::string secondary_base_url = collateral_url.secondary_base_url.str();
 
-        std::string fetch_from_base = fetch_from_base_url();
+        std::string fetch_base = fetch_base_url();
         transform(
-            fetch_from_base.begin(),
-            fetch_from_base.end(),
-            fetch_from_base.begin(),
+            fetch_base.begin(),
+            fetch_base.end(),
+            fetch_base.begin(),
             ::tolower);
         try
         {
             const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
-            if (fetch_from_base.compare("true") == 0)
+            if (fetch_base.compare("true") == 0)
             {
+                log(SGX_QL_LOG_INFO,
+                    "Trying to fetch response from primary URL: '%s'.",
+                    primary_base_url.c_str());
                 fetch_response_from_primary = fetch_response(
                     primary_base_url,
                     eppid_json,
@@ -1137,12 +1162,17 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             }
             if (!fetch_response_from_primary)
             {
+                log(SGX_QL_LOG_INFO,
+                    "Trying to fetch response from local cache.");
                 fetch_response_from_cache =
                     check_cache(secondary_base_url, pp_quote_config);
                 if (fetch_response_from_cache)
                     return SGX_QL_SUCCESS;
                 else
                 {
+                    log(SGX_QL_LOG_INFO,
+                        "Trying to fetch response from secondary URL: '%s'.",
+                        secondary_base_url.c_str());
                     fetch_response(
                         secondary_base_url,
                         eppid_json,
@@ -1727,7 +1757,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
         std::string qe_identity_issuer_chain;
 
         // Get PCK CRL
-        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION_2020);
+        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION_02_2020);
         operation_result = get_collateral(
             CollateralTypes::PckCrl,
             pck_crl_url,
@@ -1744,7 +1774,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(root_crl_name, API_VERSION_2020);
+            build_pck_crl_url(root_crl_name, API_VERSION_02_2020);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -1993,7 +2023,7 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         }
 
         std::string root_ca_crl_url =
-            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION_2020);
+            build_pck_crl_url(ROOT_CRL_NAME, API_VERSION_02_2020);
         std::vector<uint8_t> root_ca_crl;
         std::string root_ca_chain;
 
