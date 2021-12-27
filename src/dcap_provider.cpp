@@ -65,8 +65,8 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string default_cert_url = DEFAULT_CERT_URL;
 
-static char DEFAULT_FETCH_BASE_URL[] = "true";
-static std::string default_fetch_base_url = DEFAULT_FETCH_BASE_URL;
+static char DEFAULT_BYPASS_BASE_URL[] = "false";
+static std::string default_bypass_base_url = DEFAULT_BYPASS_BASE_URL;
 
 static char PRIMARY_CERT_URL[] =
     "http://169.254.169.254/metadata/THIM/sgx/certification";
@@ -137,13 +137,13 @@ static std::string get_collateral_version()
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
-            log(SGX_QL_LOG_WARNING,
+            log(SGX_QL_LOG_INFO,
                 "Using default collateral version '%s'.",
                 default_collateral_version.c_str());
             return default_collateral_version;
         }
 
-        log(SGX_QL_LOG_INFO,
+        log(SGX_QL_LOG_WARNING,
             "Using %s envvar for collateral version URL, set to '%s'.",
             ENV_AZDCAP_COLLATERAL_VER,
             collateral_version.c_str());
@@ -157,37 +157,36 @@ static std::string get_base_url()
 
     if (env_base_url.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default primary base cert URL '%s'.",
             default_cert_url.c_str());
         return default_cert_url;
     }
 
-    log(SGX_QL_LOG_INFO,
+    log(SGX_QL_LOG_WARNING,
         "Using %s envvar for base cert URL, set to '%s'.",
         ENV_AZDCAP_BASE_URL,
         env_base_url.c_str());
     return env_base_url;
 }
 
-static std::string fetch_base_url()
+static std::string bypass_base_url()
 {
-    std::string env_fetch_base_url =
-        get_env_variable(ENV_FETCH_BASE_URL);
+    std::string env_bypass_base_url = get_env_variable(ENV_BYPASS_BASE_URL);
 
-    if (env_fetch_base_url.empty())
+    if (env_bypass_base_url.empty())
     {
-        log(SGX_QL_LOG_WARNING,
-            "Using default base URL '%s'.",
-            default_fetch_base_url);
-        return default_fetch_base_url;
+        log(SGX_QL_LOG_INFO,
+            "Bypass default base URL:'%s'",
+            default_bypass_base_url);
+        return default_bypass_base_url;
     }
 
-    log(SGX_QL_LOG_INFO,
-        "Using %s envvar for base URL, set to '%s'.",
-        ENV_FETCH_BASE_URL,
-        env_fetch_base_url.c_str());
-    return env_fetch_base_url;
+    log(SGX_QL_LOG_WARNING,
+        "Bypass default base URL:'%s'",
+        ENV_BYPASS_BASE_URL,
+        env_bypass_base_url.c_str());
+    return env_bypass_base_url;
 }
 
 static std::string get_primary_url()
@@ -197,13 +196,13 @@ static std::string get_primary_url()
 
     if (env_primary_url.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default secondary base cert URL '%s'.",
             primary_cert_url.c_str());
         return primary_cert_url;
     }
 
-    log(SGX_QL_LOG_INFO,
+    log(SGX_QL_LOG_WARNING,
         "Using %s envvar for base cert URL, set to '%s'.",
         ENV_AZDCAP_PRIMARY_BASE_CERT_URL,
         env_primary_url.c_str());
@@ -217,13 +216,13 @@ static std::string get_secondary_url()
 
     if (env_secondary_url.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default secondary base cert URL '%s'.",
             secondary_cert_url.c_str());
         return secondary_cert_url;
     }
 
-    log(SGX_QL_LOG_INFO,
+    log(SGX_QL_LOG_WARNING,
         "Using %s envvar for base cert URL, set to '%s'.",
         ENV_AZDCAP_SECONDARY_BASE_CERT_URL,
         env_secondary_url.c_str());
@@ -236,13 +235,13 @@ static std::string get_client_id()
 
     if (env_client_id.empty())
     {
-        log(SGX_QL_LOG_WARNING,
+        log(SGX_QL_LOG_INFO,
             "Using default client id '%s'.",
             prod_client_id.c_str());
         return prod_client_id;
     }
 
-    log(SGX_QL_LOG_INFO,
+    log(SGX_QL_LOG_WARNING,
         "Using %s envvar for client id, set to '%s'.",
         ENV_AZDCAP_CLIENT_ID,
         env_client_id.c_str());
@@ -286,7 +285,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
 
 //
 // Determine the time cache should invalidate for given certificate.
-// The new return object from the service is a string value that
+// The return object from the service is a string value that
 // defines certificate expiration time in seconds. In this function
 // we convert the returned value to ingeter and uses that to define 
 // the expiration time of the certificate cached locally.
@@ -611,7 +610,7 @@ void safe_cast(input_t in, output_t* out)
     *out = static_cast<output_t>(in);
 }
 
-static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, collateral_fetch_url& collateral_url)
+static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certificate_fetch_url& certificate_url)
 {
     const std::string qe_id =
         format_as_hex_string(pck_cert_id.p_qe3_id, pck_cert_id.qe3_id_size);
@@ -626,45 +625,52 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, collater
     const std::string pce_id =
         format_as_big_endian_hex_string(pck_cert_id.pce_id);
     std::string version = get_collateral_version();
-    collateral_url.secondary_base_url << get_secondary_url();
-    collateral_url.primary_base_url << get_primary_url();
-    collateral_url.secondary_base_url << '/' << version;
-    collateral_url.primary_base_url << '/' << version;
-    collateral_url.secondary_base_url << "/pckcert?";
-    collateral_url.secondary_base_url << "qeid=" << qe_id << '&';
-    collateral_url.secondary_base_url << "cpusvn=" << cpu_svn << '&';
-    collateral_url.secondary_base_url << "pcesvn=" << pce_svn << '&';
-    collateral_url.secondary_base_url << "pceid=" << pce_id << '&';
 
-    collateral_url.primary_base_url << "/pckcert?";
-    collateral_url.primary_base_url << "qeId=" << qe_id << '&';
-    collateral_url.primary_base_url << "cpusvn=" << cpu_svn << '&';
-    collateral_url.primary_base_url << "pcesvn=" << pce_svn << '&';
-    collateral_url.primary_base_url << "pceid=" << pce_id << '&';
+    certificate_url.primary_base_url << get_primary_url();
+    certificate_url.primary_base_url << '/' << version;
+    certificate_url.primary_base_url << "/pckcert?";
+    certificate_url.primary_base_url << "qeId=" << qe_id << '&';
+    certificate_url.primary_base_url << "cpusvn=" << cpu_svn << '&';
+    certificate_url.primary_base_url << "pcesvn=" << pce_svn << '&';
+    certificate_url.primary_base_url << "pceid=" << pce_id << '&';
+
+    certificate_url.secondary_base_url << get_secondary_url();
+    certificate_url.secondary_base_url << '/' << version;
+    certificate_url.secondary_base_url << "/pckcert?";
+    certificate_url.secondary_base_url << "qeid=" << qe_id << '&';
+    certificate_url.secondary_base_url << "cpusvn=" << cpu_svn << '&';
+    certificate_url.secondary_base_url << "pcesvn=" << pce_svn << '&';
+    certificate_url.secondary_base_url << "pceid=" << pce_id << '&';
 
     std::string client_id = get_client_id();
     if (!client_id.empty())
     {
-        collateral_url.secondary_base_url << "clientid=" << client_id << '&';
+        certificate_url.primary_base_url << "clientid=" << client_id << '&';
+        certificate_url.secondary_base_url << "clientid=" << client_id << '&';
     }
-    collateral_url.secondary_base_url << API_VERSION_07_2021;
-    collateral_url.primary_base_url << API_VERSION_07_2021;
+
+    certificate_url.primary_base_url << API_VERSION_07_2021;
+    certificate_url.secondary_base_url << API_VERSION_07_2021;
 }
 
 //
 // Build a complete cert chain from a completed curl object.
 //
-static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json& json)
+static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::json& json, std::string* out_header)
 {
     std::string leaf_cert;
     std::string chain;
     std::string temp_chain;
-    if (!json.empty())
-    {
-        extract_from_json(json, "pckCert", &leaf_cert);
-        extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
-        chain = curl.unescape(temp_chain);
-    }
+    sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
+
+    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
+    result = extract_from_json(json, "pckCert", &leaf_cert);
+    if (result != SGX_PLAT_ERROR_OK)
+        return result;
+    result = extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
+    if (result != SGX_PLAT_ERROR_OK)
+        return result;
+    chain = curl.unescape(temp_chain);
 
     // The cache service does not return a newline in the response
     // response_body. Add one here so that we have a properly formatted chain.
@@ -674,7 +680,11 @@ static std::string build_cert_chain(const curl_easy& curl, const nlohmann::json&
     }
 
     log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
-    return leaf_cert + chain;
+    if (out_header != nullptr)
+    {
+        *out_header = leaf_cert + chain;
+    }
+    return result;
 }
 
 //
@@ -726,10 +736,8 @@ static sgx_plat_error_t parse_svn_values(
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
     std::string tcb;
-    if (!json.empty())
-    {
-        result = extract_from_json(json, headers::TCB_INFO, &tcb);
-    }
+    result = extract_from_json(json, headers::TCB_INFO, &tcb);
+    
     if (result != SGX_PLAT_ERROR_OK)
         return result;
 
@@ -944,7 +952,6 @@ static quote3_error_t get_collateral(
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
 {
-    std::unique_ptr<curl_easy> curl_operation;
     quote3_error_t retval = SGX_QL_ERROR_UNEXPECTED;
     std::string friendly_name = get_collateral_friendly_name(collateral_type);
     try
@@ -968,7 +975,7 @@ static quote3_error_t get_collateral(
             friendly_name.c_str(),
             url.c_str());
 
-        curl_operation = curl_easy::create(url, request_body);
+        const auto curl_operation = curl_easy::create(url, request_body);
         curl_operation->perform();
         response_body = curl_operation->get_body();
         auto get_issuer_chain_operation =
@@ -1079,11 +1086,7 @@ bool fetch_response(
     bool fetch_response = false;
     try
     {
-        if (!eppid_json.empty())
-            curl = curl_easy::create(base_url, &eppid_json, dwFlags);
-        else
-            curl = curl_easy::create(base_url, nullptr, dwFlags);
-
+        curl = curl_easy::create(base_url, &eppid_json, dwFlags);
         log(SGX_QL_LOG_INFO,
             "Fetching certificate from: '%s'.",
             base_url.c_str());
@@ -1126,47 +1129,47 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
     try
     {
-        bool fetch_response_from_primary = false;
-        bool fetch_response_from_cache = false;
-
+        bool recieved_certificate = false;
+        quote3_error_t retval;
         sgx_ql_config_t temp_config{};
         nlohmann::json json_body;
-        collateral_fetch_url collateral_url;
+        certificate_fetch_url certificate_url;
         std::vector<uint8_t> response_body;
         std::unique_ptr<curl_easy> curl;
+        std::string cert_data;
 
-        build_pck_cert_url(*p_pck_cert_id, collateral_url);
-        std::string primary_base_url = collateral_url.primary_base_url.str();
-        std::string secondary_base_url = collateral_url.secondary_base_url.str();
+        build_pck_cert_url(*p_pck_cert_id, certificate_url);
+        std::string primary_base_url = certificate_url.primary_base_url.str();
+        std::string secondary_base_url = certificate_url.secondary_base_url.str();
 
-        std::string fetch_base = fetch_base_url();
+        std::string bypass_base = bypass_base_url();
         transform(
-            fetch_base.begin(),
-            fetch_base.end(),
-            fetch_base.begin(),
+            bypass_base.begin(),
+            bypass_base.end(),
+            bypass_base.begin(),
             ::tolower);
         try
         {
             const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
-            if (fetch_base.compare("true") == 0)
+            if (bypass_base.compare("false") == 0)
             {
                 log(SGX_QL_LOG_INFO,
                     "Trying to fetch response from primary URL: '%s'.",
                     primary_base_url.c_str());
-                fetch_response_from_primary = fetch_response(
+                recieved_certificate = fetch_response(
                     primary_base_url,
                     eppid_json,
                     curl,
                     headers::localhost_metadata,
                     0);
             }
-            if (!fetch_response_from_primary)
+            if (!recieved_certificate)
             {
                 log(SGX_QL_LOG_INFO,
                     "Trying to fetch response from local cache.");
-                fetch_response_from_cache =
+                recieved_certificate =
                     check_cache(secondary_base_url, pp_quote_config);
-                if (fetch_response_from_cache)
+                if (recieved_certificate)
                     return SGX_QL_SUCCESS;
                 else
                 {
@@ -1188,16 +1191,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             // This will be returned to the caller.
             response_body = curl->get_body();
             json_body = nlohmann::json::parse(response_body);
-
-            if ((extract_from_json(json_body, headers::TCB_INFO, nullptr) !=
-                 SGX_PLAT_ERROR_OK) ||
-                (extract_from_json(
-                     json_body, headers::PCK_CERT_ISSUER_CHAIN, nullptr) !=
-                 SGX_PLAT_ERROR_OK))
-            {
-                log(SGX_QL_LOG_ERROR, "Required headers are missing.");
-                return SGX_QL_ERROR_UNEXPECTED;
-            }
         }
         catch (const std::exception& error)
         {
@@ -1213,7 +1206,17 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             return convert_to_intel_error(err);
         }
 
-        const std::string cert_data = build_cert_chain(*curl, json_body);
+        const sgx_plat_error_t err = build_cert_chain(*curl, json_body, &cert_data);
+        retval = convert_to_intel_error(err);
+        if (retval == SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_INFO, "Successfully parsed certificate chain: %s.", cert_data);
+        }
+        else
+        {
+            log(SGX_QL_LOG_ERROR, "Unable to parse certificate chain from the response.");
+            return retval;
+        }
 
         // copy the null-terminator for convenience (less error-prone)
         const uint32_t cert_data_size =
@@ -1246,7 +1249,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         auto get_cache_header_operation = extract_from_json(
             json_body, headers::CERT_CACHE_CONTROL, &cache_control);
 
-        auto retval = convert_to_intel_error(get_cache_header_operation);
+        retval = convert_to_intel_error(get_cache_header_operation);
         if (retval == SGX_QL_SUCCESS)
         {
             time_t expiry;
@@ -1254,6 +1257,10 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             {
                 local_cache_add(secondary_base_url, expiry, buf_size, *pp_quote_config);
             }
+        }
+        else
+        {
+            log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
         }
     }
     catch (const std::bad_alloc&)
@@ -1287,7 +1294,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             error.what());
         return SGX_QL_ERROR_UNEXPECTED;
     }
-
     return SGX_QL_SUCCESS;
 }
 

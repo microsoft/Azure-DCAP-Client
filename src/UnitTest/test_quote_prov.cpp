@@ -903,9 +903,9 @@ void SetupEnvironment(std::string version)
 void SetupEnvironmentToReachSecondary()
 {
 #if defined __LINUX__
-    setenv("AZDCAP_FETCH_BASE_URL", "false", 1);
+    setenv("AZDCAP_BYPASS_BASE_URL", "false", 1);
 #else
-    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_FETCH_BASE_URL", "false"));
+    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_BYPASS_BASE_URL", "false"));
 #endif
 }
 

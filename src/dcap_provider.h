@@ -91,10 +91,10 @@ typedef void (*sgx_free_qe_identity_info_t)(
  * Structure to pass primary and secondary base URL
  ****************************************************************************/
 
-typedef struct _collateral_fetch_url {
+typedef struct _certificate_fetch_url {
     std::stringstream primary_base_url; // URL to fetch collateral from the host agent
     std::stringstream secondary_base_url; // URL to fetch collateral from the remote service
-} collateral_fetch_url;
+} certificate_fetch_url;
 
 /*****************************************************************************
  * Data types and interfaces for configuration the platform quote provider
