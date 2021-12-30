@@ -629,7 +629,7 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
     certificate_url.primary_base_url << get_primary_url();
     certificate_url.primary_base_url << '/' << version;
     certificate_url.primary_base_url << "/pckcert?";
-    certificate_url.primary_base_url << "qeId=" << qe_id << '&';
+    certificate_url.primary_base_url << "qeid=" << qe_id << '&';
     certificate_url.primary_base_url << "cpusvn=" << cpu_svn << '&';
     certificate_url.primary_base_url << "pcesvn=" << pce_svn << '&';
     certificate_url.primary_base_url << "pceid=" << pce_id << '&';
@@ -1081,6 +1081,7 @@ bool fetch_response(
     const std::string& eppid_json,
     std::unique_ptr<curl_easy>& curl,
     std::map<std::string, std::string> header_value,
+    quote3_error_t &retval,
     unsigned long dwFlags = 0x00800000)
 {
     bool fetch_response = false;
@@ -1097,7 +1098,7 @@ bool fetch_response(
     catch (const std::bad_alloc&)
     {
         log_message(SGX_QL_LOG_ERROR, "Out of memory thrown");
-        return SGX_QL_ERROR_OUT_OF_MEMORY;
+        retval = SGX_QL_ERROR_OUT_OF_MEMORY;
     }
     catch (const std::runtime_error& error)
     {
@@ -1161,6 +1162,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     eppid_json,
                     curl,
                     headers::localhost_metadata,
+                    retval,
                     0);
             }
             if (!recieved_certificate)
@@ -1174,13 +1176,16 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 else
                 {
                     log(SGX_QL_LOG_INFO,
-                        "Trying to fetch response from secondary URL: '%s'.",
+                        "Certificate not found in local cache. Trying to fetch response from secondary URL: '%s'.",
                         secondary_base_url.c_str());
-                    fetch_response(
+                    recieved_certificate = fetch_response(
                         secondary_base_url,
                         eppid_json,
                         curl,
-                        headers::default_values);
+                        headers::default_values,
+                        retval);
+                    if (!recieved_certificate)
+                        return retval;
                 }
             }
 
