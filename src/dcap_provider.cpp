@@ -178,7 +178,7 @@ static std::string bypass_base_url()
     {
         log(SGX_QL_LOG_INFO,
             "Bypass default base URL:'%s'",
-            default_bypass_base_url);
+            default_bypass_base_url.c_str());
         return default_bypass_base_url;
     }
 
@@ -197,7 +197,7 @@ static std::string get_primary_url()
     if (env_primary_url.empty())
     {
         log(SGX_QL_LOG_INFO,
-            "Using default secondary base cert URL '%s'.",
+            "Using default primary base cert URL '%s'.",
             primary_cert_url.c_str());
         return primary_cert_url;
     }
@@ -436,7 +436,7 @@ sgx_plat_error_t extract_from_json(
     {
         std::string raw_value = json[item];
         log(SGX_QL_LOG_INFO,
-            "Required information from JSON %s:[%s]",
+            "Required information from JSON \n %s: [%s]",
             item.c_str(),
             raw_value.c_str());
         if (out_header != nullptr)
@@ -610,6 +610,37 @@ void safe_cast(input_t in, output_t* out)
     *out = static_cast<output_t>(in);
 }
 
+static std::string build_eppid(const sgx_ql_pck_cert_id_t& pck_cert_id)
+{
+    const std::string disable_ondemand =
+        get_env_variable(ENV_AZDCAP_DISABLE_ONDEMAND);
+    if (!disable_ondemand.empty())
+    {
+        if (disable_ondemand == "1")
+        {
+            log(SGX_QL_LOG_WARNING,
+                "On demand registration disabled by environment variable. No "
+                "eppid being sent to caching service");
+            return "";
+        }
+    }
+
+    const std::string eppid = format_as_hex_string(
+        pck_cert_id.p_encrypted_ppid, pck_cert_id.encrypted_ppid_size);
+
+    if (eppid.empty())
+    {
+        log(SGX_QL_LOG_WARNING,
+            "No eppid provided.");
+        return "";
+    }
+    else
+    {
+        log(SGX_QL_LOG_INFO, "Sending the provided eppid.");
+        return eppid;
+    }
+}
+
 static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certificate_fetch_url& certificate_url)
 {
     const std::string qe_id =
@@ -642,6 +673,13 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
     certificate_url.secondary_base_url << "pcesvn=" << pce_svn << '&';
     certificate_url.secondary_base_url << "pceid=" << pce_id << '&';
 
+    const std::string eppid_json = build_eppid(pck_cert_id);
+    if (!eppid_json.empty())
+    {
+        certificate_url.primary_base_url << "encrypted_ppid=" << eppid_json << '&';
+        certificate_url.secondary_base_url << "encrypted_ppid=" << eppid_json << '&';
+    }
+
     std::string client_id = get_client_id();
     if (!client_id.empty())
     {
@@ -663,7 +701,6 @@ static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::
     std::string temp_chain;
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
-    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
     result = extract_from_json(json, "pckCert", &leaf_cert);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
@@ -1078,7 +1115,6 @@ bool check_cache(std::string base_url, sgx_ql_config_t** pp_quote_config)
 
 bool fetch_response(
     std::string base_url,
-    const std::string& eppid_json,
     std::unique_ptr<curl_easy>& curl,
     std::map<std::string, std::string> header_value,
     quote3_error_t &retval,
@@ -1087,7 +1123,7 @@ bool fetch_response(
     bool fetch_response = false;
     try
     {
-        curl = curl_easy::create(base_url, &eppid_json, dwFlags);
+        curl = curl_easy::create(base_url, nullptr, dwFlags);
         log(SGX_QL_LOG_INFO,
             "Fetching certificate from: '%s'.",
             base_url.c_str());
@@ -1151,7 +1187,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             ::tolower);
         try
         {
-            const std::string eppid_json = build_eppid_json(*p_pck_cert_id);
             if (bypass_base.compare("false") == 0)
             {
                 log(SGX_QL_LOG_INFO,
@@ -1159,7 +1194,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     primary_base_url.c_str());
                 recieved_certificate = fetch_response(
                     primary_base_url,
-                    eppid_json,
                     curl,
                     headers::localhost_metadata,
                     retval,
@@ -1180,7 +1214,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                         secondary_base_url.c_str());
                     recieved_certificate = fetch_response(
                         secondary_base_url,
-                        eppid_json,
                         curl,
                         headers::default_values,
                         retval);
@@ -1215,7 +1248,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         retval = convert_to_intel_error(err);
         if (retval == SGX_QL_SUCCESS)
         {
-            log(SGX_QL_LOG_INFO, "Successfully parsed certificate chain: %s.", cert_data);
+            log(SGX_QL_LOG_INFO, "Successfully parsed certificate chain: %s.", cert_data.c_str());
         }
         else
         {
