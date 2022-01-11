@@ -58,6 +58,7 @@ def ACCContainerTest(String label, String version) {
                         sudo apt-get purge az-dcap-client -y 
                         sudo apt-get update
                         sudo apt-get install sudo libcurl4-openssl-dev wget -y
+						sudo apt install software-properties-common
 						sudo add-apt-repository ppa:team-xbmc/ppa -y
 						sudo apt-get update
 						sudo apt-get install nlohmann-json3-dev
@@ -97,6 +98,7 @@ def ACCTestOeRelease(String label, String version) {
                         sudo apt-get purge az-dcap-client -y
                         sudo apt-get update
                         sudo apt-get install sudo libcurl4-openssl-dev wget -y
+						sudo apt install software-properties-common
 						sudo add-apt-repository ppa:team-xbmc/ppa -y
 						sudo apt-get update
 						sudo apt-get install nlohmann-json3-dev
