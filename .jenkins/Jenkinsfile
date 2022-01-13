@@ -17,6 +17,10 @@ def ACCTest(String label, String version, String compiler, String build_type) {
                 }
                 // Run hardware tests using the libdcap_quoteprov.so build
                 def task = """
+                    sudo apt install software-properties-common -y
+                    sudo add-apt-repository ppa:team-xbmc/ppa -y
+                    sudo apt-get update -y
+                    sudo apt-get install nlohmann-json3-dev
                     cd ${WORKSPACE}/src/Linux
                     ./configure
                     make
@@ -48,7 +52,10 @@ def ACCContainerTest(String label, String version) {
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt install software-properties-common -y
+                        sudo add-apt-repository ppa:team-xbmc/ppa -y
                         sudo apt-get update -y
+                        sudo apt-get install nlohmann-json3-dev
                         sudo apt-get install -y libgtest-dev
                         sudo apt-get install -y cmake
                         cd /usr/src/gtest
@@ -58,10 +65,6 @@ def ACCContainerTest(String label, String version) {
                         sudo apt-get purge az-dcap-client -y 
                         sudo apt-get update
                         sudo apt-get install sudo libcurl4-openssl-dev wget -y
-						sudo apt install software-properties-common -y
-						sudo add-apt-repository ppa:team-xbmc/ppa -y
-						sudo apt-get update
-						sudo apt-get install nlohmann-json3-dev
                         cd ${WORKSPACE}/src/Linux
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
