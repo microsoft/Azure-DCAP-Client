@@ -775,8 +775,8 @@ static sgx_plat_error_t hex_decode(const std::string& hex_string, T* decoded)
 //  PCESVN(2 bytes)."
 //
 static sgx_plat_error_t parse_svn_values(
-    const nlohmann::json& json,
     const curl_easy& curl,
+    const nlohmann::json& json,
     sgx_ql_config_t* quote_config)
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
@@ -1213,7 +1213,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 
         // parse the SVNs into a local data structure so we can handle any
         // parse errors before allocating the output buffer
-        if (const sgx_plat_error_t err = parse_svn_values(json_body, *curl, &temp_config))
+        if (const sgx_plat_error_t err = parse_svn_values(*curl, json_body, &temp_config))
         {
             return convert_to_intel_error(err);
         }

@@ -76,8 +76,15 @@ def ACCContainerTest(String label, String version) {
                         ninja -v
                         ctest --output-on-failure
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
-            }
+				if(version.trim().equals("20.04")
+				{
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+				}
+				else
+				{
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+
+				}            }
         }
     }
 }
@@ -119,8 +126,16 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
-            }
+				if(version.trim().equals("20.04")
+				{
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+				}
+				else
+				{
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+
+				}
+			}
         }
     }
 }
