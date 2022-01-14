@@ -52,6 +52,7 @@ def ACCContainerTest(String label, String version) {
                 // Run the OE tests from the git repository with the currently
                 // generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt-get update -y
                         sudo apt install software-properties-common -y
                         sudo add-apt-repository ppa:team-xbmc/ppa -y
                         sudo apt-get update -y
@@ -91,6 +92,7 @@ def ACCTestOeRelease(String label, String version) {
                 // Run the OE samples bundled with the published OE package, having
                 // the currently generated az-dcap-client deb package installed
                 def task = """
+                        sudo apt-get update -y
                         sudo apt install software-properties-common -y
                         sudo add-apt-repository ppa:team-xbmc/ppa -y
                         sudo apt-get update -y
