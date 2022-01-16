@@ -37,7 +37,7 @@ def ACCTest(String label, String version, String compiler, String build_type) {
     }
 }
 
-// Test using oetools-test Docker image with /dev/sgx_enclave and dev/sgx_provision mounted inside container
+// Test using oetools-test Docker image with /dev/sgx_enclave and /dev/sgx_provision mounted inside container
 def ACCContainerTest(String label, String version) {
     stage("Ubuntu ${version} Non-Simulation Container SGX1-FLC RelWithDebInfo") {
         node("${label}") {
@@ -78,7 +78,7 @@ def ACCContainerTest(String label, String version) {
                        """
 				if(${version}.trim().equals("20.04"))
 				{
-					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
 				}
 				else
 				{
@@ -128,11 +128,11 @@ def ACCTestOeRelease(String label, String version) {
                        """
 				if(${version}.trim().equals("20.04"))
 				{
-					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
 				}
 				else
 				{
-					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")	
 				}
 			}
         }
