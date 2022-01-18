@@ -70,6 +70,7 @@ def ACCContainerTest(String label, String version) {
                         dpkg-buildpackage -us -uc
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
                         mkdir -p ${WORKSPACE}/openenclave/build
+                        sudo apt install ca-certificates
                         cd ${WORKSPACE}/openenclave/build
                         git submodule update --recursive --init
                         cmake ${WORKSPACE}/openenclave -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -119,7 +120,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --device /dev/sgx_provision:/dev/sgx_provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+					dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx_enclave:/dev/sgx_enclave --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
 			}
         }
     }
