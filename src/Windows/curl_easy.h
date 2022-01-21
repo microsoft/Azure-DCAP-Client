@@ -39,7 +39,8 @@ class curl_easy
     };
     static std::unique_ptr<curl_easy> create(
         const std::string& url,
-        const std::string* const p_body);
+        const std::string* const p_body,
+        unsigned long dwFlags = 0x00800000);
 
     ~curl_easy();
 

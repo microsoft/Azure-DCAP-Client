@@ -70,7 +70,7 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body)
+std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 

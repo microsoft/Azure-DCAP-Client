@@ -8,6 +8,10 @@ apt-get install libssl-dev
 apt install libcurl4-openssl-dev
 apt-get install pkg-config
 
+add-apt-repository ppa:team-xbmc/ppa -y
+apt-get update -y
+apt-get install nlohmann-json3-dev
+
 apt install build-essential
 
 apt-get install -y debhelper dh-virtualenv

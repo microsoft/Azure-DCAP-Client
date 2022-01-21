@@ -6,6 +6,10 @@ This library requires libcurl built with OpenSSL support and package config.
 * `sudo apt-get install libssl-dev`
 * `sudo apt install libcurl4-openssl-dev`
 * `sudo apt-get install pkg-config`
+* `sudo  add-apt-repository ppa:team-xbmc/ppa -y`
+* `sudo  apt-get update`
+* `sudo  apt-get install nlohmann-json3-dev`
+
 
 Install Google Test
 ```

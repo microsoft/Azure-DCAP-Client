@@ -38,6 +38,8 @@ The Azure-DCAP-Client library uses the following environment variables if set:
 * `AZDCAP_BASE_CERT_URL` and `AZDCAP_CLIENT_ID` - Used in conjunction to explicitly overwrite the default values for the PCK caching service. These should be used only for development purposes and they **must** not be used in any production environment.
 * `AZDCAP_COLLATERAL_VERSION` - Used to specify the collateral version requested from the PCK caching service. Must be either'v1' or 'v2' if specified and defaults to 'v1' if unspecified.
 * `AZDCAP_DEBUG_LOG_LEVEL` - Used to enable logging to stdout for debug purposes. Supported values are INFO, WARNING, and ERROR; any other values will fail silently. If a logging callback is set by the caller such as open enclave this setting will be ignored as the logging callback will have precedence. Log levels follow standard behavior: INFO logs everything, WARNING logs warnings and errors, and ERROR logs only errors. Default setting has logging off. These capatalized values are represented internally as strings.
+* `AZDCAP_PRIMARY_BASE_CERT_URL` and `AZDCAP_SECONDARY_BASE_CERT_URL` - Used in conjunction to explicitly overwrite the default values of endpoints to fetch certificates. These should be used only for development purposes and they **must** not be used in any production environment.
+* `AZDCAP_BYPASS_BASE_URL`- Used in conjunction to explicitly fetch certificates from PCK caching service instead of the host agent. This should be used only for development purposes and **must** not be used in any production environment.
 
 # See Also
 
