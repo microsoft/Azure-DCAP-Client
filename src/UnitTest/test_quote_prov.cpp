@@ -150,24 +150,25 @@ static uint8_t qe_id[16] = {0x00,
                             0x2e,
                             0x64};
 
-static sgx_cpu_svn_t cpusvn = {0x04,
-                               0x04,
-                               0x02,
-                               0x04,
-                               0xff,
-                               0x80,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00};
+static sgx_cpu_svn_t cpusvn = {
+    0x0f,
+    0x0f,
+    0x02,
+    0x04,
+    0x01,
+    0x80,
+    0x07,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00};
 
-static sgx_isv_svn_t pcesvn = 11;
+static sgx_isv_svn_t pcesvn = 10;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
@@ -268,9 +269,9 @@ static void* LoadFunctions()
             dlsym(library, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_callback_function_t>(
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
             dlsym(library, "sgx_ql_set_logging_callback"));
-    EXPECT_NE(sgx_ql_set_callback_function, nullptr);
+    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
 
     sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
@@ -1351,6 +1352,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
 
     //
     // Get the data from the service
