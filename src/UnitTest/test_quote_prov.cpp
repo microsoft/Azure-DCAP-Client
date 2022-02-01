@@ -150,25 +150,24 @@ static uint8_t qe_id[16] = {0x00,
                             0x2e,
                             0x64};
 
-static sgx_cpu_svn_t cpusvn = {
-    0x0f,
-    0x0f,
-    0x02,
-    0x04,
-    0x01,
-    0x80,
-    0x07,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static sgx_cpu_svn_t cpusvn = {0x04,
+                               0x04,
+                               0x02,
+                               0x04,
+                               0xff,
+                               0x80,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00};
 
-static sgx_isv_svn_t pcesvn = 10;
+static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
