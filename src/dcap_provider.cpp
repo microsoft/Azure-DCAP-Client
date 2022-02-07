@@ -311,7 +311,7 @@ bool get_cert_cache_expiration_time(const string& cache_max_age, const string& u
     catch (const std::invalid_argument& e)
     {
         log(SGX_QL_LOG_ERROR,
-            "Invalid argument thrown when parsing cache-control. Header text: %s' Error: '%s'. Collateral will not be cached",
+            "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
             cache_max_age.c_str(),
             e.what());
         return false;
@@ -686,7 +686,7 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
     const std::string eppid_json = build_eppid(pck_cert_id);
 
     certificate_url.primary_base_url << get_primary_url();
-    pck_cert_url(certificate_url.primary_base_url, version, qe_id, cpu_svn, pce_svn,  pce_id, eppid_json);
+    pck_cert_url(certificate_url.primary_base_url, version, qe_id, cpu_svn, pce_svn, pce_id, eppid_json);
 
     certificate_url.secondary_base_url << get_secondary_url();
     pck_cert_url(certificate_url.secondary_base_url, version, qe_id, cpu_svn, pce_svn, pce_id, eppid_json);
@@ -992,7 +992,7 @@ static std::string get_issuer_chain_cache_name(std::string url)
 static quote3_error_t get_collateral(
     CollateralTypes collateral_type,
     std::string url,
-    const char* issuer_chain_header,
+    const char *issuer_chain_header,
     std::vector<uint8_t>& response_body,
     std::string& issuer_chain,
     const std::string* const request_body = nullptr)
@@ -1028,8 +1028,7 @@ static quote3_error_t get_collateral(
         if (retval == SGX_QL_SUCCESS)
         {
             std::string cache_control;
-            auto get_cache_header_operation = get_unescape_header(
-                *curl_operation, headers::CACHE_CONTROL, &cache_control);
+            auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
             retval = convert_to_intel_error(get_cache_header_operation);
             if (retval == SGX_QL_SUCCESS)
             {
@@ -1090,7 +1089,7 @@ bool fetch_response(
     std::string base_url,
     std::unique_ptr<curl_easy>& curl,
     std::map<std::string, std::string> header_value,
-    quote3_error_t& retval,
+    quote3_error_t &retval,
     unsigned long dwFlags = 0x00800000)
 {
     bool fetch_response = false;
