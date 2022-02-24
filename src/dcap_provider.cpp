@@ -894,7 +894,10 @@ static sgx_plat_error_t build_pck_crl_url(
     return SGX_PLAT_ERROR_OK;
 }
 
-static std::string build_tcb_info_url(const std::string& fmspc, size_t num_params = 0, sgx_ql_qve_collateral_param_t* req_params = nullptr)
+static std::string build_tcb_info_url(
+    const std::string& fmspc,
+    void* custom_param = nullptr,
+    const uint16_t custom_param_length = 0)
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
@@ -905,13 +908,16 @@ static std::string build_tcb_info_url(const std::string& fmspc, size_t num_param
     {
         tcb_info_url << "/" << version;
     }
-    tcb_info_url << "/tcb/";
-    tcb_info_url << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "?";
+    tcb_info_url << "/tcb?";
+    tcb_info_url << "fmspc=" << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "&";
 
-    for (size_t i = 0; i < num_params; i++)
+    if (custom_param != nullptr)
     {
-        tcb_info_url << req_params[i].key << "=" << req_params[i].value << "&";
+        std::string& custom_param_value = *(static_cast<std::string*>(custom_param));
+        custom_param_value.erase(std::remove(custom_param_value.begin(), custom_param_value.end(), ' '), custom_param_value.end());
+        tcb_info_url << "customParameter=" << custom_param_value << "&";
     }
+
     if (!client_id.empty())
     {
         tcb_info_url << "clientid=" << client_id << "&";
@@ -1703,8 +1709,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
     const uint16_t fmspc_size,
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral,
-    size_t num_params = 0,
-    sgx_ql_qve_collateral_param_t* req_params = nullptr)
+    void* custom_param = nullptr,
+    const  uint16_t custom_param_length = 0)
 {
     log(SGX_QL_LOG_INFO, "Getting quote verification collateral");
     sgx_ql_qve_collateral_t* p_quote_collateral = nullptr;
@@ -1808,9 +1814,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         // Get Tcb Info & Issuer Chain
-        std::string tcb_info_url = build_tcb_info_url(str_fmspc, num_params, req_params);
-        const auto tcb_info_operation =
-            curl_easy::create(tcb_info_url, nullptr);
+        std::string tcb_info_url = build_tcb_info_url(str_fmspc, custom_param, custom_param_length);
+        const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
             CollateralTypes::TcbInfo,
@@ -1939,12 +1944,17 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     const uint8_t* fmspc,
     const uint16_t fmspc_size,
     const char* pck_ca,
-    size_t num_params,
-    sgx_ql_qve_collateral_param_t* req_params,
+    void* custom_param,
+    const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        fmspc, fmspc_size, pck_ca, pp_quote_collateral, num_params, req_params);
+        fmspc,
+        fmspc_size,
+        pck_ca,
+        pp_quote_collateral,
+        custom_param,
+        custom_param_length);
 }
 
 extern "C" quote3_error_t sgx_ql_get_qve_identity(

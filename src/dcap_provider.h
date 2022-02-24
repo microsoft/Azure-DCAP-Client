@@ -10,8 +10,6 @@
 
 using namespace std;
 
-#define MAX_PARAM_STRING_SIZE 256
-
 /*****************************************************************************
  * Data types and interfaces for getting platform revocation info. This
  * includes fetching CRLs as well as the Intel-defined TCB info.
@@ -82,13 +80,6 @@ typedef struct _sgx_qe_identity_info_t
     uint32_t issuer_chain_size; // size of issuer chain for qe identity info
     char* issuer_chain;         // null-terminated PEM-encoded certificate chain
 } sgx_qe_identity_info_t;
-
-typedef struct _sgx_ql_qve_collateral_param_t
-{
-    uint8_t key[MAX_PARAM_STRING_SIZE + 1];
-    uint8_t value[MAX_PARAM_STRING_SIZE + 1];
-} sgx_ql_qve_collateral_param_t;
-
 
 typedef sgx_plat_error_t (*sgx_get_qe_identity_info_t)(
     sgx_qe_identity_info_t** pp_qe_identity_info);

@@ -72,8 +72,8 @@ typedef quote3_error_t (*sgx_ql_get_quote_verification_collateral_with_params_t)
     const uint8_t* fmspc,
     const uint16_t fmspc_size,
     const char* pck_ca,
-    size_t num_params,
-    sgx_ql_qve_collateral_param_t* req_params,
+    void* custom_param,
+    const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral);
 
 typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
@@ -110,10 +110,8 @@ static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
 static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
 
-static size_t num_params = 2;
-static sgx_ql_qve_collateral_param_t req_params[2] = {
-    {"tcbEvaluationNumber", "10"},
-    {"region", "westus"}};
+const uint16_t custom_param_length = 2;
+std::string custom_param = "tcbnumber = 1;region = useast2";
 
 // Test input (choose an arbitrary Azure server)
 static uint8_t qe_id[16] = {0x00,
@@ -534,8 +532,8 @@ static void GetVerificationCollateralTest()
             TEST_FMSPC,
             sizeof(TEST_FMSPC),
             "processor",
-            num_params,
-            req_params,
+            static_cast<void*>(&custom_param),
+            custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
@@ -560,8 +558,8 @@ static void GetVerificationCollateralTestICXV3()
             ICX_TEST_FMSPC,
             sizeof(ICX_TEST_FMSPC),
             "platform",
-            num_params,
-            req_params, 
+             static_cast<void*>(&custom_param),
+             custom_param_length, 
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
