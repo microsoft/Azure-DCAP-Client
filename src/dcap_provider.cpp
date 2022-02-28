@@ -896,59 +896,78 @@ static sgx_plat_error_t build_pck_crl_url(
     return SGX_PLAT_ERROR_OK;
 }
 
-// Convert ASCII string to Base64 format
-char* base64Encoder(char input_str[], int len_str)
+char get_base64_char(unsigned char val)
 {
-    // Character set of base64 encoding scheme
-    char char_set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    // Resultant string
-    char* res_str = (char*)malloc(SIZE * sizeof(char));
-    int index, no_of_bits = 0, padding = 0, val = 0, count = 0, temp;
-    int i, j, k = 0;
-
-    // Loop takes 3 characters at a time from
-    // input_str and stores it in val
-    for (i = 0; i < len_str; i += 3)
+    if (val < 26)
     {
-        val = 0, count = 0, no_of_bits = 0;
-        for (j = i; j < len_str && j <= i + 2; j++)
-        {
-            val = val << 8;
-            val = val | input_str[j];
-            count++;
-        }
-        no_of_bits = count * 8;
-        padding = no_of_bits % 3;
-
-        // extracts all bits from val (6 at a time)
-        // and find the value of each block
-        while (no_of_bits != 0)
-        {
-            if (no_of_bits >= 6)
-            {
-                temp = no_of_bits - 6;
-                index = (val >> temp) & 63;
-                no_of_bits -= 6;
-            }
-            else
-            {
-                temp = 6 - no_of_bits;
-                // append zeros to right if bits are less than 6
-                index = (val << temp) & 63;
-                no_of_bits = 0;
-            }
-            res_str[k++] = char_set[index];
-        }
+        return 'A' + val;
     }
 
-    // padding 
-    for (i = 1; i <= padding; i++)
+    if (val < 52)
     {
-        res_str[k++] = '=';
+        return 'a' + val - 26;
     }
-    res_str[k] = '\0';
-    return res_str;
+
+    if (val < 62)
+    {
+        return '0' + val - 52;
+    }
+
+    if (val == 62)
+    {
+        return '+';
+    }
+
+    if (val == 63)
+    {
+        return '/';
+    }
+
+    // error case
+    return '!';
+}
+
+std::string base64_encode(const std::string& source)
+{
+    size_t size = source.length();
+    size_t groups = size / 3;
+    size_t last_group_size = size % 3;
+
+    std::string encoded_string;
+    for (size_t i = 0; i < groups; ++i)
+    {
+        unsigned char byte1 = (source[i * 3] >> 2);
+        unsigned char byte2 = (source[i * 3 + 1] >> 4) | ((source[i * 3] & 3) << 4);
+        unsigned char byte3 = (source[i * 3 + 2] >> 6) | ((source[i * 3 + 1] & 15) << 2);
+        unsigned char byte4 = source[i * 3 + 2] & 63;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+        encoded_string.push_back(get_base64_char(byte3));
+        encoded_string.push_back(get_base64_char(byte4));
+    }
+
+    if (last_group_size == 1)
+    {
+        unsigned char byte1 = source[groups * 3] >> 2;
+        unsigned char byte2 = (source[groups * 3] & 3) << 4;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+        encoded_string.push_back('=');
+        encoded_string.push_back('=');
+    }
+    else if (last_group_size == 2)
+    {
+        unsigned char byte1 = source[groups * 3] >> 2;
+        unsigned char byte2 =
+            (source[groups * 3 + 1] >> 4) | ((source[groups * 3] & 3) << 4);
+        unsigned char byte3 = (source[groups * 3 + 1] & 15) << 2;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+        encoded_string.push_back(get_base64_char(byte3));
+        encoded_string.push_back('=');
+    }
+
+    return encoded_string;
 }
 
 static std::string build_tcb_info_url(
@@ -971,12 +990,8 @@ static std::string build_tcb_info_url(
     if (custom_param != nullptr)
     {
         std::string& custom_param_value = *(static_cast<std::string*>(custom_param));
-        custom_param_value.erase(std::remove(custom_param_value.begin(), custom_param_value.end(), ' '), custom_param_value.end());
-        char* cstr = new char[custom_param_value.length() + 1];
-        strcpy(cstr, custom_param_value.c_str());
-        std::string custom_param = base64Encoder(cstr, custom_param_value.length());
+        std::string custom_param = base64_encode(custom_param_value);
         tcb_info_url << "customParameter=" << custom_param << "&";
-        delete[] cstr;
     }
 
     if (!client_id.empty())
