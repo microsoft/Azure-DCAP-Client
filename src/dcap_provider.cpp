@@ -1085,7 +1085,7 @@ static quote3_error_t get_collateral(
         const auto curl_operation = curl_easy::create(url, request_body);
         curl_operation->perform();
         response_body = curl_operation->get_body();
-        auto get_issuer_chain_operation = 
+        auto get_issuer_chain_operation =
             get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
         retval = convert_to_intel_error(get_issuer_chain_operation);
         if (retval == SGX_QL_SUCCESS)
@@ -1854,7 +1854,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         // Get Root CA CRL
-        std::string root_ca_crl_url = 
+        std::string root_ca_crl_url =
             build_pck_crl_url(root_crl_name, API_VERSION_02_2020);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
@@ -1872,7 +1872,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get Tcb Info & Issuer Chain
         std::string tcb_info_url = build_tcb_info_url(str_fmspc, custom_param, custom_param_length);
-        const auto tcb_info_operation = 
+        const auto tcb_info_operation =
             curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
