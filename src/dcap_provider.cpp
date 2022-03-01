@@ -289,7 +289,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
 // Determine the time cache should invalidate for given certificate.
 // The return object from the service is a string value that
 // defines certificate expiration time in seconds. In this function
-// we convert the returned value to ingeter and uses that to define
+// we convert the returned value to ingeter and uses that to define 
 // the expiration time of the certificate cached locally.
 //
 bool get_cert_cache_expiration_time(const string& cache_max_age, const string& url, time_t& expiration_time)
@@ -313,8 +313,7 @@ bool get_cert_cache_expiration_time(const string& cache_max_age, const string& u
     catch (const std::invalid_argument& e)
     {
         log(SGX_QL_LOG_ERROR,
-            "Invalid argument thrown when parsing cache-control. Header "
-            "text: '%s' Error: '%s'. Collateral will not be cached",
+            "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
             cache_max_age.c_str(),
             e.what());
         return false;
@@ -322,7 +321,8 @@ bool get_cert_cache_expiration_time(const string& cache_max_age, const string& u
     catch (const std::out_of_range& e)
     {
         log(SGX_QL_LOG_ERROR,
-            "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
+            "Invalid argument thrown when parsing cache-control. Header "
+            "text: '%s' Error: '%s'. Collateral will not be cached",
             cache_max_age.c_str(),
             e.what());
         return false;
@@ -437,7 +437,7 @@ sgx_plat_error_t extract_from_json(
     try
     {
         std::string raw_value = json[item];
-        log(SGX_QL_LOG_INFO, "Required information from JSON");
+        log(SGX_QL_LOG_INFO, "Required information from JSON"); 
         log(SGX_QL_LOG_INFO, "% s: [% s] ", item.c_str(), raw_value.c_str());
         if (out_header != nullptr)
         {
@@ -1085,7 +1085,8 @@ static quote3_error_t get_collateral(
         const auto curl_operation = curl_easy::create(url, request_body);
         curl_operation->perform();
         response_body = curl_operation->get_body();
-        auto get_issuer_chain_operation = get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
+        auto get_issuer_chain_operation = 
+            get_unescape_header(*curl_operation, issuer_chain_header, &issuer_chain);
         retval = convert_to_intel_error(get_issuer_chain_operation);
         if (retval == SGX_QL_SUCCESS)
         {
@@ -1853,7 +1854,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         // Get Root CA CRL
-        std::string root_ca_crl_url = build_pck_crl_url(root_crl_name, API_VERSION_02_2020);
+        std::string root_ca_crl_url = 
+            build_pck_crl_url(root_crl_name, API_VERSION_02_2020);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -1870,7 +1872,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get Tcb Info & Issuer Chain
         std::string tcb_info_url = build_tcb_info_url(str_fmspc, custom_param, custom_param_length);
-        const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
+        const auto tcb_info_operation = 
+            curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
             CollateralTypes::TcbInfo,
@@ -2030,7 +2033,9 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         if (*pp_qve_identity != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Qve identity pointer is not null. This memory will be allocated by this library");
+                "Qve identity pointer is not null. This memory will be "
+                "allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -2043,7 +2048,9 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         if (*pp_qve_identity_issuer_chain != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Issuer chain pointer is not null. This memory will be allocated by this library");
+                "Issuer chain pointer is not null. This memory will be "
+                "allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
@@ -2121,7 +2128,8 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         if (*pp_root_ca_crl != nullptr)
         {
             log(SGX_QL_LOG_ERROR,
-                "Crl pointer is not null. This memory will be allocated by this library");
+                "Crl pointer is not null. This memory will be allocated by "
+                "this library");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
