@@ -313,7 +313,8 @@ bool get_cert_cache_expiration_time(const string& cache_max_age, const string& u
     catch (const std::invalid_argument& e)
     {
         log(SGX_QL_LOG_ERROR,
-            "Invalid argument thrown when parsing cache-control. Header text: '%s' Error: '%s'. Collateral will not be cached",
+            "Invalid argument thrown when parsing cache-control. Header "
+            "text: '%s' Error: '%s'. Collateral will not be cached",
             cache_max_age.c_str(),
             e.what());
         return false;
@@ -445,7 +446,8 @@ sgx_plat_error_t extract_from_json(
     }
     catch (const exception& ex)
     {
-        log(SGX_QL_LOG_ERROR, "Require information '%s' is missing.", item.c_str());
+        log(SGX_QL_LOG_ERROR,
+            "Require information '%s' is missing.", item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
@@ -617,7 +619,8 @@ static std::string build_eppid(const sgx_ql_pck_cert_id_t& pck_cert_id)
         if (disable_ondemand == "1")
         {
             log(SGX_QL_LOG_WARNING,
-                "On demand registration disabled by environment variable. No eppid being sent to caching service");
+                "On demand registration disabled by environment variable. No "
+                "eppid being sent to caching service");
             return "";
         }
     }
@@ -627,7 +630,8 @@ static std::string build_eppid(const sgx_ql_pck_cert_id_t& pck_cert_id)
 
     if (eppid.empty())
     {
-        log(SGX_QL_LOG_WARNING, "No eppid provided.");
+        log(SGX_QL_LOG_WARNING,
+            "No eppid provided.");
         return "";
     }
     else
@@ -896,87 +900,64 @@ static sgx_plat_error_t build_pck_crl_url(
     return SGX_PLAT_ERROR_OK;
 }
 
-char get_base64_char(unsigned char val)
+char* base64_encode(const void* source)
 {
-    if (val < 26)
+    // Character set of base64 encoding scheme
+    char char_set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const char* input = static_cast<const char*>(source);
+    int len_str = strlen(input);
+    char* res_str = (char*)malloc(SIZE * sizeof(char));
+
+    int index, no_of_bits = 0, padding = 0, val = 0, count = 0, temp;
+    int i, j, k = 0;
+
+    for (i = 0; i < len_str; i += 3)
     {
-        return 'A' + val;
+        val = 0, count = 0, no_of_bits = 0;
+        for (j = i; j < len_str && j <= i + 2; j++)
+        {
+            val = val << 8;
+            val = val | input[j];
+            count++;
+        }
+
+        no_of_bits = count * 8;
+        padding = no_of_bits % 3;
+        while (no_of_bits != 0)
+        {
+            if (no_of_bits >= 6)
+            {
+                temp = no_of_bits - 6;
+                index = (val >> temp) & 63;
+                no_of_bits -= 6;
+            }
+            else
+            {
+                temp = 6 - no_of_bits;
+                index = (val << temp) & 63;
+                no_of_bits = 0;
+            }
+            res_str[k++] = char_set[index];
+        }
     }
 
-    if (val < 52)
+    // padding
+    for (i = 1; i <= padding; i++)
     {
-        return 'a' + val - 26;
+        res_str[k++] = '=';
     }
-
-    if (val < 62)
-    {
-        return '0' + val - 52;
-    }
-
-    if (val == 62)
-    {
-        return '+';
-    }
-
-    if (val == 63)
-    {
-        return '/';
-    }
-
-    // error case
-    return '!';
-}
-
-std::string base64_encode(const std::string& source)
-{
-    size_t size = source.length();
-    size_t groups = size / 3;
-    size_t last_group_size = size % 3;
-
-    std::string encoded_string;
-    for (size_t i = 0; i < groups; ++i)
-    {
-        unsigned char byte1 = (source[i * 3] >> 2);
-        unsigned char byte2 = (source[i * 3 + 1] >> 4) | ((source[i * 3] & 3) << 4);
-        unsigned char byte3 = (source[i * 3 + 2] >> 6) | ((source[i * 3 + 1] & 15) << 2);
-        unsigned char byte4 = source[i * 3 + 2] & 63;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
-        encoded_string.push_back(get_base64_char(byte3));
-        encoded_string.push_back(get_base64_char(byte4));
-    }
-
-    if (last_group_size == 1)
-    {
-        unsigned char byte1 = source[groups * 3] >> 2;
-        unsigned char byte2 = (source[groups * 3] & 3) << 4;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
-        encoded_string.push_back('=');
-        encoded_string.push_back('=');
-    }
-    else if (last_group_size == 2)
-    {
-        unsigned char byte1 = source[groups * 3] >> 2;
-        unsigned char byte2 =
-            (source[groups * 3 + 1] >> 4) | ((source[groups * 3] & 3) << 4);
-        unsigned char byte3 = (source[groups * 3 + 1] & 15) << 2;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
-        encoded_string.push_back(get_base64_char(byte3));
-        encoded_string.push_back('=');
-    }
-
-    return encoded_string;
+    res_str[k] = '\0';
+    return res_str;
 }
 
 static std::string build_tcb_info_url(
     const std::string& fmspc,
-    void* custom_param = nullptr,
+    const void* custom_param = nullptr,
     const uint16_t custom_param_length = 0)
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
+    std::string additional_parameters = "";
     std::stringstream tcb_info_url;
     tcb_info_url << get_base_url();
 
@@ -989,9 +970,8 @@ static std::string build_tcb_info_url(
 
     if (custom_param != nullptr)
     {
-        std::string& custom_param_value = *(static_cast<std::string*>(custom_param));
-        std::string custom_param = base64_encode(custom_param_value);
-        tcb_info_url << "customParameter=" << custom_param << "&";
+        additional_parameters = base64_encode(custom_param);
+        tcb_info_url << "customParameter=" << additional_parameters << "&";
     }
 
     if (!client_id.empty())
@@ -1394,7 +1374,6 @@ extern "C" quote3_error_t sgx_ql_free_quote_config(
     sgx_ql_config_t* p_quote_config)
 {
     delete[] p_quote_config;
-
     return SGX_QL_SUCCESS;
 }
 
@@ -1785,7 +1764,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
     const uint16_t fmspc_size,
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral,
-    void* custom_param = nullptr,
+    const void* custom_param = nullptr,
     const  uint16_t custom_param_length = 0)
 {
     log(SGX_QL_LOG_INFO, "Getting quote verification collateral");
@@ -2020,7 +1999,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     const uint8_t* fmspc,
     const uint16_t fmspc_size,
     const char* pck_ca,
-    void* custom_param,
+    const void* custom_param,
     const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
