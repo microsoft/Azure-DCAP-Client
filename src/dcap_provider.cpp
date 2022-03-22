@@ -1523,8 +1523,7 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         {
             std::string tcb_info_url = build_tcb_info_url(*params);
 
-            const auto tcb_info_operation =
-                curl_easy::create(tcb_info_url, nullptr);
+            const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
             log(SGX_QL_LOG_INFO,
                 "Fetching TCB Info from remote server: '%s'.",
                 tcb_info_url.c_str());
@@ -2126,10 +2125,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
 
         quote3_error_t operation_result = get_collateral(
             CollateralTypes::QveIdentity,
-            qve_url,
-            expected_issuer.c_str(),
-            qve_identity,
-            issuer_chain);
+            qve_url, expected_issuer.c_str(), qve_identity, issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
             log(SGX_QL_LOG_ERROR,
