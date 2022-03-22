@@ -17,6 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Constants
 ///////////////////////////////////////////////////////////////////////////////
+static constexpr int maximum_retries = 5;
+static constexpr int initial_retry_delay_ms = 20;
 static constexpr WCHAR content_type_header[] =
     L"Content-Type: application/json";
 
@@ -262,37 +264,61 @@ DWORD curl_easy::get_response_code() const
 
 void curl_easy::perform() const
 {
-    //  Start the protocol exchange with the server.
-    if (!WinHttpSendRequest(
-            request.get(),
-            request_header_text.c_str(),
-            (DWORD)request_header_text.size(),
-            (PVOID)request_body_data.c_str(),
-            (DWORD)request_body_data.size(),
-            (DWORD)request_body_data.size(),
-            0))
+    int retry_delay = initial_retry_delay_ms;
+    int attempts = 0;
+    do
     {
-        throw_on_error(
-            GetLastError(), "curl_easy::perform/WinHttpSendRequest");
-    }
+        //  Start the protocol exchange with the server.
+        if (!WinHttpSendRequest(
+                request.get(),
+                request_header_text.c_str(),
+                (DWORD)request_header_text.size(),
+                (PVOID)request_body_data.c_str(),
+                (DWORD)request_body_data.size(),
+                (DWORD)request_body_data.size(),
+                0))
+        {
+            throw_on_error(
+                GetLastError(), "curl_easy::perform/WinHttpSendRequest");
+        }
 
-    //  Wait for the response from the server.
-    if (!WinHttpReceiveResponse(request.get(), nullptr))
-    {
-        DWORD lastError = GetLastError();
-        throw_on_error(
-            lastError, "curl_easy::perform/WinHttpReceiveRequest");
-    }
+        //  Wait for the response from the server.
+        if (!WinHttpReceiveResponse(request.get(), nullptr))
+        {
+            DWORD lastError = GetLastError();
+            if (lastError == ERROR_WINHTTP_TIMEOUT ||
+                lastError == ERROR_WINHTTP_RESEND_REQUEST)
+            {
+                if (attempts <= maximum_retries)
+                {
+                    attempts++;
+                    log(SGX_QL_LOG_INFO,
+                        "CURL timeout detected (WINHTTP Error %zd). Retrying "
+                        "after %d milliseconds (attempt %d / %d) ",
+                        lastError,
+                        retry_delay,
+                        attempts,
+                        maximum_retries);
+                    Sleep(retry_delay);
+                    retry_delay *= 2;
+                    continue;
+                }
+            }
+            throw_on_error(
+                lastError, "curl_easy::perform/WinHttpReceiveRequest");
+        }
 
-    DWORD response_code = get_response_code();
-    if (response_code >= HTTP_STATUS_BAD_REQUEST && response_code <= HTTP_STATUS_SERVER_ERROR)
-    {
-        log(SGX_QL_LOG_INFO,
-            "HTTP Error (%d) on curl->perform() request",
-            response_code);
-        throw_on_error(WINHTTP_ERROR_BASE, "curl_easy::perform");
-    }
-    return;
+        DWORD response_code = get_response_code();
+        if (response_code >= HTTP_STATUS_BAD_REQUEST &&
+            response_code <= HTTP_STATUS_SERVER_ERROR)
+        {
+            log(SGX_QL_LOG_INFO,
+                "HTTP Error (%d) on curl->perform() request",
+                response_code);
+            throw_on_error(WINHTTP_ERROR_BASE, "curl_easy::perform");
+        }
+        return;
+    } while (true);
 }
 
 const std::vector<uint8_t>& curl_easy::get_body() const

@@ -13,7 +13,6 @@
 #include <limits>
 #include <memory>
 #include <new>
-#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -28,8 +27,6 @@
 #include <intsafe.h>
 #include <winsock.h>
 #endif
-
-#define SIZE 1000
 
 using namespace std;
 
@@ -436,7 +433,7 @@ sgx_plat_error_t extract_from_json(
 {
     try
     {
-        std::string raw_value = json[item];
+        std::string raw_value = to_string(json[item]);
         log(SGX_QL_LOG_INFO, "Required information from JSON"); 
         log(SGX_QL_LOG_INFO, "% s: [% s] ", item.c_str(), raw_value.c_str());
         if (out_header != nullptr)
@@ -711,10 +708,10 @@ static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::
     std::string temp_chain;
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
-    result = extract_from_json(json, "pckCert", &leaf_cert);
+    result = extract_from_json(json.flatten(), "pckCert", &leaf_cert);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
-    result = extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
+    result = extract_from_json(json.flatten(), headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
     chain = curl.unescape(temp_chain);
@@ -783,7 +780,7 @@ static sgx_plat_error_t parse_svn_values(
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
     std::string tcb;
-    result = extract_from_json(json, headers::TCB_INFO, &tcb);
+    result = extract_from_json(json.flatten(), headers::TCB_INFO, &tcb);
 
     if (result != SGX_PLAT_ERROR_OK)
         return result;
@@ -900,54 +897,107 @@ static sgx_plat_error_t build_pck_crl_url(
     return SGX_PLAT_ERROR_OK;
 }
 
-char* base64_encode(const void* source)
+char get_base64_char(uint8_t val)
+{
+    if (val < 26)
+    {
+        return 'A' + val;
+    }
+
+    if (val < 52)
+    {
+        return 'a' + val - 26;
+    }
+
+    if (val < 62)
+    {
+        return '0' + val - 52;
+    }
+
+    if (val == 62)
+    {
+        return '+';
+    }
+
+    if (val == 63)
+    {
+        return '/';
+    }
+
+    // error case
+    return '!';
+}
+
+ std::string base64_encode(
+    const void* source,
+    const uint16_t custom_param_length)
 {
     // Character set of base64 encoding scheme
-    char char_set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const char* input = static_cast<const char*>(source);
-    int len_str = strlen(input);
-    char* res_str = (char*)malloc(SIZE * sizeof(char));
+    const uint8_t* input = static_cast<const uint8_t*>(source);
 
-    int index, no_of_bits = 0, padding = 0, val = 0, count = 0, temp;
-    int i, j, k = 0;
+    // Group input string into 3 characters. Since we are converting 8 bit(3 bytes) to
+    // 6 bit(4 bytes) and lcm of these is 24, the base case is having 24 bits to work with. 
+    size_t groups = custom_param_length / 3;
 
-    for (i = 0; i < len_str; i += 3)
+    // Last group will either have 1 or 2 characters. This case will be handled
+    // separately at the end.
+    size_t last_group_size = custom_param_length % 3;
+    std::string encoded_string;
+
+    for(size_t i = 0; i < groups; ++i)
     {
-        val = 0, count = 0, no_of_bits = 0;
-        for (j = i; j < len_str && j <= i + 2; j++)
-        {
-            val = val << 8;
-            val = val | input[j];
-            count++;
-        }
-
-        no_of_bits = count * 8;
-        padding = no_of_bits % 3;
-        while (no_of_bits != 0)
-        {
-            if (no_of_bits >= 6)
-            {
-                temp = no_of_bits - 6;
-                index = (val >> temp) & 63;
-                no_of_bits -= 6;
-            }
-            else
-            {
-                temp = 6 - no_of_bits;
-                index = (val << temp) & 63;
-                no_of_bits = 0;
-            }
-            res_str[k++] = char_set[index];
-        }
+        // To get base 64 encoded first byte, take the first 6 bits from the first byte of input string
+        uint8_t byte1 = (input[i * 3] >> 2);
+        // To get base 64 encoded second byte, take the first 4 bits from the second byte of the input
+        // string and the remaining 2 bits of the first byte of the input string
+        uint8_t byte2 = (input[i * 3 + 1] >> 4) | ((input[i * 3] & 3) << 4);
+        // To get base 64 encoded third byte, take the first 2 bits from the third byte of the input string
+        // and the remaining 4 bits of the second byte of the input string
+        uint8_t byte3 = (input[i * 3 + 2] >> 6) | ((input[i * 3 + 1] & 15) << 2);
+        // To get base 64 encoded last byte, take the remaining 6 bits from the third byte of the input string
+        uint8_t byte4 = input[i * 3 + 2] & 63;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+        encoded_string.push_back(get_base64_char(byte3));
+        encoded_string.push_back(get_base64_char(byte4));
     }
 
-    // padding
-    for (i = 1; i <= padding; i++)
+    // Last group has 1 character to encode 
+    if (last_group_size == 1)
     {
-        res_str[k++] = '=';
+        // To get base 64 encoded first byte, take the first 6 bits from the
+        // first byte of input string
+        uint8_t byte1 = input[groups * 3] >> 2;
+        // To get base 64 encoded second byte, take the remaining 2 bits of the first byte of the input string
+        uint8_t byte2 = (input[groups * 3] & 3) << 4;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+
+        // Add padding for the remianing bits
+        encoded_string.push_back('=');
+        encoded_string.push_back('=');
     }
-    res_str[k] = '\0';
-    return res_str;
+    // Last group has 2 characters to encode 
+    else if (last_group_size == 2)
+    {
+        // To get base 64 encoded first byte, take the first 6 bits from the
+        // first byte of input string
+        uint8_t byte1 = input[groups * 3] >> 2;
+        // To get base 64 encoded second byte, take the first 4 bits from the
+        // second byte of the input string and the remaining 2 bits of the first
+        // byte of the input string
+        uint8_t byte2 = (input[groups * 3 + 1] >> 4) | ((input[groups * 3] & 3) << 4);
+        // To get base 64 encoded third byte, take the remaining 4 bits of the second
+        // byte of the input string
+        uint8_t byte3 = (input[groups * 3 + 1] & 15) << 2;
+        encoded_string.push_back(get_base64_char(byte1));
+        encoded_string.push_back(get_base64_char(byte2));
+        encoded_string.push_back(get_base64_char(byte3));
+
+        // Add padding for the remianing bits
+        encoded_string.push_back('=');
+    }
+    return encoded_string;
 }
 
 static std::string build_tcb_info_url(
@@ -957,7 +1007,6 @@ static std::string build_tcb_info_url(
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
-    std::string additional_parameters = "";
     std::stringstream tcb_info_url;
     tcb_info_url << get_base_url();
 
@@ -965,14 +1014,16 @@ static std::string build_tcb_info_url(
     {
         tcb_info_url << "/" << version;
     }
+
     tcb_info_url << "/tcb?";
     tcb_info_url << "fmspc=" << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "&";
 
     if (custom_param != nullptr)
     {
-        additional_parameters = base64_encode(custom_param);
-        tcb_info_url << "customParameter=" << additional_parameters << "&";
+        std::string encoded_str = base64_encode(custom_param, custom_param_length);
+        tcb_info_url << customParam << "=" << encoded_str << "&";
     }
+
 
     if (!client_id.empty())
     {
@@ -986,10 +1037,12 @@ static std::string build_tcb_info_url(
 // The expected URL for a given TCB.
 //
 static std::string build_tcb_info_url(
-    const sgx_ql_get_revocation_info_params_t& params)
+    const sgx_ql_get_revocation_info_params_t& params,
+    const void* custom_param = nullptr,
+    const uint16_t custom_param_length = 0)
 {
     std::string fmspc((char*)params.fmspc, params.fmspc_size);
-    return build_tcb_info_url(fmspc);
+    return build_tcb_info_url(fmspc, custom_param, custom_param_length);
 }
 
 //
@@ -997,7 +1050,9 @@ static std::string build_tcb_info_url(
 //
 static std::string build_enclave_id_url(
     bool qve,
-    std::string& expected_issuer_chain_header)
+    std::string& expected_issuer_chain_header,
+    const void* custom_param = nullptr,
+    const uint16_t custom_param_length = 0)
 {
     std::string version = get_collateral_version();
     std::string client_id = get_client_id();
@@ -1023,6 +1078,12 @@ static std::string build_enclave_id_url(
     }
 
     qe_id_url << "/" << (qve ? "qveid" : "qeid") << "?";
+
+    if (custom_param != nullptr)
+    {
+        std::string encoded_str = base64_encode(custom_param, custom_param_length);
+        qe_id_url << customParam << "=" << encoded_str << "&";
+    }
 
     if (!client_id.empty())
     {
@@ -1321,7 +1382,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         // Get the cache control header
         std::string cache_control;
         auto get_cache_header_operation = extract_from_json(
-            json_body, headers::CERT_CACHE_CONTROL, &cache_control);
+            json_body.flatten(), headers::CERT_CACHE_CONTROL, &cache_control);
 
         retval = convert_to_intel_error(get_cache_header_operation);
         if (retval == SGX_QL_SUCCESS)
@@ -1872,8 +1933,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get Tcb Info & Issuer Chain
         std::string tcb_info_url = build_tcb_info_url(str_fmspc, custom_param, custom_param_length);
-        const auto tcb_info_operation =
-            curl_easy::create(tcb_info_url, nullptr);
+        const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
             CollateralTypes::TcbInfo,
@@ -1891,7 +1951,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get QE Identity & Issuer Chain
         std::string issuer_chain_header;
-        std::string qe_identity_url = build_enclave_id_url(false, issuer_chain_header);
+        std::string qe_identity_url = build_enclave_id_url(false, issuer_chain_header, custom_param, custom_param_length);
         const auto qe_identity_operation =
             curl_easy::create(qe_identity_url, nullptr);
 

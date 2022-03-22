@@ -110,8 +110,9 @@ static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
 static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
 
-const uint16_t custom_param_length = 2;
-const char *custom_param = "tcbnumber=1;region=us central";
+const uint16_t custom_param_length = 45;
+const char *custom_param = "tcbEvaluationDataNumber=11;region=us central";
+std::string tcbEvaluationDataNumber = "11";
 
 // Test input (choose an arbitrary Azure server)
 static uint8_t qe_id[16] = {
@@ -217,6 +218,8 @@ static void Log(sgx_ql_log_level_t level, const char* message)
     }
     printf("[%s]: %s\n", levelText, message);
 }
+
+
 
 #if defined __LINUX__
 static void* LoadFunctions()
@@ -355,6 +358,32 @@ static HINSTANCE LoadFunctions()
     return hLibCapdll;
 }
 #endif
+
+//
+// extract raw value from response body, if exists
+//
+sgx_plat_error_t extract_from_json(
+    const nlohmann::json& json,
+    const std::string& item,
+    std::string* out_header)
+{
+    try
+    {
+        std::string raw_value = to_string(json[item]);
+        Log(SGX_QL_LOG_INFO, "Required information from JSON"); 
+        if (out_header != nullptr)
+        {
+            *out_header = raw_value;
+        }
+    }
+    catch (const exception& ex)
+    {
+        Log(SGX_QL_LOG_ERROR,
+            "Require information '%s' is missing.");
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    return SGX_PLAT_ERROR_OK;
+}
 
 //
 // Fetches and validates certification data for a platform
@@ -532,9 +561,18 @@ static void GetVerificationCollateralTest()
         &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
+}
 
-    collateral = nullptr;
-    result = sgx_ql_get_quote_verification_collateral_with_params(
+//
+// Fetches and validates verification APIs of QPL with custom params provided
+//
+static void GetVerificationCollateralTestWithParams()
+{
+    // Test input (choose an arbitrary Azure server)
+ 
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    std::string tcbEvaluationNumber;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
             TEST_FMSPC,
             sizeof(TEST_FMSPC),
             "processor",
@@ -542,6 +580,9 @@ static void GetVerificationCollateralTest()
             custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(json_body.flatten(), "/tcbInfo/tcbEvaluationDataNumber", &tcbEvaluationNumber);
+    ASSERT_TRUE(tcbEvaluationNumber == tcbEvaluationDataNumber);
     VerifyCollateral(collateral);
 }
 
@@ -558,16 +599,29 @@ static void GetVerificationCollateralTestICXV3()
         &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
+}
 
-    collateral = nullptr;
-    result = sgx_ql_get_quote_verification_collateral_with_params(
+//
+// Fetches and validates verification APIs of QPL with custom params provided
+//
+static void GetVerificationCollateralTestICXV3WithParams()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    std::string tcbEvaluationNumber;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
             ICX_TEST_FMSPC,
             sizeof(ICX_TEST_FMSPC),
             "platform",
-             custom_param,
-             custom_param_length, 
+            custom_param,
+            custom_param_length, 
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(
+        json_body.flatten(),
+        "/tcbInfo/tcbEvaluationDataNumber",
+        &tcbEvaluationNumber);
+    ASSERT_TRUE(tcbEvaluationNumber == tcbEvaluationDataNumber);
     VerifyCollateral(collateral);
 }
 
@@ -663,6 +717,8 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     GetCrlTest();
     auto duration_curl_verification =
         MeasureFunction(GetVerificationCollateralTest);
+    auto duration_curl_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestWithParams);
     GetRootCACrlTest();
 
     //
@@ -672,12 +728,21 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     GetCrlTest();
     GetRootCACrlTest();
     auto duration_local_verification = MeasureFunction(GetVerificationCollateralTest);
+    auto duration_local_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestWithParams);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
         caching_enabled);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification_with_params,
+        duration_curl_cert,
+        duration_curl_verification_with_params,
+        caching_enabled);
+
     return true;
 }
 
@@ -687,6 +752,8 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
     auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_curl_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
     GetRootCACrlTest();
 
     //
@@ -696,11 +763,19 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     GetCrlTestICXV3();
     GetRootCACrlTest();
     auto duration_local_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_local_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
+        caching_enabled);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification_with_params,
+        duration_curl_cert,
+        duration_curl_verification_with_params,
         caching_enabled);
     return true;
 }
