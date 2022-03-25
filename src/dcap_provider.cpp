@@ -708,10 +708,10 @@ static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::
     std::string temp_chain;
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
 
-    result = extract_from_json(json.flatten(), "pckCert", &leaf_cert);
+    result = extract_from_json(json, "pckCert", &leaf_cert);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
-    result = extract_from_json(json.flatten(), headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
+    result = extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
     chain = curl.unescape(temp_chain);
@@ -780,7 +780,7 @@ static sgx_plat_error_t parse_svn_values(
 {
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
     std::string tcb;
-    result = extract_from_json(json.flatten(), headers::TCB_INFO, &tcb);
+    result = extract_from_json(json, headers::TCB_INFO, &tcb);
 
     if (result != SGX_PLAT_ERROR_OK)
         return result;
@@ -1418,7 +1418,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         // Get the cache control header
         std::string cache_control;
         auto get_cache_header_operation = extract_from_json(
-            json_body.flatten(), headers::CERT_CACHE_CONTROL, &cache_control);
+            json_body, headers::CERT_CACHE_CONTROL, &cache_control);
 
         retval = convert_to_intel_error(get_cache_header_operation);
         if (retval == SGX_QL_SUCCESS)
