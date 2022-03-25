@@ -925,7 +925,7 @@ char get_base64_char(uint8_t val)
     }
 
     // error case
-    return '!';
+    throw SGX_QL_ERROR_INVALID_PARAMETER;
 }
 
  std::string base64_encode(
@@ -943,61 +943,68 @@ char get_base64_char(uint8_t val)
     // separately at the end.
     size_t last_group_size = custom_param_length % 3;
     std::string encoded_string;
-
-    for(size_t i = 0; i < groups; ++i)
+    try
     {
-        // To get base 64 encoded first byte, take the first 6 bits from the first byte of input string
-        uint8_t byte1 = (input[i * 3] >> 2);
-        // To get base 64 encoded second byte, take the first 4 bits from the second byte of the input
-        // string and the remaining 2 bits of the first byte of the input string
-        uint8_t byte2 = (input[i * 3 + 1] >> 4) | ((input[i * 3] & 3) << 4);
-        // To get base 64 encoded third byte, take the first 2 bits from the third byte of the input string
-        // and the remaining 4 bits of the second byte of the input string
-        uint8_t byte3 = (input[i * 3 + 2] >> 6) | ((input[i * 3 + 1] & 15) << 2);
-        // To get base 64 encoded last byte, take the remaining 6 bits from the third byte of the input string
-        uint8_t byte4 = input[i * 3 + 2] & 63;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
-        encoded_string.push_back(get_base64_char(byte3));
-        encoded_string.push_back(get_base64_char(byte4));
-    }
+        for(size_t i = 0; i < groups; ++i)
+        {
+            // To get base 64 encoded first byte, take the first 6 bits from the first byte of input string
+            uint8_t byte1 = (input[i * 3] >> 2);
+            // To get base 64 encoded second byte, take the first 4 bits from the second byte of the input
+            // string and the remaining 2 bits of the first byte of the input string
+            uint8_t byte2 = (input[i * 3 + 1] >> 4) | ((input[i * 3] & 3) << 4);
+            // To get base 64 encoded third byte, take the first 2 bits from the third byte of the input string
+            // and the remaining 4 bits of the second byte of the input string
+            uint8_t byte3 = (input[i * 3 + 2] >> 6) | ((input[i * 3 + 1] & 15) << 2);
+            // To get base 64 encoded last byte, take the remaining 6 bits from the third byte of the input string
+            uint8_t byte4 = input[i * 3 + 2] & 63;
+            encoded_string.push_back(get_base64_char(byte1));
+            encoded_string.push_back(get_base64_char(byte2));
+            encoded_string.push_back(get_base64_char(byte3));
+            encoded_string.push_back(get_base64_char(byte4));
+        }
 
-    // Last group has 1 character to encode 
-    if (last_group_size == 1)
-    {
-        // To get base 64 encoded first byte, take the first 6 bits from the
-        // first byte of input string
-        uint8_t byte1 = input[groups * 3] >> 2;
-        // To get base 64 encoded second byte, take the remaining 2 bits of the first byte of the input string
-        uint8_t byte2 = (input[groups * 3] & 3) << 4;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
+        // Last group has 1 character to encode 
+        if (last_group_size == 1)
+        {
+            // To get base 64 encoded first byte, take the first 6 bits from the
+            // first byte of input string
+            uint8_t byte1 = input[groups * 3] >> 2;
+            // To get base 64 encoded second byte, take the remaining 2 bits of the first byte of the input string
+            uint8_t byte2 = (input[groups * 3] & 3) << 4;
+            encoded_string.push_back(get_base64_char(byte1));
+            encoded_string.push_back(get_base64_char(byte2));
 
-        // Add padding for the remianing bits
-        encoded_string.push_back('=');
-        encoded_string.push_back('=');
-    }
-    // Last group has 2 characters to encode 
-    else if (last_group_size == 2)
-    {
-        // To get base 64 encoded first byte, take the first 6 bits from the
-        // first byte of input string
-        uint8_t byte1 = input[groups * 3] >> 2;
-        // To get base 64 encoded second byte, take the first 4 bits from the
-        // second byte of the input string and the remaining 2 bits of the first
-        // byte of the input string
-        uint8_t byte2 = (input[groups * 3 + 1] >> 4) | ((input[groups * 3] & 3) << 4);
-        // To get base 64 encoded third byte, take the remaining 4 bits of the second
-        // byte of the input string
-        uint8_t byte3 = (input[groups * 3 + 1] & 15) << 2;
-        encoded_string.push_back(get_base64_char(byte1));
-        encoded_string.push_back(get_base64_char(byte2));
-        encoded_string.push_back(get_base64_char(byte3));
+            // Add padding for the remianing bits
+            encoded_string.push_back('=');
+            encoded_string.push_back('=');
+        }
+        // Last group has 2 characters to encode 
+        else if (last_group_size == 2)
+        {
+            // To get base 64 encoded first byte, take the first 6 bits from the
+            // first byte of input string
+            uint8_t byte1 = input[groups * 3] >> 2;
+            // To get base 64 encoded second byte, take the first 4 bits from the
+            // second byte of the input string and the remaining 2 bits of the first
+            // byte of the input string
+            uint8_t byte2 = (input[groups * 3 + 1] >> 4) | ((input[groups * 3] & 3) << 4);
+            // To get base 64 encoded third byte, take the remaining 4 bits of the second
+            // byte of the input string
+            uint8_t byte3 = (input[groups * 3 + 1] & 15) << 2;
+            encoded_string.push_back(get_base64_char(byte1));
+            encoded_string.push_back(get_base64_char(byte2));
+            encoded_string.push_back(get_base64_char(byte3));
 
-        // Add padding for the remianing bits
-        encoded_string.push_back('=');
-    }
+            // Add padding for the remianing bits
+            encoded_string.push_back('=');
+        }
     return encoded_string;
+    }
+    catch(exception SGX_QL_ERROR_INVALID_PARAMETER)
+    {
+        log(SGX_QL_LOG_ERROR, "Incorrect parameter passed for encoding.");
+        throw SGX_QL_ERROR_INVALID_PARAMETER;
+    }
 }
 
 static std::string build_tcb_info_url(
@@ -1020,7 +1027,16 @@ static std::string build_tcb_info_url(
 
     if (custom_param != nullptr)
     {
-        std::string encoded_str = base64_encode(custom_param, custom_param_length);
+        std::string encoded_str;
+        try
+        {
+            encoded_str = base64_encode(custom_param, custom_param_length);
+        }
+        catch (exception e)
+        {
+            log(SGX_QL_LOG_ERROR, "TCB_Info_URL: Invalid parameters provided.");
+            throw e;
+        }
         tcb_info_url << customParam << "=" << encoded_str << "&";
     }
 
@@ -1042,7 +1058,18 @@ static std::string build_tcb_info_url(
     const uint16_t custom_param_length = 0)
 {
     std::string fmspc((char*)params.fmspc, params.fmspc_size);
-    return build_tcb_info_url(fmspc, custom_param, custom_param_length);
+    std ::string tcb_info_url;
+    try
+    {
+        tcb_info_url =
+            build_tcb_info_url(fmspc, custom_param, custom_param_length);
+        return tcb_info_url;
+    }
+    catch (exception e)
+    {
+        throw e;
+    }
+
 }
 
 //
@@ -1081,7 +1108,16 @@ static std::string build_enclave_id_url(
 
     if (custom_param != nullptr)
     {
-        std::string encoded_str = base64_encode(custom_param, custom_param_length);
+        std::string encoded_str;
+        try
+        {
+            encoded_str = base64_encode(custom_param, custom_param_length);
+        }
+        catch (exception e)
+        {
+            log(SGX_QL_LOG_ERROR, "Enclave_Id_URL: Invalid parameters provided.");
+            throw e;
+        }
         qe_id_url << customParam << "=" << encoded_str << "&";
     }
 
@@ -1677,8 +1713,16 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         std::string issuer_chain;
         std::string request_id;
         size_t total_buffer_size = 0;
-        std::string qe_id_url =
-            build_enclave_id_url(false, issuer_chain_header);
+        std::string qe_id_url;
+        try
+        {
+            qe_id_url = build_enclave_id_url(false, issuer_chain_header);
+        }
+        catch (exception e)
+        {
+            log(SGX_QL_LOG_ERROR, "QE_ID_URL can't be formed. Validate the parameters passed.");
+            return SGX_PLAT_ERROR_INVALID_PARAMETER;
+        }
 
         const auto curl = curl_easy::create(qe_id_url, nullptr);
         log(SGX_QL_LOG_INFO,
@@ -1931,7 +1975,17 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         // Get Tcb Info & Issuer Chain
-        std::string tcb_info_url = build_tcb_info_url(str_fmspc, custom_param, custom_param_length);
+        std::string tcb_info_url;
+        try
+        {
+            tcb_info_url = build_tcb_info_url(
+                str_fmspc, custom_param, custom_param_length);
+        }
+        catch (exception& e)
+        {
+            log(SGX_QL_LOG_ERROR, "TCB_INFO_URL can't be formed. Validate the parameters passed.");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
         const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
@@ -1950,7 +2004,18 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get QE Identity & Issuer Chain
         std::string issuer_chain_header;
-        std::string qe_identity_url = build_enclave_id_url(false, issuer_chain_header, custom_param, custom_param_length);
+        std::string qe_identity_url;
+        try
+        {
+            qe_identity_url = build_enclave_id_url(
+                false, issuer_chain_header, custom_param, custom_param_length);
+        }
+        catch (exception e)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "QE_IDENTITY_URL can't be formed. Validate the parameters passed.");
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        }
         const auto qe_identity_operation =
             curl_easy::create(qe_identity_url, nullptr);
 
@@ -2116,10 +2181,20 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         std::vector<uint8_t> qve_identity;
         std::string expected_issuer;
         std::string issuer_chain;
-        std::string qve_url = build_enclave_id_url(true, expected_issuer);
-        if (qve_url.empty())
+        std::string qve_url;
+
+        try
         {
-            log(SGX_QL_LOG_ERROR, "V1 QVE is not supported");
+            qve_url = build_enclave_id_url(true, expected_issuer);
+            if (qve_url.empty())
+            {
+                log(SGX_QL_LOG_ERROR, "V1 QVE is not supported");
+                return SGX_QL_ERROR_INVALID_PARAMETER;
+            }
+        }
+        catch (exception e)
+        {
+            log(SGX_QL_LOG_ERROR, "QVE_URL can't be formed. Validate the parameters passed.");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
