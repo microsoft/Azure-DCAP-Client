@@ -1559,7 +1559,8 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
         {
             std::string tcb_info_url = build_tcb_info_url(*params);
 
-            const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
+            const auto tcb_info_operation =
+                curl_easy::create(tcb_info_url, nullptr);
             log(SGX_QL_LOG_INFO,
                 "Fetching TCB Info from remote server: '%s'.",
                 tcb_info_url.c_str());
@@ -1986,7 +1987,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             log(SGX_QL_LOG_ERROR, "TCB_INFO_URL can't be formed. Validate the parameters passed.");
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
-        const auto tcb_info_operation = curl_easy::create(tcb_info_url, nullptr);
+        const auto tcb_info_operation = 
+            curl_easy::create(tcb_info_url, nullptr);
 
         operation_result = get_collateral(
             CollateralTypes::TcbInfo,
@@ -2182,7 +2184,6 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
         std::string expected_issuer;
         std::string issuer_chain;
         std::string qve_url;
-
         try
         {
             qve_url = build_enclave_id_url(true, expected_issuer);
