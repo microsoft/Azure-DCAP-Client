@@ -582,7 +582,7 @@ static void GetVerificationCollateralTestWithParams()
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
     extract_from_json(json_body.flatten(), "/tcbInfo/tcbEvaluationDataNumber", &tcbEvaluationNumber);
-    ASSERT_TRUE(tcbEvaluationNumber == tcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber));
     VerifyCollateral(collateral);
 }
 
@@ -621,7 +621,7 @@ static void GetVerificationCollateralTestICXV3WithParams()
         json_body.flatten(),
         "/tcbInfo/tcbEvaluationDataNumber",
         &tcbEvaluationNumber);
-    ASSERT_TRUE(tcbEvaluationNumber == tcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber) != 0);
     VerifyCollateral(collateral);
 }
 

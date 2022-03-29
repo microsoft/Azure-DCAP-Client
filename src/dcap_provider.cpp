@@ -897,6 +897,26 @@ static sgx_plat_error_t build_pck_crl_url(
     return SGX_PLAT_ERROR_OK;
 }
 
+// Base64 alphabet defined in RFC 4648
+/* Value    Encoding    Value   Encoding    Value   Encoding    Value   Encoding
+   0        A           17      R           34      i           51      z
+   1        B           18      S           35      j           52      0
+   2        C           19      T           36      k           53      1
+   3        D           20      U           37      l           54      2
+   4        E           21      V           38      m           55      3
+   5        F           22      W           39      n           56      4
+   6        G           23      X           40      o           57      5
+   7        H           24      Y           41      p           58      6
+   8        I           25      Z           42      q           59      7
+   9        J           26      a           43      r           60      8
+   10       K           27      b           44      s           61      9
+   11       L           28      c           45      t           62      +
+   12       M           29      d           46      u           63      /
+   13       N           30      e           47      v
+   14       O           31      f           48      w           (pad) =
+   15       P           32      g           49      x 
+   16       Q           33      h           50      y
+*/
 char get_base64_char(uint8_t val)
 {
     if (val < 26)
@@ -1171,6 +1191,10 @@ static quote3_error_t get_collateral(
                     url.c_str());
                 response_body = *cache_hit_collateral;
                 issuer_chain = std::string(cache_hit_issuer_chain->begin(), cache_hit_issuer_chain->end());
+                log(SGX_QL_LOG_INFO,
+                    "Successfully fetched %s from cache: '%s'.",
+                    friendly_name.c_str(),
+                    url.c_str());
                 return SGX_QL_SUCCESS;
             }
         }
@@ -1187,6 +1211,10 @@ static quote3_error_t get_collateral(
         retval = convert_to_intel_error(get_issuer_chain_operation);
         if (retval == SGX_QL_SUCCESS)
         {
+            log(SGX_QL_LOG_INFO,
+                "Successfully fetched %s from URL: '%s'.",
+                friendly_name.c_str(),
+                url.c_str());
             std::string cache_control;
             auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
             retval = convert_to_intel_error(get_cache_header_operation);
@@ -1332,14 +1360,24 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     retval,
                     0);
             }
-            if (!recieved_certificate)
+            if (recieved_certificate)
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Successfully fetched certificate from primary URL: '%s'.",
+                    primary_base_url.c_str());
+            }
+            else
             {
                 log(SGX_QL_LOG_INFO,
                     "Trying to fetch response from local cache.");
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
                 if (recieved_certificate)
+                {
+                    log(SGX_QL_LOG_INFO,
+                        "Successfully fetched certificate from cache.");
                     return SGX_QL_SUCCESS;
+                }
                 else
                 {
                     log(SGX_QL_LOG_INFO,
@@ -1352,6 +1390,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                         retval);
                     if (!recieved_certificate)
                         return retval;
+                    log(SGX_QL_LOG_INFO,
+                        "Successfully fetched certificate from secondary URL: '%s'.",
+                        secondary_base_url.c_str());
                 }
             }
 
@@ -1532,6 +1573,10 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
 
             crl_operation->set_headers(headers::default_values);
             crl_operation->perform();
+            log(SGX_QL_LOG_INFO,
+                "Successfully fetched '%s' from URL: '%s'",
+                CollateralTypes::PckCrl,
+                crl_url.c_str());
             crls.push_back(crl_operation->get_body());
             total_crl_size = safe_add(total_crl_size, crls.back().size());
             total_crl_size =
@@ -1565,6 +1610,10 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
                 "Fetching TCB Info from remote server: '%s'.",
                 tcb_info_url.c_str());
             tcb_info_operation->perform();
+            log(SGX_QL_LOG_INFO,
+                "Successfully fetched '%s' from URL: '%s'",
+                CollateralTypes::TcbInfo,
+                tcb_info_url.c_str());
 
             tcb_info = tcb_info_operation->get_body();
 
@@ -1730,6 +1779,10 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
             "Fetching QE Identity from remote server: '%s'.",
             qe_id_url.c_str());
         curl->perform();
+        log(SGX_QL_LOG_INFO,
+            "Successfully fetched '%s' from URL: '%s'",
+            CollateralTypes::QeIdentity,
+            qe_id_url.c_str());
 
         // issuer chain
         result = get_unescape_header(*curl, issuer_chain_header, &issuer_chain);
