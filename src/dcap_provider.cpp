@@ -433,9 +433,13 @@ sgx_plat_error_t extract_from_json(
 {
     try
     {
-        std::string raw_value = to_string(json[item]);
-        log(SGX_QL_LOG_INFO, "Required information from JSON"); 
-        log(SGX_QL_LOG_INFO, "% s: [% s] ", item.c_str(), raw_value.c_str());
+        nlohmann::json raw_value = json[item];
+        if (!raw_value.is_string())
+        {
+            raw_value = raw_value.dump();
+        }
+        log(SGX_QL_LOG_INFO,
+            "Fetched %s value from JSON. \n", item.c_str());
         if (out_header != nullptr)
         {
             *out_header = raw_value;
@@ -444,7 +448,7 @@ sgx_plat_error_t extract_from_json(
     catch (const exception& ex)
     {
         log(SGX_QL_LOG_ERROR,
-            "Require information '%s' is missing.", item.c_str());
+            "Required information '%s' is missing. \n", item.c_str());
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
@@ -711,9 +715,14 @@ static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::
     result = extract_from_json(json, "pckCert", &leaf_cert);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
+    log(SGX_QL_LOG_INFO, "pckCert : %s from JSON", leaf_cert.c_str()); 
     result = extract_from_json(json, headers::PCK_CERT_ISSUER_CHAIN, &temp_chain);
     if (result != SGX_PLAT_ERROR_OK)
         return result;
+    log(SGX_QL_LOG_INFO,
+        "%s : %s",
+        headers::PCK_CERT_ISSUER_CHAIN,
+        temp_chain.c_str()); 
     chain = curl.unescape(temp_chain);
 
     // The cache service does not return a newline in the response
@@ -723,7 +732,7 @@ static sgx_plat_error_t build_cert_chain(const curl_easy& curl, const nlohmann::
         leaf_cert += "\n";
     }
 
-    log(SGX_QL_LOG_INFO, "libquote_provider.so: [%s]", chain.c_str());
+    log(SGX_QL_LOG_INFO, "Cert chain formed: [%s]", chain.c_str());
     if (out_header != nullptr)
     {
         *out_header = leaf_cert + chain;
@@ -781,10 +790,9 @@ static sgx_plat_error_t parse_svn_values(
     sgx_plat_error_t result = SGX_PLAT_ERROR_OK;
     std::string tcb;
     result = extract_from_json(json, headers::TCB_INFO, &tcb);
-
     if (result != SGX_PLAT_ERROR_OK)
         return result;
-
+    log(SGX_QL_LOG_INFO, "%s : %s", headers::TCB_INFO, tcb.c_str()); 
     // string size == byte size * 2 (for hex-encoding)
     static constexpr size_t CPUSVN_SIZE =
         2 * sizeof(quote_config->cert_cpu_svn);
@@ -1460,10 +1468,13 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         std::string cache_control;
         auto get_cache_header_operation = extract_from_json(
             json_body, headers::CERT_CACHE_CONTROL, &cache_control);
-
         retval = convert_to_intel_error(get_cache_header_operation);
         if (retval == SGX_QL_SUCCESS)
         {
+            log(SGX_QL_LOG_INFO,
+                "%s : %s",
+                headers::CERT_CACHE_CONTROL,
+                cache_control.c_str());
             time_t expiry = 0;
             if (get_cert_cache_expiration_time(cache_control, cached_file_name.str(), expiry))
             {
@@ -1570,12 +1581,11 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
             log(SGX_QL_LOG_INFO,
                 "Fetching revocation info from remote server: '%s'",
                 crl_url.c_str());
-
             crl_operation->set_headers(headers::default_values);
             crl_operation->perform();
             log(SGX_QL_LOG_INFO,
-                "Successfully fetched '%s' from URL: '%s'",
-                CollateralTypes::PckCrl,
+                "Successfully fetched %s from URL: '%s'",
+                get_collateral_friendly_name(CollateralTypes::PckCrl).c_str(),
                 crl_url.c_str());
             crls.push_back(crl_operation->get_body());
             total_crl_size = safe_add(total_crl_size, crls.back().size());
@@ -1612,7 +1622,7 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
             tcb_info_operation->perform();
             log(SGX_QL_LOG_INFO,
                 "Successfully fetched '%s' from URL: '%s'",
-                CollateralTypes::TcbInfo,
+                get_collateral_friendly_name(CollateralTypes::TcbInfo).c_str(),
                 tcb_info_url.c_str());
 
             tcb_info = tcb_info_operation->get_body();
@@ -1781,7 +1791,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         curl->perform();
         log(SGX_QL_LOG_INFO,
             "Successfully fetched '%s' from URL: '%s'",
-            CollateralTypes::QeIdentity,
+            get_collateral_friendly_name(CollateralTypes::QeIdentity).c_str(),
             qe_id_url.c_str());
 
         // issuer chain
