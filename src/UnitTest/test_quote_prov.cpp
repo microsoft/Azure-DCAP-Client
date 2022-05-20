@@ -619,7 +619,8 @@ static void GetVerificationCollateralTestICXV3()
 static void GetVerificationCollateralTestICXV3WithParams()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
-    std::string tcbEvaluationNumber;
+    std::string tcbEvaluationDataNumber;
+    std::string enclaveIdentityTcbEvaluationDataNumber;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
             ICX_TEST_FMSPC,
             sizeof(ICX_TEST_FMSPC),
@@ -632,8 +633,15 @@ static void GetVerificationCollateralTestICXV3WithParams()
     extract_from_json(
         json_body.flatten(),
         "/tcbInfo/tcbEvaluationDataNumber",
-        &tcbEvaluationNumber);
-    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber) == 0);
+        &tcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    json_body = nlohmann::json::parse(collateral->qe_identity);
+    extract_from_json(
+        json_body.flatten(),
+        "/enclaveIdentity/tcbEvaluationDataNumber",
+        &enclaveIdentityTcbEvaluationDataNumber);
+    ASSERT_TRUE(
+        enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -797,6 +805,32 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
+        caching_enabled);
+    return true;
+}
+
+boolean RunQuoteProviderTestsICXV3WithParam(bool caching_enabled = false)
+{
+    local_cache_clear();
+    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
+    GetCrlTestICXV3();
+    auto duration_curl_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+    GetRootCACrlTest();
+
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
+    GetCrlTestICXV3();
+    GetRootCACrlTest();
+    auto duration_local_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification_with_params,
+        duration_curl_cert,
+        duration_curl_verification_with_params,
         caching_enabled);
     return true;
 }
@@ -1163,6 +1197,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1183,6 +1218,7 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     SetupEnvironment("v3");
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__

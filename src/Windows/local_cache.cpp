@@ -229,7 +229,6 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
     do {
         file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile));
-
 		retry = false;
 		if (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY)) {
 			retry = true;
