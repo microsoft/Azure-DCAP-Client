@@ -787,8 +787,6 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
     auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
-    auto duration_curl_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
     GetRootCACrlTest();
 
     //
@@ -798,8 +796,6 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     GetCrlTestICXV3();
     GetRootCACrlTest();
     auto duration_local_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
-    auto duration_local_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
