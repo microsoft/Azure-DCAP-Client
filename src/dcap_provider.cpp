@@ -1132,7 +1132,7 @@ static std::string build_enclave_id_url(
         return "";
     }
 
-    qe_id_url << "/" << (qve ? "qveid" : "qeid") << "?";
+    qe_id_url << "/" << (qve ? "qve/identity" : "qe/identity") << "?";
 
     if (custom_param != nullptr)
     {

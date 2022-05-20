@@ -369,8 +369,11 @@ sgx_plat_error_t extract_from_json(
 {
     try
     {
-        std::string raw_value = to_string(json[item]);
-        Log(SGX_QL_LOG_INFO, "Required information from JSON"); 
+        nlohmann::json raw_value = json[item];
+        if (!raw_value.is_string())
+        {
+            raw_value = raw_value.dump();
+        }
         if (out_header != nullptr)
         {
             *out_header = raw_value;
@@ -378,8 +381,6 @@ sgx_plat_error_t extract_from_json(
     }
     catch (const exception& ex)
     {
-        Log(SGX_QL_LOG_ERROR,
-            "Require information '%s' is missing.");
         return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
     }
     return SGX_PLAT_ERROR_OK;
@@ -571,7 +572,9 @@ static void GetVerificationCollateralTestWithParams()
     // Test input (choose an arbitrary Azure server)
  
     sgx_ql_qve_collateral_t* collateral = nullptr;
-    std::string tcbEvaluationNumber;
+    std::string tcbInfoTcbEvaluationDataNumber;
+    std::string enclaveIdentityTcbEvaluationDataNumber;
+    nlohmann::json json_body;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
             TEST_FMSPC,
             sizeof(TEST_FMSPC),
@@ -580,9 +583,18 @@ static void GetVerificationCollateralTestWithParams()
             custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
-    nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
-    extract_from_json(json_body.flatten(), "/tcbInfo/tcbEvaluationDataNumber", &tcbEvaluationNumber);
-    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber));
+    json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(
+        json_body.flatten(),
+        "/tcbInfo/tcbEvaluationDataNumber",
+        &tcbInfoTcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbInfoTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    json_body = nlohmann::json::parse(collateral->qe_identity);
+    extract_from_json(
+        json_body.flatten(),
+        "/enclaveIdentity/tcbEvaluationDataNumber",
+        &enclaveIdentityTcbEvaluationDataNumber);
+    ASSERT_TRUE(enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -621,7 +633,7 @@ static void GetVerificationCollateralTestICXV3WithParams()
         json_body.flatten(),
         "/tcbInfo/tcbEvaluationDataNumber",
         &tcbEvaluationNumber);
-    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber) != 0);
+    ASSERT_TRUE(tcbEvaluationNumber.compare(tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -668,7 +680,7 @@ static void GetRootCACrlTest()
 #ifdef __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
 #else
-constexpr auto CURL_TOLERANCE = 0.004;
+constexpr auto CURL_TOLERANCE = 0.008;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -702,7 +714,6 @@ static inline void VerifyDurationChecks(
         EXPECT_TRUE(
             fabs(duration_curl_verification - duration_local_verification) >
             CURL_TOLERANCE);
-
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
         EXPECT_TRUE(
             duration_local_verification <
@@ -717,6 +728,29 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     GetCrlTest();
     auto duration_curl_verification =
         MeasureFunction(GetVerificationCollateralTest);
+    GetRootCACrlTest();
+
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    auto duration_local_cert = MeasureFunction(GetCertsTest);
+    GetCrlTest();
+    GetRootCACrlTest();
+    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTest);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification,
+        duration_curl_cert,
+        duration_curl_verification,
+        caching_enabled);
+    return true;
+}
+
+boolean RunQuoteProviderTestsWithCustomParams(bool caching_enabled = false)
+{
+    local_cache_clear();
+    auto duration_curl_cert = MeasureFunction(GetCertsTest);
+    GetCrlTest();
     auto duration_curl_verification_with_params =
         MeasureFunction(GetVerificationCollateralTestWithParams);
     GetRootCACrlTest();
@@ -727,15 +761,8 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     auto duration_local_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
     GetRootCACrlTest();
-    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTest);
     auto duration_local_verification_with_params =
         MeasureFunction(GetVerificationCollateralTestWithParams);
-    VerifyDurationChecks(
-        duration_local_cert,
-        duration_local_verification,
-        duration_curl_cert,
-        duration_curl_verification,
-        caching_enabled);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification_with_params,
@@ -770,12 +797,6 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
-        caching_enabled);
-    VerifyDurationChecks(
-        duration_local_cert,
-        duration_local_verification_with_params,
-        duration_curl_cert,
-        duration_curl_verification_with_params,
         caching_enabled);
     return true;
 }
@@ -949,7 +970,8 @@ boolean RunCachePermissionTests(libary_type_t* library)
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
-        {GENERIC_WRITE, DENY_ACCESS}};
+        {GENERIC_WRITE, DENY_ACCESS}
+    };
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
@@ -972,6 +994,49 @@ boolean RunCachePermissionTests(libary_type_t* library)
         RunQuoteProviderTests(true);
         change_permission(permission_folder, permission);
         RunQuoteProviderTests(false);
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
+    }
+
+    return true;
+}
+
+boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* library)
+{
+#if defined __LINUX__
+    auto permission_folder = "./test_permission";
+    int permissions[] = {0700, 0400, 0200, 0000};
+    setenv("AZDCAP_CACHE", permission_folder, 1);
+#else
+    auto permission_folder = ".\\test_permission";
+    permission_type_t permissions[] = {
+        {STANDARD_RIGHTS_ALL, SET_ACCESS},
+        {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
+        {GENERIC_READ, DENY_ACCESS},
+        {GENERIC_WRITE, DENY_ACCESS}
+    };
+    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
+#endif
+
+    // Create the parent folder before the library runs
+    for (auto permission : permissions)
+    {
+        ReloadLibrary(library);
+        make_folder(permission_folder, permission);
+        RunQuoteProviderTestsWithCustomParams(is_caching_allowed(permission));
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
+    }
+
+    // Change the permissions on the parent folder after the
+    // library has used it
+    for (auto permission : permissions)
+    {
+        ReloadLibrary(library);
+        make_folder(permission_folder, permissions[0]);
+        RunQuoteProviderTestsWithCustomParams(true);
+        change_permission(permission_folder, permission);
+        RunQuoteProviderTestsWithCustomParams(false);
         allow_access(permission_folder);
         remove_folder(permission_folder);
     }
@@ -1137,7 +1202,7 @@ TEST(testQuoteProv, testWithoutLogging)
     //
     SetupEnvironment("v2");
     ReloadLibrary(&library, false);
-    ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1156,8 +1221,29 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
     // Get the data from the service
     //
     SetupEnvironment("v2");
+    SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
     ASSERT_TRUE(RunCachePermissionTests(&library));
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironment("v2");
+    SetupEnvironmentToReachSecondary();
+    ReloadLibrary(&library, false);
+    ASSERT_TRUE(RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
 
 #if defined __LINUX__
     dlclose(library);
