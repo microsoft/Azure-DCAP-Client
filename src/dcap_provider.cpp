@@ -1073,7 +1073,7 @@ static std::string build_tcb_info_url(
     {
         tcb_info_url << "clientid=" << client_id << "&";
     }
-    tcb_info_url << API_VERSION_02_2020;
+    tcb_info_url << API_VERSION_10_2018;
     return tcb_info_url.str();
 }
 
@@ -1153,7 +1153,7 @@ static std::string build_enclave_id_url(
     {
         qe_id_url << "clientid=" << client_id << '&';
     }
-    qe_id_url << API_VERSION_02_2020;
+    qe_id_url << API_VERSION_10_2018;
     return qe_id_url.str();
 }
 
