@@ -1026,13 +1026,13 @@ char get_base64_char(uint8_t val)
             // Add padding for the remianing bits
             encoded_string.push_back('=');
         }
-    return encoded_string;
     }
-    catch(exception SGX_QL_ERROR_INVALID_PARAMETER)
+    catch(exception& SGX_QL_ERROR_INVALID_PARAMETER)
     {
         log(SGX_QL_LOG_ERROR, "Incorrect parameter passed for encoding.");
         throw SGX_QL_ERROR_INVALID_PARAMETER;
     }
+    return encoded_string;
 }
 
 static std::string build_tcb_info_url(
@@ -1060,7 +1060,7 @@ static std::string build_tcb_info_url(
         {
             encoded_str = base64_encode(custom_param, custom_param_length);
         }
-        catch (exception e)
+        catch (exception& e)
         {
             log(SGX_QL_LOG_ERROR, "TCB_Info_URL: Invalid parameters provided.");
             throw e;
@@ -1073,7 +1073,7 @@ static std::string build_tcb_info_url(
     {
         tcb_info_url << "clientid=" << client_id << "&";
     }
-    tcb_info_url << API_VERSION_10_2018;
+    tcb_info_url << API_VERSION_02_2020;
     return tcb_info_url.str();
 }
 
@@ -1093,7 +1093,7 @@ static std::string build_tcb_info_url(
             build_tcb_info_url(fmspc, custom_param, custom_param_length);
         return tcb_info_url;
     }
-    catch (exception e)
+    catch (exception& e)
     {
         throw e;
     }
@@ -1141,7 +1141,7 @@ static std::string build_enclave_id_url(
         {
             encoded_str = base64_encode(custom_param, custom_param_length);
         }
-        catch (exception e)
+        catch (exception& e)
         {
             log(SGX_QL_LOG_ERROR, "Enclave_Id_URL: Invalid parameters provided.");
             throw e;
@@ -1153,7 +1153,7 @@ static std::string build_enclave_id_url(
     {
         qe_id_url << "clientid=" << client_id << '&';
     }
-    qe_id_url << API_VERSION_10_2018;
+    qe_id_url << API_VERSION_02_2020;
     return qe_id_url.str();
 }
 
@@ -1778,7 +1778,7 @@ extern "C" sgx_plat_error_t sgx_get_qe_identity_info(
         {
             qe_id_url = build_enclave_id_url(false, issuer_chain_header);
         }
-        catch (exception e)
+        catch (exception& e)
         {
             log(SGX_QL_LOG_ERROR, "QE_ID_URL can't be formed. Validate the parameters passed.");
             return SGX_PLAT_ERROR_INVALID_PARAMETER;
@@ -2075,7 +2075,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             qe_identity_url = build_enclave_id_url(
                 false, issuer_chain_header, custom_param, custom_param_length);
         }
-        catch (exception e)
+        catch (exception& e)
         {
             log(SGX_QL_LOG_ERROR,
                 "QE_IDENTITY_URL can't be formed. Validate the parameters passed.");
@@ -2256,7 +2256,7 @@ extern "C" quote3_error_t sgx_ql_get_qve_identity(
                 return SGX_QL_ERROR_INVALID_PARAMETER;
             }
         }
-        catch (exception e)
+        catch (exception& e)
         {
             log(SGX_QL_LOG_ERROR, "QVE_URL can't be formed. Validate the parameters passed.");
             return SGX_QL_ERROR_INVALID_PARAMETER;
