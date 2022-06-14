@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <sstream>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -114,5 +115,7 @@ typedef void (
 /// Set the callback used for recording log information.
 typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(
     sgx_ql_logging_function_t logger);
+
+const std::string customParam = "customParameter";
 
 #endif // #ifndef PLATFORM_QUOTE_PROVIDER_H

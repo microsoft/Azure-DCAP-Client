@@ -68,6 +68,14 @@ typedef quote3_error_t (*sgx_ql_get_quote_verification_collateral_t)(
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral);
 
+typedef quote3_error_t (*sgx_ql_get_quote_verification_collateral_with_params_t)(
+    const uint8_t* fmspc,
+    const uint16_t fmspc_size,
+    const char* pck_ca,
+    const void* custom_param,
+    const uint16_t custom_param_length,
+    sgx_ql_qve_collateral_t** pp_quote_collateral);
+
 typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     char** pp_qve_identity,
     uint32_t* p_qve_identity_size,
@@ -93,12 +101,18 @@ static sgx_ql_free_qve_identity_t sgx_ql_free_qve_identity;
 static sgx_ql_free_root_ca_crl_t sgx_ql_free_root_ca_crl;
 static sgx_ql_get_quote_verification_collateral_t
     sgx_ql_get_quote_verification_collateral;
+static sgx_ql_get_quote_verification_collateral_with_params_t
+    sgx_ql_get_quote_verification_collateral_with_params;
 static sgx_ql_get_qve_identity_t sgx_ql_get_qve_identity;
 static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 
 // Test FMSPC
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
 static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
+
+const uint16_t custom_param_length = 45;
+const char *custom_param = "tcbEvaluationDataNumber=11;region=us central";
+std::string tcbEvaluationDataNumber = "11";
 
 // Test input (choose an arbitrary Azure server)
 static uint8_t qe_id[16] = {
@@ -205,6 +219,8 @@ static void Log(sgx_ql_log_level_t level, const char* message)
     printf("[%s]: %s\n", levelText, message);
 }
 
+
+
 #if defined __LINUX__
 static void* LoadFunctions()
 {
@@ -252,6 +268,11 @@ static void* LoadFunctions()
     sgx_ql_free_root_ca_crl = reinterpret_cast<sgx_ql_free_root_ca_crl_t>(
         dlsym(library, "sgx_ql_free_root_ca_crl"));
     EXPECT_NE(sgx_ql_free_root_ca_crl, nullptr);
+
+    sgx_ql_get_quote_verification_collateral_with_params = reinterpret_cast<
+        sgx_ql_get_quote_verification_collateral_with_params_t>(
+        dlsym(library, "sgx_ql_get_quote_verification_collateral_with_params"));
+    EXPECT_NE(sgx_ql_get_quote_verification_collateral_with_params, nullptr);
 
     sgx_ql_get_quote_verification_collateral =
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
@@ -321,6 +342,11 @@ static HINSTANCE LoadFunctions()
                 hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
+    sgx_ql_get_quote_verification_collateral_with_params = reinterpret_cast<
+        sgx_ql_get_quote_verification_collateral_with_params_t>(GetProcAddress(
+        hLibCapdll, "sgx_ql_get_quote_verification_collateral_with_params"));
+    EXPECT_NE(sgx_ql_get_quote_verification_collateral_with_params, nullptr);
+
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_qve_identity"));
     EXPECT_NE(sgx_ql_get_qve_identity, nullptr);
@@ -332,6 +358,33 @@ static HINSTANCE LoadFunctions()
     return hLibCapdll;
 }
 #endif
+
+//
+// extract raw value from response body, if exists
+//
+sgx_plat_error_t extract_from_json(
+    const nlohmann::json& json,
+    const std::string& item,
+    std::string* out_header)
+{
+    try
+    {
+        nlohmann::json raw_value = json[item];
+        if (!raw_value.is_string())
+        {
+            raw_value = raw_value.dump();
+        }
+        if (out_header != nullptr)
+        {
+            *out_header = raw_value;
+        }
+    }
+    catch (const exception& ex)
+    {
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    return SGX_PLAT_ERROR_OK;
+}
 
 //
 // Fetches and validates certification data for a platform
@@ -512,6 +565,40 @@ static void GetVerificationCollateralTest()
 }
 
 //
+// Fetches and validates verification APIs of QPL with custom params provided
+//
+static void GetVerificationCollateralTestWithParams()
+{
+    // Test input (choose an arbitrary Azure server)
+ 
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    std::string tcbInfoTcbEvaluationDataNumber;
+    std::string enclaveIdentityTcbEvaluationDataNumber;
+    nlohmann::json json_body;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+            TEST_FMSPC,
+            sizeof(TEST_FMSPC),
+            "processor",
+            custom_param,
+            custom_param_length,
+            &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(
+        json_body.flatten(),
+        "/tcbInfo/tcbEvaluationDataNumber",
+        &tcbInfoTcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbInfoTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    json_body = nlohmann::json::parse(collateral->qe_identity);
+    extract_from_json(
+        json_body.flatten(),
+        "/enclaveIdentity/tcbEvaluationDataNumber",
+        &enclaveIdentityTcbEvaluationDataNumber);
+    ASSERT_TRUE(enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    VerifyCollateral(collateral);
+}
+
+//
 // Fetches and validates verification APIs of QPL
 //
 static void GetVerificationCollateralTestICXV3()
@@ -523,6 +610,38 @@ static void GetVerificationCollateralTestICXV3()
         "platform",
         &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateral(collateral);
+}
+
+//
+// Fetches and validates verification APIs of QPL with custom params provided
+//
+static void GetVerificationCollateralTestICXV3WithParams()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    std::string tcbEvaluationDataNumber;
+    std::string enclaveIdentityTcbEvaluationDataNumber;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+            ICX_TEST_FMSPC,
+            sizeof(ICX_TEST_FMSPC),
+            "platform",
+            custom_param,
+            custom_param_length, 
+            &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(
+        json_body.flatten(),
+        "/tcbInfo/tcbEvaluationDataNumber",
+        &tcbEvaluationDataNumber);
+    ASSERT_TRUE(tcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    json_body = nlohmann::json::parse(collateral->qe_identity);
+    extract_from_json(
+        json_body.flatten(),
+        "/enclaveIdentity/tcbEvaluationDataNumber",
+        &enclaveIdentityTcbEvaluationDataNumber);
+    ASSERT_TRUE(
+        enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -569,7 +688,7 @@ static void GetRootCACrlTest()
 #ifdef __LINUX__
 constexpr auto CURL_TOLERANCE = 0.002;
 #else
-constexpr auto CURL_TOLERANCE = 0.004;
+constexpr auto CURL_TOLERANCE = 0.008;
 #endif
 
 static inline float MeasureFunction(measured_function_t func)
@@ -603,7 +722,6 @@ static inline void VerifyDurationChecks(
         EXPECT_TRUE(
             fabs(duration_curl_verification - duration_local_verification) >
             CURL_TOLERANCE);
-
         constexpr int NUMBER_VERIFICATION_CURL_CALLS = 4;
         EXPECT_TRUE(
             duration_local_verification <
@@ -636,6 +754,33 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     return true;
 }
 
+boolean RunQuoteProviderTestsWithCustomParams(bool caching_enabled = false)
+{
+    local_cache_clear();
+    auto duration_curl_cert = MeasureFunction(GetCertsTest);
+    GetCrlTest();
+    auto duration_curl_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestWithParams);
+    GetRootCACrlTest();
+
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    auto duration_local_cert = MeasureFunction(GetCertsTest);
+    GetCrlTest();
+    GetRootCACrlTest();
+    auto duration_local_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestWithParams);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification_with_params,
+        duration_curl_cert,
+        duration_curl_verification_with_params,
+        caching_enabled);
+
+    return true;
+}
+
 boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
 {
     local_cache_clear();
@@ -656,6 +801,32 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
         duration_local_verification,
         duration_curl_cert,
         duration_curl_verification,
+        caching_enabled);
+    return true;
+}
+
+boolean RunQuoteProviderTestsICXV3WithParam(bool caching_enabled = false)
+{
+    local_cache_clear();
+    auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
+    GetCrlTestICXV3();
+    auto duration_curl_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+    GetRootCACrlTest();
+
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
+    GetCrlTestICXV3();
+    GetRootCACrlTest();
+    auto duration_local_verification_with_params =
+        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_local_verification_with_params,
+        duration_curl_cert,
+        duration_curl_verification_with_params,
         caching_enabled);
     return true;
 }
@@ -829,7 +1000,8 @@ boolean RunCachePermissionTests(libary_type_t* library)
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
-        {GENERIC_WRITE, DENY_ACCESS}};
+        {GENERIC_WRITE, DENY_ACCESS}
+    };
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
@@ -852,6 +1024,49 @@ boolean RunCachePermissionTests(libary_type_t* library)
         RunQuoteProviderTests(true);
         change_permission(permission_folder, permission);
         RunQuoteProviderTests(false);
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
+    }
+
+    return true;
+}
+
+boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* library)
+{
+#if defined __LINUX__
+    auto permission_folder = "./test_permission";
+    int permissions[] = {0700, 0400, 0200, 0000};
+    setenv("AZDCAP_CACHE", permission_folder, 1);
+#else
+    auto permission_folder = ".\\test_permission";
+    permission_type_t permissions[] = {
+        {STANDARD_RIGHTS_ALL, SET_ACCESS},
+        {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
+        {GENERIC_READ, DENY_ACCESS},
+        {GENERIC_WRITE, DENY_ACCESS}
+    };
+    EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
+#endif
+
+    // Create the parent folder before the library runs
+    for (auto permission : permissions)
+    {
+        ReloadLibrary(library);
+        make_folder(permission_folder, permission);
+        RunQuoteProviderTestsWithCustomParams(is_caching_allowed(permission));
+        allow_access(permission_folder);
+        remove_folder(permission_folder);
+    }
+
+    // Change the permissions on the parent folder after the
+    // library has used it
+    for (auto permission : permissions)
+    {
+        ReloadLibrary(library);
+        make_folder(permission_folder, permissions[0]);
+        RunQuoteProviderTestsWithCustomParams(true);
+        change_permission(permission_folder, permission);
+        RunQuoteProviderTestsWithCustomParams(false);
         allow_access(permission_folder);
         remove_folder(permission_folder);
     }
@@ -978,6 +1193,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -998,6 +1214,7 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     SetupEnvironment("v3");
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1017,7 +1234,7 @@ TEST(testQuoteProv, testWithoutLogging)
     //
     SetupEnvironment("v2");
     ReloadLibrary(&library, false);
-    ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1036,8 +1253,29 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
     // Get the data from the service
     //
     SetupEnvironment("v2");
+    SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
     ASSERT_TRUE(RunCachePermissionTests(&library));
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironment("v2");
+    SetupEnvironmentToReachSecondary();
+    ReloadLibrary(&library, false);
+    ASSERT_TRUE(RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
 
 #if defined __LINUX__
     dlclose(library);
