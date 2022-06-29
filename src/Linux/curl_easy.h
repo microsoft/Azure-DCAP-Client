@@ -66,7 +66,6 @@ class curl_easy
         size_t size,
         size_t nmemb,
         void* user_data);
-        void* user_data);
 
 #pragma warning( \
     suppress : 25033 25057) // CURL defines input buffers as non-const
