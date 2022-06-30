@@ -26,6 +26,5 @@ To build the installer Visual Studio 2017 or 2019 and the WIX toolset are requir
 
 # Packaging
 1. Run the build script in Release mode
-1. Run `nuget pack` in the GeneratePackage directory. If you need to bump the version number
-or any other info, update the *.nuspec file.
+1. Run `nuget pack` in the GeneratePackage directory. If you need to bump the version number or any other info, update the *.nuspec file.
 > If you get an error like "The element 'metadata' in namespace..." Please use a newer version of nuget.exe
