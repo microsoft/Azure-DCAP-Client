@@ -87,11 +87,12 @@ def ACCTestOeRelease(String label, String version) {
                     sudo apt-get upgrade -y az-dcap-client
                     sudo apt-get update
                     sudo apt-get install -y open-enclave
+                    /opt/openenclave/bin/oeapkman root
+                    echo ***************************      ***********     ****************************
                     . /opt/openenclave/share/openenclave/openenclaverc
                     cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
-                    /opt/openenclave/bin/oeapkman root
-                    echo"***************************      ***********     ****************************"
                     for DIR in \$(find ~/samples/* -maxdepth 0 -type d); do
+                        echo $DIR 
                         cd \$DIR
                         make build
                         make run
