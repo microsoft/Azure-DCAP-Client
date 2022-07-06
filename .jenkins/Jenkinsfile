@@ -122,6 +122,8 @@ def ACCTestOeRelease(String label, String version) {
                         sudo apt-get install -y open-enclave
                         . /opt/openenclave/share/openenclave/openenclaverc
                         cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
+                        /opt/openenclave/bin/oeapkman root
+                        echo"***************************      ***********     ****************************"
                         for DIR in \$(find ~/samples/* -maxdepth 0 -type d); do
                             cd \$DIR
                             make build
