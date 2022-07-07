@@ -1255,9 +1255,15 @@ static quote3_error_t get_collateral(
             "curl error thrown, error code: %x: %s",
             error.code,
             error.what());
-        return error.code == CURLE_HTTP_RETURNED_ERROR
+        #ifdef __LINUX__
+            return error.code == CURLE_HTTP_RETURNED_ERROR
                    ? SGX_QL_NO_QUOTE_COLLATERAL_DATA
                    : SGX_QL_NETWORK_ERROR;
+        #else
+            return error.code == WINHTTP_ERROR_BASE
+                   ? SGX_QL_NO_QUOTE_COLLATERAL_DATA
+                   : SGX_QL_NETWORK_ERROR;
+        #endif
     }
 }
 

@@ -114,6 +114,9 @@ const uint16_t custom_param_length = 45;
 const char *custom_param = "tcbEvaluationDataNumber=11;region=us central";
 std::string tcbEvaluationDataNumber = "11";
 
+const uint16_t incorrect_custom_param_length = 24;
+const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
+
 // Test input (choose an arbitrary Azure server)
 static uint8_t qe_id[16] = {
     0x00,
@@ -599,6 +602,25 @@ static void GetVerificationCollateralTestWithParams()
 }
 
 //
+// Validates the return code if curl request to the THIM service failed.
+//
+static void GetVerificationCollateralTestWithIncorrectParams()
+{
+    // Test input (choose an arbitrary Azure server)
+
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    nlohmann::json json_body;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+            TEST_FMSPC,
+            sizeof(TEST_FMSPC),
+            "processor",
+            incorrect_custom_param,
+            incorrect_custom_param_length,
+            &collateral);
+    ASSERT_TRUE(SGX_QL_NO_QUOTE_COLLATERAL_DATA == result);
+}
+
+//
 // Fetches and validates verification APIs of QPL
 //
 static void GetVerificationCollateralTestICXV3()
@@ -643,6 +665,22 @@ static void GetVerificationCollateralTestICXV3WithParams()
     ASSERT_TRUE(
         enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
+}
+
+//
+// Validates the return code if curl request to the THIM service failed.
+//
+static void GetVerificationCollateralTestICXV3WithIncorrectParams()
+{
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+            ICX_TEST_FMSPC,
+            sizeof(ICX_TEST_FMSPC),
+            "platform",
+            incorrect_custom_param,
+            incorrect_custom_param_length,
+            &collateral);
+    ASSERT_TRUE(SGX_QL_NO_QUOTE_COLLATERAL_DATA == result);
 }
 
 static boolean GetQveIdentityTest()
@@ -1153,6 +1191,7 @@ TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
     SetupEnvironment("v2");
     SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1172,6 +1211,7 @@ TEST(testQuoteProv, quoteProviderTestsV2Data)
     //
     SetupEnvironment("v2");
     ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1224,6 +1264,25 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
 #endif
 }
 
+TEST(testQuoteProv, quoteProviderTestsWithIncorrectCustomParam)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironment("v2");
+    GetVerificationCollateralTestWithIncorrectParams();
+    SetupEnvironment("v3");
+    GetVerificationCollateralTestICXV3WithIncorrectParams();
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
 TEST(testQuoteProv, testWithoutLogging)
 {
     libary_type_t library = LoadFunctions();

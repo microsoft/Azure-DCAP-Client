@@ -120,6 +120,7 @@ def ACCTestOeRelease(String label, String version) {
                         sudo dpkg -i ${WORKSPACE}/src/az-dcap-client_*_amd64.deb
                         sudo apt-get update
                         sudo apt-get install -y open-enclave
+                        /opt/openenclave/bin/oeapkman root
                         . /opt/openenclave/share/openenclave/openenclaverc
                         cp -r /opt/openenclave/share/openenclave/samples/ ~/samples
                         for DIR in \$(find ~/samples/* -maxdepth 0 -type d); do
@@ -135,7 +136,7 @@ def ACCTestOeRelease(String label, String version) {
                 else
                 {
                     dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx:/dev/sgx --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
-                } 			
+                }
 			}
         }
     }
