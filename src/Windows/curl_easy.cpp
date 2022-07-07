@@ -309,8 +309,7 @@ void curl_easy::perform() const
         }
 
         DWORD response_code = get_response_code();
-        if (response_code >= HTTP_STATUS_BAD_REQUEST &&
-            response_code <= HTTP_STATUS_SERVER_ERROR)
+        if (response_code >= HTTP_STATUS_BAD_REQUEST)
         {
             log(SGX_QL_LOG_INFO,
                 "HTTP Error (%d) on curl->perform() request",

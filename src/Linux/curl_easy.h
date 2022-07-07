@@ -15,7 +15,6 @@
 #include <vector>
 #include <curl/curl.h>
 
-const uint32_t WINHTTP_ERROR_BASE = 12000;
 //
 // RAII wrapper around Curl to make resource management exception-safe. This
 // class also converts
