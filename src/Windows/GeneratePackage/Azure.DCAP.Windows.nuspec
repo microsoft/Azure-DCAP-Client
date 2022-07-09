@@ -2,12 +2,15 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.10.0</version>
+        <version>1.11.2</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <releaseNotes>Set default collateral version to v3</releaseNotes>
+        <releaseNotes>
+		*Enable certificate fetch from host agent for quote generation
+  		*Enable customer to provide tcb baseline for evidence verification
+	  </releaseNotes>
         <description>
             This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
             This provider plugin is then used to fetch certain data files, such as platform certificates, TCB structures, and revocation lists.

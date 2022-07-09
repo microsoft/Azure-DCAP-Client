@@ -1,3 +1,9 @@
+az-dcap-client (1.11.2) stable; urgency=medium
+  * Enable certificate fetch from host agent for quote generation
+  * Enable customer to provide tcb baseline for evidence verification
+
+ -- Gunjan Munjal<gumunjal@microsoft.com>  Thu, 7 July 2022 19:56:00 -0700
+
 az-dcap-client (1.10) stable; urgency=medium
   * Set default collateral version to v3
 
