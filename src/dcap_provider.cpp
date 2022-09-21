@@ -1315,6 +1315,7 @@ bool fetch_response(
         log(SGX_QL_LOG_WARNING,
             "Runtime exception thrown, error: %s",
             error.what());
+        retval = SGX_QL_ERROR_UNEXPECTED;
     }
     catch (const curl_easy::error& error)
     {
@@ -1322,12 +1323,14 @@ bool fetch_response(
             "error thrown, error code: %x: %s",
             error.code,
             error.what());
+        retval = SGX_QL_NETWORK_ERROR;
     }
     catch (const std::exception& error)
     {
         log(SGX_QL_LOG_ERROR,
             "Unknown exception thrown, error: %s",
             error.what());
+        retval = SGX_QL_ERROR_UNEXPECTED;
     }
     return fetch_response;
 }
