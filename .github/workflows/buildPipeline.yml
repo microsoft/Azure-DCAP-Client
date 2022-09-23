@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Build and test
 
 # Controls when the workflow will run
 on:
@@ -16,23 +16,25 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  ACCTest:
+  ACCTest:  
     
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+        
+    # Launch a VM and build once per each combination of linux image and buildType
     strategy:
       matrix:
         image: [Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest, Canonical:UbuntuServer:18_04-lts-gen2:latest]
-        vmImageName: [Ubuntu20_04, Ubuntu18_04]
+        buildType: [RelWithDebInfo, Debug]
         include:
           - image: Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest
-            vmImageName: Ubuntu20_04
+            imageVmName: Ubuntu20_04
           - image: Canonical:UbuntuServer:18_04-lts-gen2:latest
-            vmImageName: Ubuntu18_04
-    
-    runs-on: ubuntu-latest
-        
+            imageVmName: Ubuntu18_04
+            
     # Job environment variables
     env:
-      vmName: "dcapACCTestBuildVM${{ github.run_number }}$vmImageName"
+      vmName: join([dcapACCTestBuildVM, ${{ github.run_number }}, $imageVmName, $buildType], '')
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -60,21 +62,21 @@ jobs:
           inlineScript: |
             az account show --query id
             
-      - name: Create VM
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.30.0
-          inlineScript: |
-            az vm create \
-              --resource-group dcap-github-actions-agents-rg \
-              --name $vmName \
-              --image Canonical:0001-com-ubuntu-server-focal:$vmImageName:latest \
-              --size Standard_DC4s_v2 \
-              --admin-username secrets.BUILD_VM_USERNAME \
-              --admin-password secrets.BUILD_VM_PASSWORD \
-              --nic-delete-option delete \
-              --os-disk-delete-option delete \
-              --public-ip-sku Standard
+#      - name: Create VM
+#        uses: azure/CLI@v1
+#        with:
+#          azcliversion: 2.30.0
+#          inlineScript: |
+#            az vm create \
+#              --resource-group dcap-github-actions-agents-rg \
+#              --name $vmName \
+#              --image $image \
+#              --size Standard_DC4s_v2 \
+#              --admin-username secrets.BUILD_VM_USERNAME \
+#              --admin-password secrets.BUILD_VM_PASSWORD \
+#              --nic-delete-option delete \
+#              --os-disk-delete-option delete \
+#              --public-ip-sku Standard
             
   
       
