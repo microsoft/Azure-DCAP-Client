@@ -43,8 +43,8 @@ jobs:
       - uses: actions/checkout@v3
 
       # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo $vmName
+      # - name: Run a one-line script
+      #   run: echo $vmName
 
       # Runs a set of commands using the runners shell
       # - name: Run a multi-line script
@@ -55,30 +55,34 @@ jobs:
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
-      - name: Test login
+            
+      - name: Create VM
         uses: azure/CLI@v1
         with:
           azcliversion: 2.30.0
           inlineScript: |
-            az account show
-            az storage -h
+            az vm create \
+              --resource-group dcap-github-actions-agents-rg \
+              --name $vmName \
+              --image ${{ matrix.image }} \
+              --size Standard_DC4s_v2 \
+              --admin-username secrets.BUILD_VM_USERNAME \
+              --admin-password secrets.BUILD_VM_PASSWORD \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
             
-#      - name: Create VM
-#        uses: azure/CLI@v1
-#        with:
-#          azcliversion: 2.30.0
-#          inlineScript: |
-#            az vm create \
-#              --resource-group dcap-github-actions-agents-rg \
-#              --name $vmName \
-#              --image $image \
-#              --size Standard_DC4s_v2 \
-#              --admin-username secrets.BUILD_VM_USERNAME \
-#              --admin-password secrets.BUILD_VM_PASSWORD \
-#              --nic-delete-option delete \
-#              --os-disk-delete-option delete \
-#              --public-ip-sku Standard
-            
+      - name: Sleep to check VM existence through Azure portal
+        run: sleep 180
   
+      - name: Delete VM
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az vm delete \
+              -g dcap-github-actions-agents-rg \
+              -n vmName \
+              --yes
+
       
