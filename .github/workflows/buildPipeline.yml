@@ -83,7 +83,7 @@ jobs:
           inlineScript: |
             az vm delete \
               -g dcap-github-actions-agents-rg \
-              -n vmName \
+              -n $vmName \
               --yes
 
       
