@@ -16,18 +16,32 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  ACCTest:
+    
+    strategy:
+      matrix:
+        image: [Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest, Canonical:UbuntuServer:18_04-lts-gen2:latest]
+        vmImageName: [Ubuntu20_04, Ubuntu18_04]
+        include:
+          - image: Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest
+            vmImageName: Ubuntu20_04
+          - image: Canonical:UbuntuServer:18_04-lts-gen2:latest
+            vmImageName: Ubuntu18_04
+    
     runs-on: ubuntu-latest
-
+        
+    # Job environment variables
+    env:
+      vmName: "dcapACCTestBuildVM${{ github.run_number }}$vmImageName"
+      
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
       # Runs a single command using the runners shell
-      # - name: Run a one-line script
-      #   run: echo Hello, world!
+      - name: Run a one-line script
+        run: echo $vmName
 
       # Runs a set of commands using the runners shell
       # - name: Run a multi-line script
@@ -39,11 +53,28 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           
-      - name: Azure CLI script
+      - name: Test login
         uses: azure/CLI@v1
         with:
           azcliversion: 2.30.0
           inlineScript: |
-            az account show --output table
+            az account show --query id
+            
+      - name: Create VM
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az vm create \
+              --resource-group dcap-github-actions-agents-rg \
+              --name $vmName \
+              --image Canonical:0001-com-ubuntu-server-focal:$vmImageName:latest \
+              --size Standard_DC4s_v2 \
+              --admin-username secrets.BUILD_VM_USERNAME \
+              --admin-password secrets.BUILD_VM_PASSWORD \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+            
   
       
