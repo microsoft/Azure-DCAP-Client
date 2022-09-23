@@ -17,21 +17,21 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   ACCTest:  
-    
-    # OS of the Github VM calling Azure CLI
-    runs-on: ubuntu-latest
         
     # Launch a VM and build once per each combination of linux image and buildType
     strategy:
       matrix:
-        image: [Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest, Canonical:UbuntuServer:18_04-lts-gen2:latest]
+        image: ["Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest", "Canonical:UbuntuServer:18_04-lts-gen2:latest"]
         buildType: [RelWithDebInfo, Debug]
         include:
-          - image: Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest
+          - image: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageVmName: Ubuntu20_04
-          - image: Canonical:UbuntuServer:18_04-lts-gen2:latest
+          - image: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
             imageVmName: Ubuntu18_04
             
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
     # Job environment variables
     env:
       vmName: join([dcapACCTestBuildVM, ${{ github.run_number }}, $imageVmName, $buildType], '')
