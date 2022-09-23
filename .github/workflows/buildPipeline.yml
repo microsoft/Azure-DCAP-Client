@@ -61,7 +61,8 @@ jobs:
         with:
           azcliversion: 2.30.0
           inlineScript: |
-            az account show --query id
+            az account show
+            az storage -h
             
 #      - name: Create VM
 #        uses: azure/CLI@v1
