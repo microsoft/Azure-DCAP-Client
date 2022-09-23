@@ -66,8 +66,8 @@ jobs:
               --name $vmName \
               --image ${{ matrix.image }} \
               --size Standard_DC4s_v2 \
-              --admin-username secrets.BUILD_VM_USERNAME \
-              --admin-password secrets.BUILD_VM_PASSWORD \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
               --os-disk-delete-option delete \
               --public-ip-sku Standard
