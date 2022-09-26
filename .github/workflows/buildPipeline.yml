@@ -241,15 +241,27 @@ jobs:
               --name "installGoogleTest" \
               --instance-view    
               
-      - name: Clone Azure DCAP
-        uses: azure/CLI@v1
+      # extract branch name
+      - name: Extract branch name
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: echo "::set-env name=branchName::$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      # extract branch name on pull request
+      - name: Print branch name
+        if: github.event_name == 'pull_request'
+        run: echo "::set-env name=branchName::$(echo ${GITHUB_HEAD_REF})"
+              
+      - name: Clone Azure DCAP 
+        uses: nelonoel/branch-name@v1.0.1
         with:
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneAzureDcap" \
-              --script "git clone -b ${{ github.ref_name }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
+              --script "git clone -b ${branchName} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
