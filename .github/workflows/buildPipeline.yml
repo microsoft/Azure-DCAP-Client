@@ -36,6 +36,7 @@ jobs:
     # Job environment variables
     env:
       vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageVmName }}${{ matrix.buildType }}
+      rgName: dcap-github-actions-agents-rg
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -63,7 +64,7 @@ jobs:
           azcliversion: 2.30.0
           inlineScript: |
             az vm create \
-              --resource-group dcap-github-actions-agents-rg \
+              --resource-group $rgName \
               --name $vmName \
               --image ${{ matrix.image }} \
               --size Standard_DC1s_v2 \
@@ -72,18 +73,46 @@ jobs:
               --nic-delete-option delete \
               --os-disk-delete-option delete \
               --public-ip-sku Standard
+              
+      - name: Call a function in the VM
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "test" \
+              --script "lsb_release -a"   
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "test" \
+              --instance-view       
             
-      - name: Sleep to check VM existence through Azure portal
-        run: sleep 180
-  
-      - name: Delete VM
+      - name: Break the build process to confirm that cleanup is still performed
+        run: wronginstruction.exe
+
+      - name: Cleanup
+        if: always()
         uses: azure/CLI@v1
         with:
           azcliversion: 2.30.0
           inlineScript: |
             az vm delete \
-              -g dcap-github-actions-agents-rg \
+              -g $rgName \
               -n $vmName \
               --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups" \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses" \
+              --yes
+              
 
       
