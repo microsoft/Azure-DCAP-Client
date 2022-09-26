@@ -84,6 +84,12 @@ jobs:
               --vm-name $vmName \
               --name "test" \
               --script "lsb_release -a"   
+              
+      - name: Check the output of the previous function
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -106,13 +112,11 @@ jobs:
             az resource delete \
               -g $rgName \
               -n ${{ env.vmName }}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups" \
-              --yes
+              --resource-type "Microsoft.Network/networkSecurityGroups"
             az resource delete \
               -g $rgName \
               -n ${{ env.vmName }}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses" \
-              --yes
+              --resource-type "Microsoft.Network/publicIPAddresses"
               
 
       
