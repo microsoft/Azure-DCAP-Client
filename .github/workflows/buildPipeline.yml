@@ -73,6 +73,9 @@ jobs:
               --os-disk-delete-option delete \
               --public-ip-sku Standard
               
+      - name: Sleep to let the VM start
+        run: sleep 60
+              
       - name: Update apt-get
         uses: azure/CLI@v1
         with:
