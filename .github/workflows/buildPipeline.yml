@@ -4,14 +4,9 @@ name: Build and test
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
-  push:
-    branches: [ "master" ]
+  # Triggers the workflow on pull request events but only for the "master" branch
   pull_request:
     branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -75,6 +70,21 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
+              
+      - name: Clone Azure DCAP 
+        uses: nelonoel/branch-name@v1.0.1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneAzureDcap" \
+              --script "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneAzureDcap" \
+              --instance-view    
               
       - name: Update apt-get
         uses: azure/CLI@v1
@@ -253,20 +263,20 @@ jobs:
         if: github.event_name == 'pull_request'
         run: echo "::set-env name=branchName::$(echo ${GITHUB_HEAD_REF})"
               
-      - name: Clone Azure DCAP 
-        uses: nelonoel/branch-name@v1.0.1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --script "git clone -b ${branchName} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --instance-view    
+#      - name: Clone Azure DCAP 
+#        uses: nelonoel/branch-name@v1.0.1
+#        with:
+#          inlineScript: |
+#            az vm run-command create \
+#              --resource-group $rgName \
+#              --vm-name $vmName \
+#              --name "cloneAzureDcap" \
+#              --script "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
+#            az vm run-command show \
+#              --resource-group $rgName \
+#              --vm-name $vmName \
+#              --name "cloneAzureDcap" \
+#              --instance-view    
               
       - name: Update submodule
         uses: azure/CLI@v1
