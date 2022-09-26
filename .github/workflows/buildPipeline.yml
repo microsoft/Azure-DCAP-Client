@@ -83,7 +83,13 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
-              --script "sudo apt-get update -y"   
+              --script "sudo apt-get update -y"  
+              
+      - name: Check the output of the previous function
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.40.0
+          inlineScript: | 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
