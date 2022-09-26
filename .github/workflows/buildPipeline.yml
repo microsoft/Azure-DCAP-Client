@@ -234,19 +234,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installGoogleTest" \
-              --instance-view    
-              
-      # extract branch name
-      - name: Extract branch name
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: echo "::set-env name=branchName::$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
-
-      # extract branch name on pull request
-      - name: Print branch name
-        if: github.event_name == 'pull_request'
-        run: echo "::set-env name=branchName::$(echo ${GITHUB_HEAD_REF})"
+              --instance-view
               
       - name: Clone Azure DCAP 
         uses: azure/CLI@v1
