@@ -83,7 +83,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
-              --script "lsb_release -a"   
+              --script "exit 1"   
               
       - name: Check the output of the previous function
         uses: azure/CLI@v1
