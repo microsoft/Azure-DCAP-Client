@@ -73,7 +73,7 @@ jobs:
               --os-disk-delete-option delete \
               --public-ip-sku Standard
               
-      - name: Call a function in the VM
+      - name: Execute update apt-get
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -82,18 +82,13 @@ jobs:
               --vm-name $vmName \
               --name "test" \
               --script "sudo apt-get update -y"  
-              
-      - name: Check the output of the previous function
-        uses: azure/CLI@v1
-        with:
-          inlineScript: | 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
               --instance-view      
             
-      - name: Break the build process to confirm that cleanup is still performed
+      - name: Break the build process to stop the following jobs from executing
         run: wronginstruction.exe
 
       - name: Cleanup
