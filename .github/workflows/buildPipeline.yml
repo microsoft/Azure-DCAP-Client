@@ -72,7 +72,7 @@ jobs:
         run: sleep 60
               
       - name: Clone Azure DCAP 
-        uses: nelonoel/branch-name@v1.0.1
+        uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command create \
