@@ -61,7 +61,6 @@ jobs:
       - name: Create VM
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.40.0
           inlineScript: |
             az vm create \
               --resource-group $rgName \
@@ -77,7 +76,6 @@ jobs:
       - name: Call a function in the VM
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.40.0
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
@@ -88,7 +86,6 @@ jobs:
       - name: Check the output of the previous function
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.40.0
           inlineScript: | 
             az vm run-command show \
               --resource-group $rgName \
@@ -103,7 +100,6 @@ jobs:
         if: always()
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.40.0
           inlineScript: |
             az vm delete \
               -g $rgName \
