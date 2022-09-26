@@ -81,7 +81,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updateAptGet" \
-              --script "sudo apt-get update -y" \
+              --script "sudo apt-get update -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -96,7 +96,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installLibSSL" \
-              --script "sudo apt-get install -y libssl-dev" \
+              --script "sudo apt-get install -y libssl-dev" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -111,7 +111,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installOpenSSL" \
-              --script "sudo apt install -y libcurl4-openssl-dev" \
+              --script "sudo apt install -y libcurl4-openssl-dev" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -126,7 +126,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installPkgConfig" \
-              --script "sudo apt-get install -y pkg-config" \
+              --script "sudo apt-get install -y pkg-config" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -141,7 +141,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installBuildEssential" \
-              --script "sudo apt install -y build-essential" \
+              --script "sudo apt install -y build-essential" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -156,7 +156,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installNlohmannJson" \
-              --script "sudo apt-get install -y nlohmann-json3-dev" \
+              --script "sudo apt-get install -y nlohmann-json3-dev" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -171,7 +171,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installSqlite3" \
-              --script "sudo apt-get install -y sqlite3" \
+              --script "sudo apt-get install -y sqlite3" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -186,7 +186,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installSqlite3Dev" \
-              --script "sudo apt-get install -y libsqlite3-dev" \
+              --script "sudo apt-get install -y libsqlite3-dev" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -201,7 +201,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installLibgtest" \
-              --script "sudo apt-get install -y libgtest-dev" \
+              --script "sudo apt-get install -y libgtest-dev" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -216,7 +216,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installCMake" \
-              --script "sudo apt-get install -y cmake" \
+              --script "sudo apt-get install -y cmake" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -231,7 +231,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installGoogleTest" \
-              --script "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib" \
+              --script "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -246,7 +246,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneAzureDcap" \
-              --script "git clone -b ${{ github.ref_name }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" \
+              --script "git clone -b ${{ github.ref_name }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -261,7 +261,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updateSubmodule" \
-              --script "cd /AzureDCAP && git submodule update --init --recursive" \
+              --script "cd /AzureDCAP && git submodule update --init --recursive" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -276,7 +276,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "configureAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && ./configure" \
+              --script "cd /AzureDCAP/src/Linux && ./configure" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -291,7 +291,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && make" \
+              --script "cd /AzureDCAP/src/Linux && make" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -306,7 +306,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeInstallAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && sudo make install" \
+              --script "cd /AzureDCAP/src/Linux && sudo make install" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -321,7 +321,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cmakeDcapTests" \
-              --script "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt" \
+              --script "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -336,7 +336,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeDcapTests" \
-              --script "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make" \
+              --script "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -351,7 +351,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "runDcapTests" \
-              --script "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests" \
+              --script "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
