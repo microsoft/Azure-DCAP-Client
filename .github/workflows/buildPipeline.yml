@@ -81,7 +81,8 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
-              --script "sudo apt-get update -y"  
+              --script "sudo apt-get update -y" \
+              --output none
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
