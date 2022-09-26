@@ -83,18 +83,12 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
-              --script "exit 1"   
-              
-      - name: Check the output of the previous function
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.40.0
-          inlineScript: |
+              --script "sudo apt-get update -y"   
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "test" \
-              --instance-view       
+              --instance-view      
             
       - name: Break the build process to confirm that cleanup is still performed
         run: wronginstruction.exe
