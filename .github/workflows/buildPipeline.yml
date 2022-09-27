@@ -68,6 +68,21 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
+        
+      - name: Break the build
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "break" \
+              --script "set -euo pipefail && break.exe" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "break" \
+              --instance-view
               
       - name: Install software properties common
         uses: azure/CLI@v1
