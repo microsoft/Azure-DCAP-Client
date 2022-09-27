@@ -189,7 +189,52 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installNlohmannJson" \
+              --instance-view
+              
+      - name: Install sqlite3
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSqlite3" \
+              --script "sudo apt-get install sqlite3 -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSqlite3" \
               --instance-view    
+              
+      - name: Install sqlite3 dev
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSqlite3Dev" \
+              --script "sudo apt-get install libsqlite3-dev -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSqlite3Dev" \
+              --instance-view        
+              
+      - name: Install CMake
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installCMake" \
+              --script "sudo apt-get install cmake -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installCMake" \
+              --instance-view
               
       - name: Clone Azure DCAP 
         uses: azure/CLI@v1
@@ -651,6 +696,36 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeDcapTests" \
+              --instance-view        
+              
+      - name: Get make version
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeVersion" \
+              --script "make -v" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeVersion" \
+              --instance-view         
+              
+      - name: Get g++ version
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeVersion" \
+              --script "ls -l /usr/bin/g++*" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeVersion" \
               --instance-view      
               
       - name: Run DCAP tests
