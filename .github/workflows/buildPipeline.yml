@@ -77,7 +77,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "break" \
-              --script "set -euo pipefail && break.exe" 
+              --script "set -o errexit && set -euo pipefail && break.exe && ls" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
