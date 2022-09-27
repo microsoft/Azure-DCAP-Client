@@ -77,12 +77,14 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "break" \
-              --script "set -o errexit && set -euo pipefail && break.exe && ls" 
+              --script "set -o errexit && set -euo pipefail && break.exe && ls" \
+              --verbose
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "break" \
-              --instance-view
+              --instance-view \
+              --verbose
               
       - name: Install software properties common
         uses: azure/CLI@v1
