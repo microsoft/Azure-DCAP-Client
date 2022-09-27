@@ -77,7 +77,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "break" \
-              --script "break.exe && [ \$status -eq 0 ] && echo \"command successful\" || echo \"command unsuccessful\""
+              --script "break.exe && [ \$? -eq 0 ] && echo \"command successful\" || echo \"command unsuccessful\""
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -92,7 +92,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installSoftwarePropertiesCommon" \
-              --script "sudo apt install software-properties-common -y" 
+              --script "sudo apt install software-properties-common -y && [ \$? -eq 0 ] && echo \"command successful\" || echo \"command unsuccessful\"" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
