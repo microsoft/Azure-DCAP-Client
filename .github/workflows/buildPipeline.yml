@@ -10,10 +10,14 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
+
+
+  # This job tests running on hardware with a custom path to libdcap_quoteprov.so
   ACCTest:          
     strategy:
       # Launch a VM and build once per each combination of linux image and buildType
+      max-parallel: 2
       matrix:
         image: ["Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest", "Canonical:UbuntuServer:18_04-lts-gen2:latest"]
         buildType: [RelWithDebInfo, Debug]
@@ -50,7 +54,7 @@ jobs:
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-            
+      
       - name: Create VM
         uses: azure/CLI@v1
         with:
@@ -65,24 +69,9 @@ jobs:
               --nic-delete-option delete \
               --os-disk-delete-option delete \
               --public-ip-sku Standard
-              
+      
       - name: Sleep to let the VM start
         run: sleep 60
-        
-      - name: Break the build
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "break" \
-              --script "break.exe && echo $?"
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "break" \
-              --instance-view
               
       - name: Install software properties common
         uses: azure/CLI@v1
@@ -113,6 +102,231 @@ jobs:
               --vm-name $vmName \
               --name "addPpaRepository" \
               --instance-view
+              
+      - name: Update apt-get
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateAptGet" \
+              --script "sudo apt-get update -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateAptGet" \
+              --instance-view
+              
+      - name: Install nlohmann json
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installNlohmannJson" \
+              --script "sudo apt-get install nlohmann-json3-dev -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installNlohmannJson" \
+              --instance-view    
+              
+      - name: Clone Azure DCAP 
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneAzureDcap" \
+              --script "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneAzureDcap" \
+              --instance-view
+              
+      - name: Update DCAP submodule
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateSubmodule" \
+              --script "cd /AzureDCAP && git submodule update --init --recursive" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateSubmodule" \
+              --instance-view    
+              
+      - name: Configure Azure DCAP
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "configureAzureDcap" \
+              --script "cd /AzureDCAP/src/Linux && ./configure" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "configureAzureDcap" \
+              --instance-view    
+              
+      - name: Make Azure DCAP
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeAzureDcap" \
+              --script "cd /AzureDCAP/src/Linux && make" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeAzureDcap" \
+              --instance-view    
+                            
+      - name: Clone openenclave 
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneOpenEnclave" \
+              --script "git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneOpenEnclave" \
+              --instance-view 
+                            
+      - name: Update openenclave submodule
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateOpenEnclaveSubmodule" \
+              --script "mkdir /openenclave/build && cd /openenclave/build && git submodule update --recursive --init" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updateOpenEnclaveSubmodule" \
+              --instance-view
+                            
+      - name: CMake openenclave with ninja
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cmakeOpenEnclave" \
+              --script "cd /openenclave/build && cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cmakeOpenEnclave" \
+              --instance-view
+                            
+      - name: Make openenclave with ninja
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeOpenEnclave" \
+              --script "cd /openenclave/build && ninja -v" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "makeOpenEnclave" \
+              --instance-view
+                            
+      - name: Run openenclave tests
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "testOpenEnclave" \
+              --script "cd /openenclave/build && LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "testOpenEnclave" \
+              --instance-view
+            
+     # - name: Break the build process to stop the following jobs from executing
+     #   run: wronginstruction.exe
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"# This job tests running on hardware with a custom path to libdcap_quoteprov.so
+              
+  # This job runs DCAP end to end tests 
+  DCAPE2ETest:
+            
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      vmName: dcapE2ETestBuildVM${{ github.run_number }}Ubuntu20_04
+      rgName: dcap-github-actions-agents-rg
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+          
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+            
+      - name: Create VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest" \
+              --size Standard_DC4s_v2 \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+              
+      - name: Sleep to let the VM start
+        run: sleep 60
               
       - name: Update apt-get
         uses: azure/CLI@v1
@@ -397,21 +611,6 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "runDcapTests" \
-              --instance-view
-              
-      - name: Clone openenclave 
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneOpenEnclave" \
-              --script "git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneOpenEnclave" \
               --instance-view
             
      # - name: Break the build process to stop the following jobs from executing
