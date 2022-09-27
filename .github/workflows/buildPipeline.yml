@@ -11,8 +11,6 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-
-
   # This job tests running on hardware with a custom path to libdcap_quoteprov.so
   ACCTest:          
     strategy:
@@ -267,9 +265,6 @@ jobs:
               --vm-name $vmName \
               --name "testOpenEnclave" \
               --instance-view
-            
-     # - name: Break the build process to stop the following jobs from executing
-     #   run: wronginstruction.exe
 
       - name: Cleanup
         if: always()
@@ -287,7 +282,7 @@ jobs:
             az resource delete \
               -g $rgName \
               -n ${{ env.vmName }}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses"# This job tests running on hardware with a custom path to libdcap_quoteprov.so
+              --resource-type "Microsoft.Network/publicIPAddresses"
               
   # This job runs DCAP end to end tests 
   DCAPE2ETest:
@@ -612,9 +607,6 @@ jobs:
               --vm-name $vmName \
               --name "runDcapTests" \
               --instance-view
-            
-     # - name: Break the build process to stop the following jobs from executing
-     #   run: wronginstruction.exe
 
       - name: Cleanup
         if: always()
