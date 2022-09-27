@@ -69,6 +69,36 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
               
+      - name: Install software properties common
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSoftwarePropertiesCommon" \
+              --script "sudo apt install software-properties-common -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installSoftwarePropertiesCommon" \
+              --instance-view
+              
+      - name: Add ppa repository
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "addPpaRepository" \
+              --script "sudo add-apt-repository ppa:team-xbmc/ppa -y" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "addPpaRepository" \
+              --instance-view
+              
       - name: Update apt-get
         uses: azure/CLI@v1
         with:
@@ -82,7 +112,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updateAptGet" \
-              --instance-view    
+              --instance-view
               
       - name: Install libSSL
         uses: azure/CLI@v1
@@ -92,7 +122,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installLibSSL" \
-              --script "sudo apt-get install -y libssl-dev" 
+              --script "sudo apt-get install libssl-dev -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -107,7 +137,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installOpenSSL" \
-              --script "sudo apt install -y libcurl4-openssl-dev" 
+              --script "sudo apt install libcurl4-openssl-dev -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -122,7 +152,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installPkgConfig" \
-              --script "sudo apt-get install -y pkg-config" 
+              --script "sudo apt-get install pkg-config -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -137,7 +167,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installBuildEssential" \
-              --script "sudo apt install -y build-essential" 
+              --script "sudo apt install build-essential -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -152,7 +182,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installNlohmannJson" \
-              --script "sudo apt-get install -y nlohmann-json3-dev" 
+              --script "sudo apt-get install nlohmann-json3-dev -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -167,7 +197,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installSqlite3" \
-              --script "sudo apt-get install -y sqlite3" 
+              --script "sudo apt-get install sqlite3 -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -182,7 +212,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installSqlite3Dev" \
-              --script "sudo apt-get install -y libsqlite3-dev" 
+              --script "sudo apt-get install libsqlite3-dev -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -197,7 +227,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installLibgtest" \
-              --script "sudo apt-get install -y libgtest-dev" 
+              --script "sudo apt-get install libgtest-dev -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -212,7 +242,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "installCMake" \
-              --script "sudo apt-get install -y cmake" 
+              --script "sudo apt-get install cmake -y" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -247,7 +277,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneAzureDcap" \
-              --instance-view    
+              --instance-view
               
       - name: Update submodule
         uses: azure/CLI@v1
@@ -352,7 +382,22 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "runDcapTests" \
-              --instance-view      
+              --instance-view
+              
+      - name: Clone openenclave 
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneOpenEnclave" \
+              --script "git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneOpenEnclave" \
+              --instance-view
             
      # - name: Break the build process to stop the following jobs from executing
      #   run: wronginstruction.exe
