@@ -326,6 +326,36 @@ jobs:
               --name "updateOpenEnclaveSubmodule" \
               --instance-view
                             
+      - name: Install Ansible
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installAnsible" \
+              --script "cd /openenclave && sudo scripts/ansible/install-ansible.sh" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installAnsible" \
+              --instance-view
+                            
+      - name: Setup ACC 
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "setupACC" \
+              --script "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml" 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "setupACC" \
+              --instance-view
+                            
       - name: CMake openenclave with ninja
         uses: azure/CLI@v1
         with:
