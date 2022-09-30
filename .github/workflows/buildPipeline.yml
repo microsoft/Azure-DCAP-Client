@@ -244,7 +244,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneAzureDcap" \
-              --script "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
+              --script "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -259,7 +259,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updateSubmodule" \
-              --script "cd /AzureDCAP && git submodule update --init --recursive" 
+              --script "cd /AzureDCAP && sudo git submodule update --init --recursive" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -274,7 +274,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "configureAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && ./configure" 
+              --script "cd /AzureDCAP/src/Linux && sudo ./configure" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -289,7 +289,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && make" 
+              --script "cd /AzureDCAP/src/Linux && sudo make" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -304,7 +304,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneOpenEnclave" \
-              --script "git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
+              --script "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -319,7 +319,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updateOpenEnclaveSubmodule" \
-              --script "mkdir /openenclave/build && cd /openenclave/build && git submodule update --recursive --init" 
+              --script "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -364,7 +364,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cmakeOpenEnclave" \
-              --script "cd /openenclave/build && cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}" 
+              --script "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -379,7 +379,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "makeOpenEnclave" \
-              --script "cd /openenclave/build && ninja -v" 
+              --script "cd /openenclave/build && sudo ninja -v" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
@@ -394,7 +394,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "testOpenEnclave" \
-              --script "cd /openenclave/build && LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure" 
+              --script "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure" 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
