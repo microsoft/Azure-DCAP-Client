@@ -72,7 +72,7 @@ jobs:
         run: sleep 60
       
       - name: Install software properties common
-        uses: ./.github/actions/my-custom-action
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
             rgName: $rgName
             vmName: $vmName
