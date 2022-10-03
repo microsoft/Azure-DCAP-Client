@@ -74,325 +74,134 @@ jobs:
       - name: Install software properties common
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            rgName: $rgName
-            vmName: $vmName
             commandName: "installSoftwarePropertiesCommon"
-            script: "sudo apt install software-properties-common -y  && echo $?"
+            script: "sudo apt install software-properties-common -y"
               
       - name: Add ppa repository
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "addPpaRepository" \
-              --script "sudo add-apt-repository ppa:team-xbmc/ppa -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "addPpaRepository" \
-              --instance-view
+            commandName: "addPpaRepository"
+            script: "sudo add-apt-repository ppa:team-xbmc/ppa -y"
               
       - name: Update apt-get
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateAptGet" \
-              --script "sudo apt-get update -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateAptGet" \
-              --instance-view
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
               
       - name: Install libSSL
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibSSL" \
-              --script "sudo apt-get install libssl-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibSSL" \
-              --instance-view    
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
               
       - name: Install openSSL
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installOpenSSL" \
-              --script "sudo apt install libcurl4-openssl-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installOpenSSL" \
-              --instance-view    
+            commandName: "installOpenSSL"
+            script: "sudo apt install libcurl4-openssl-dev -y"
               
       - name: Install PkgConfig
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installPkgConfig" \
-              --script "sudo apt-get install pkg-config -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installPkgConfig" \
-              --instance-view    
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
               
       - name: Install buildEssential
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installBuildEssential" \
-              --script "sudo apt install build-essential -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installBuildEssential" \
-              --instance-view
+            commandName: "installBuildEssential"
+            script: "sudo apt install build-essential -y"
               
       - name: Install nlohmann json
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installNlohmannJson" \
-              --script "sudo apt-get install nlohmann-json3-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installNlohmannJson" \
-              --instance-view
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
               
       - name: Install sqlite3
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3" \
-              --script "sudo apt-get install sqlite3 -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3" \
-              --instance-view    
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
               
       - name: Install sqlite3 dev
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3Dev" \
-              --script "sudo apt-get install libsqlite3-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3Dev" \
-              --instance-view        
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
               
       - name: Install CMake
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installCMake" \
-              --script "sudo apt-get install cmake -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installCMake" \
-              --instance-view
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
               
       - name: Clone Azure DCAP 
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --script "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --instance-view
+            commandName: "cloneAzureDcap"
+            script: "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
               
       - name: Update DCAP submodule
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateSubmodule" \
-              --script "cd /AzureDCAP && sudo git submodule update --init --recursive" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateSubmodule" \
-              --instance-view    
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && sudo git submodule update --init --recursive"
               
       - name: Configure Azure DCAP
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "configureAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && sudo ./configure" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "configureAzureDcap" \
-              --instance-view    
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo ./configure"
               
       - name: Make Azure DCAP
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && sudo make" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeAzureDcap" \
-              --instance-view    
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make"
                             
       - name: Clone openenclave 
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneOpenEnclave" \
-              --script "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneOpenEnclave" \
-              --instance-view 
+            commandName: "cloneOpenEnclave"
+            script: "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave"
                             
       - name: Update openenclave submodule
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateOpenEnclaveSubmodule" \
-              --script "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateOpenEnclaveSubmodule" \
-              --instance-view
+            commandName: "updateOpenEnclaveSubmodule"
+            script: "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init"
                             
       - name: Install Ansible
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installAnsible" \
-              --script "cd /openenclave && sudo scripts/ansible/install-ansible.sh" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installAnsible" \
-              --instance-view
+            commandName: "installAnsible"
+            script: "cd /openenclave && sudo scripts/ansible/install-ansible.sh"
                             
       - name: Setup ACC 
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "setupACC" \
-              --script "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "setupACC" \
-              --instance-view
+            commandName: "setupACC"
+            script: "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml"
                             
       - name: CMake openenclave with ninja
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cmakeOpenEnclave" \
-              --script "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cmakeOpenEnclave" \
-              --instance-view
+            commandName: "cmakeOpenEnclave"
+            script: "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}"
                             
       - name: Make openenclave with ninja
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeOpenEnclave" \
-              --script "cd /openenclave/build && sudo ninja -v" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeOpenEnclave" \
-              --instance-view
+            commandName: "makeOpenEnclave"
+            script: "cd /openenclave/build && sudo ninja -v"
                             
       - name: Run openenclave tests
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "testOpenEnclave" \
-              --script "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "testOpenEnclave" \
-              --instance-view
+            commandName: "testOpenEnclave"
+            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
 
       - name: Cleanup
         if: always()
@@ -452,319 +261,118 @@ jobs:
         run: sleep 60
               
       - name: Update apt-get
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateAptGet" \
-              --script "sudo apt-get update -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateAptGet" \
-              --instance-view
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
               
       - name: Install libSSL
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibSSL" \
-              --script "sudo apt-get install libssl-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibSSL" \
-              --instance-view    
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
               
       - name: Install openSSL
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installOpenSSL" \
-              --script "sudo apt install libcurl4-openssl-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installOpenSSL" \
-              --instance-view    
+            commandName: "installOpenSSL"
+            script: "sudo apt install libcurl4-openssl-dev -y"
               
       - name: Install PkgConfig
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installPkgConfig" \
-              --script "sudo apt-get install pkg-config -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installPkgConfig" \
-              --instance-view    
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
               
       - name: Install buildEssential
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installBuildEssential" \
-              --script "sudo apt install build-essential -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installBuildEssential" \
-              --instance-view    
+            commandName: "installBuildEssential"
+            script: "sudo apt install build-essential -y"
               
       - name: Install nlohmann json
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installNlohmannJson" \
-              --script "sudo apt-get install nlohmann-json3-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installNlohmannJson" \
-              --instance-view    
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
               
       - name: Install sqlite3
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3" \
-              --script "sudo apt-get install sqlite3 -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3" \
-              --instance-view    
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
               
       - name: Install sqlite3 dev
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3Dev" \
-              --script "sudo apt-get install libsqlite3-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSqlite3Dev" \
-              --instance-view    
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
               
       - name: Install libgtest
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibgtest" \
-              --script "sudo apt-get install libgtest-dev -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installLibgtest" \
-              --instance-view    
+            commandName: "installLibgtest"
+            script: "sudo apt-get install libgtest-dev -y"
               
       - name: Install CMake
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installCMake" \
-              --script "sudo apt-get install cmake -y" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installCMake" \
-              --instance-view    
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
               
       - name: Install Google test
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installGoogleTest" \
-              --script "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installGoogleTest" \
-              --instance-view
+            commandName: "installGoogleTest"
+            script: "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib"
               
       - name: Clone Azure DCAP 
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --script "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cloneAzureDcap" \
-              --instance-view
+            commandName: "cloneAzureDcap"
+            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
               
       - name: Update submodule
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateSubmodule" \
-              --script "cd /AzureDCAP && git submodule update --init --recursive" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updateSubmodule" \
-              --instance-view    
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && git submodule update --init --recursive"
               
       - name: Configure Azure DCAP
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "configureAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && ./configure" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "configureAzureDcap" \
-              --instance-view    
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && ./configure"
               
       - name: Make Azure DCAP
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && make" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeAzureDcap" \
-              --instance-view    
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && make"
               
       - name: Make Install Azure DCAP
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeInstallAzureDcap" \
-              --script "cd /AzureDCAP/src/Linux && sudo make install" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeInstallAzureDcap" \
-              --instance-view      
+            commandName: "makeInstallAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make install"
               
       - name: CMake DCAP tests
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cmakeDcapTests" \
-              --script "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cmakeDcapTests" \
-              --instance-view      
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
               
       - name: Make DCAP tests
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeDcapTests" \
-              --script "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeDcapTests" \
-              --instance-view        
-              
-      - name: Get make version
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeVersion" \
-              --script "make -v" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeVersion" \
-              --instance-view         
-              
-      - name: Get g++ version
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeVersion" \
-              --script "ls -l /usr/bin/g++*" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "makeVersion" \
-              --instance-view      
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
               
       - name: Run DCAP tests
-        uses: azure/CLI@v1
+        uses: ./.github/actions/actionAzVmRunCommand
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "runDcapTests" \
-              --script "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "runDcapTests" \
-              --instance-view
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
 
       - name: Cleanup
         if: always()
