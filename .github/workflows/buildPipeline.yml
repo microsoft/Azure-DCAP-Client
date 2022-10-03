@@ -17,7 +17,7 @@ jobs:
       # Launch a VM and build once per each combination of linux image and buildType
       max-parallel: 2
       matrix:
-        image: ["Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest", "Canonical:UbuntuServer:18_04-lts-gen2:latest"]
+        imageVmName: ["Ubuntu20_04", "Ubuntu18_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - image: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
