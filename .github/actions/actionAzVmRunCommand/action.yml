@@ -21,8 +21,8 @@ runs:
       with:
         inlineScript: |
           az vm run-command create \
-            --resource-group ${{ inputs.rgName }} \
-            --vm-name ${{ inputs.vmName }} \
+            --resource-group $rgName \
+            --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
             --script "${{ inputs.script }}"
             
@@ -31,7 +31,7 @@ runs:
       with:
         inlineScript: |
           az vm run-command show \
-            --resource-group ${{ inputs.rgName }} \
-            --vm-name ${{ inputs.vmName }} \
+            --resource-group $rgName \
+            --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
             --instance-view
