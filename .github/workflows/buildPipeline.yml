@@ -70,21 +70,14 @@ jobs:
       
       - name: Sleep to let the VM start
         run: sleep 60
-              
+      
       - name: Install software properties common
-        uses: azure/CLI@v1
+        uses: ./.github/actions/my-custom-action
         with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSoftwarePropertiesCommon" \
-              --script "sudo apt install software-properties-common -y  && echo $?" 
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installSoftwarePropertiesCommon" \
-              --instance-view
+            rgName: $rgName
+            vmName: $vmName
+            commandName: "installSoftwarePropertiesCommon"
+            script: "sudo apt install software-properties-common -y  && echo $?"
               
       - name: Add ppa repository
         uses: azure/CLI@v1
