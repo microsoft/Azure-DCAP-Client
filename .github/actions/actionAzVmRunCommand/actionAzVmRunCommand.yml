@@ -1,0 +1,37 @@
+name: 'AzVmRunCommand'
+description: 'This action uses az vm run-command in order to execute a command in the target VM, check the result and fail the build if it didn't execute properly. Requires being logged into azure through the azure login action'
+inputs:
+  rgName:
+    description: 'Name of the resource group containing the VM'
+    required: true
+  vmName:
+    description: 'Name of the VM'
+    required: true
+  commandName:
+    description: 'Name of the command to execute'
+    required: true
+  script:
+    description: 'The script to execute'
+    required: true
+runs:
+  using: "composite"
+  steps:      
+    - name: Execute the command
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az vm run-command create \
+            --resource-group ${{ inputs.rgName }} \
+            --vm-name ${{ inputs.vmName }} \
+            --name ${{ inputs.commandName }} \
+            --script ${{ inputs.script }} 
+            
+    - name: Get the result of the command
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az vm run-command show \
+            --resource-group ${{ inputs.rgName }} \
+            --vm-name ${{ inputs.vmName }} \
+            --name ${{ inputs.commandName }} \
+            --instance-view
