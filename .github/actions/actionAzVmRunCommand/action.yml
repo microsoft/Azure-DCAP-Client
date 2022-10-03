@@ -1,5 +1,5 @@
-name: 'AzVmRunCommand'
-description: 'This action uses az vm run-command in order to execute a command in the target VM, check the result and fail the build if it didn't execute properly. Requires being logged into azure through the azure login action'
+name: "AzVmRunCommand"
+description: "This action uses az vm run-command in order to execute a command in the target VM, check the result and fail the build if it didn't execute properly. Requires being logged into azure through the azure login action"
 inputs:
   rgName:
     description: 'Name of the resource group containing the VM'
