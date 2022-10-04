@@ -38,6 +38,6 @@ runs:
             
     - name: Check for a successful completion
       shell: bash
-      if:  ${{ endsWith( fromJSON(steps.commandResult.outputs.result).instanceView.output , 'DCAP build step successfully completed' ) }}
+      if:  ${{ endsWith( steps.commandResult.outputs.result.instanceView.output , 'DCAP build step successfully completed' ) }}
       run: echo "This was a triumph"
 
