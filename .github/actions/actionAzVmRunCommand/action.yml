@@ -39,7 +39,7 @@ runs:
             
     - name: Test string comparison
       shell: bash
-      if:  ${{ endsWith( "asdsadawfdzxcvfadgdf-DCAP build step successfully completed", "DCAP build step successfully completed" ) }}
+      if:  ${{ endsWith( 'asdsadawfdzxcvfadgdfDCAP build step successfully completed', 'DCAP build step successfully completed' ) }}
       run: echo "This was a triumph"
             
     - name: Test az show without the az cli action
