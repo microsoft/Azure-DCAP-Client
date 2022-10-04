@@ -15,7 +15,7 @@ jobs:
   ACCTest:          
     strategy:
       # Launch a VM and build once per each combination of linux image and buildType
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         imageVmName: ["Ubuntu20_04", "Ubuntu18_04"]
         buildType: [RelWithDebInfo, Debug]
@@ -70,18 +70,6 @@ jobs:
       
       - name: Sleep to let the VM start
         run: sleep 60
-      
-      - name: This should succeed
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "succeed"
-            script: "pwd"
-      
-      - name: This should fail
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "fail"
-            script: "xcom2.exe"
       
       - name: Install software properties common
         uses: ./.github/actions/actionAzVmRunCommand
@@ -214,6 +202,74 @@ jobs:
         with:
             commandName: "testOpenEnclave"
             script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
+
+  # Test DCAP build process in Windows
+  DCAPWindowsBuildTest:          
+    strategy:
+      # Launch a VM and build once per each buildType
+      max-parallel: 1
+      matrix:
+        buildType: [Release, Debug]
+            
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      vmName: dcapWindowsBuildTestVM${{ github.run_number }}${{ matrix.imageVmName }}${{ matrix.buildType }}
+      rgName: dcap-github-actions-agents-rg
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Create VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image Win2019Datacenter \
+              --size Standard_DC4s_v2 \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+      
+      - name: Sleep to let the VM start
+        run: sleep 60
+      
+      #- name: Install software properties common
+      #  uses: ./.github/actions/actionAzVmRunCommand
+      #  with:
+      #      commandName: "installSoftwarePropertiesCommon"
+      #      script: "sudo apt install software-properties-common -y"
 
       - name: Cleanup
         if: always()
