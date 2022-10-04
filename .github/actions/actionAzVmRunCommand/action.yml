@@ -28,26 +28,18 @@ runs:
             
     - name: Get the result of the command
       id: commandResult
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az vm run-command show \
-            --resource-group $rgName \
-            --vm-name $vmName \
-            --name "${{ inputs.commandName }}" \
-            --instance-view
-            
-    - name: Test string comparison
-      shell: bash
-      if:  ${{ endsWith( 'asdsadawfdzxcvfadgdfDCAP build step successfully completed', 'DCAP build step successfully completed' ) }}
-      run: echo "This was a triumph"
-            
-    - name: Test az show without the az cli action
       shell: bash
       run: |
-          az vm run-command show \
-            --resource-group $rgName \
-            --vm-name $vmName \
-            --name "${{ inputs.commandName }}" \
-            --instance-view
+          echo '::set-output name=result::\ 
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "${{ inputs.commandName }}" \
+              --instance-view\
+          '
+            
+    - name: Check for a successful completion
+      shell: bash
+      if:  ${{ endsWith( ${{ fromJSON(${{steps.commandResult.outputs.result}} }}.instanceView.output) , 'DCAP build step successfully completed' ) }}
+      run: echo "This was a triumph"
 
