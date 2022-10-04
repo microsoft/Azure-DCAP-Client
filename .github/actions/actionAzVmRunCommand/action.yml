@@ -38,6 +38,6 @@ runs:
             
     - name: Check for a successful completion
       shell: bash
-      if:  ${{ contains( steps.commandResult.outputs.result , 'DCAP build step successfully completed\n"' ) }}
+      if:  ${{ contains( steps.commandResult.outputs.result , 'software-properties-common set to manually installed."' ) }}
       run: echo "This was a triumph"
 
