@@ -1,12 +1,11 @@
 name: "AzVmRunCommand"
-description: "This action uses az vm run-command in order to execute a command in the target VM, show the result \
-  and fail the build if the last command didn't execute properly. \
-  Requires being logged into azure through the azure login action and setting the environment variables $rgName and $vmName \
-  with the names of the resource group and the vm we are targeting respectively \
-  Does not work with script files \
-  WARNING: This action ONLY checks the exit code of the last command. If your script input is made of multiple commands, \
-  make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. \
-  Some options to do this include using [set -euo pipeline] or equivalents, or using the && operator to connect console commands"
+description: "This action uses az vm run-command in order to execute a command in the target VM, show the result and fail the build if the last command didn't execute properly."
+  # Requires being logged into azure through the azure login action and setting the environment variables $rgName and $vmName 
+  # with the names of the resource group and the vm we are targeting respectively 
+  # WARNING: This action ONLY checks the exit code of the last command. If your script input is made of multiple commands, 
+  # make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. 
+  # Some options to do this include using [set -euo pipeline] or equivalents, or using the && operator to connect console commands
+  # WARNING: This action hasn't been tested with script files. 
 inputs:
   commandName:
     description: "Name of the command to execute"
