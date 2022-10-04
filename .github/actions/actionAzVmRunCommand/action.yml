@@ -32,12 +32,12 @@ runs:
       run: |
           echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "${{ inputs.commandName }}" --instance-view)'
             
-    - name: Echo output
+    - name: Show the output of the command
       shell: bash
-      run: echo ${{steps.commandResult.outputs.result.instanceView.output}}
+      run: echo -e ${{steps.commandResult.outputs.result}}
             
     - name: Check for a successful completion
       shell: bash
-      if:  ${{ endsWith( steps.commandResult.outputs.result.instanceView.output , 'DCAP build step successfully completed' ) }}
+      if:  ${{ contains( steps.commandResult.outputs.result , 'DCAP build step successfully completed\n"' ) }}
       run: echo "This was a triumph"
 
