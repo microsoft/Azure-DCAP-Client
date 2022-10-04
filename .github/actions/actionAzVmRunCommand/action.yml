@@ -27,16 +27,7 @@ runs:
             --script "${{ inputs.script }} && echo 'DCAP build step successfully completed'"
             
     - name: Get the result of the command
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az vm run-command show \
-            --resource-group $rgName \
-            --vm-name $vmName \
-            --name "${{ inputs.commandName }}" \
-            --instance-view
-            
-    - name: Get the result of the command
+      id: commandResult
       uses: azure/CLI@v1
       with:
         inlineScript: |
@@ -48,6 +39,15 @@ runs:
             
     - name: Test string comparison
       shell: bash
-      if: "asdsadawfdzxcvfadgdf-rg" == "*-rg"
+      if:  ${{ endsWith( "asdsadawfdzxcvfadgdf-DCAP build step successfully completed", "DCAP build step successfully completed" ) }}
       run: echo "This was a triumph"
+            
+    - name: Test az show without the az cli action
+      shell: bash
+      run: |
+          az vm run-command show \
+            --resource-group $rgName \
+            --vm-name $vmName \
+            --name "${{ inputs.commandName }}" \
+            --instance-view
 
