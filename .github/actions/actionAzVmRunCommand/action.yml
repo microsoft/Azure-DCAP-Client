@@ -36,6 +36,6 @@ runs:
       shell: bash
       run: |
           echo -e ${{steps.commandResult.outputs.result}} 
-          if [ ${{steps.commandResult.outputs.result}} == *"DCAP_Build_Step_Successfully_Completed"* ]; then echo "Step successfully executed"; fi 
+          if [[ "${{steps.commandResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; fi 
       
 
