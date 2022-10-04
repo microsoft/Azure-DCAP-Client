@@ -35,10 +35,15 @@ runs:
     - name: Show the output of the command
       shell: bash
       run: echo -e ${{steps.commandResult.outputs.result}}
+      
+    - name: Test
+      shell: bash
+      if:  ${{ contains( steps.commandResult.outputs.result, 'dcapACCTestBuildVM80Ubuntu20_04RelWithDebInfo' ) }}
+      run: echo "Toast"
     
     - name: Test 2
       shell: bash
-      if:  ${{ contains( steps.commandResult.outputs.result, 'e' ) }}
+      if:  ${{ contains( steps.commandResult.outputs.result, 'WARNING' ) }}
       run: echo "Toaster"
     
     - name: Check for a successful completion
