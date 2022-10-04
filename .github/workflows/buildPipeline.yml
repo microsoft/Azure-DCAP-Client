@@ -71,6 +71,18 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
       
+      - name: This should succeed
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "succeed"
+            script: "pwd"
+      
+      - name: This should fail
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "fail"
+            script: "xcom2.exe"
+      
       - name: Install software properties common
         uses: ./.github/actions/actionAzVmRunCommand
         with:
