@@ -48,6 +48,6 @@ runs:
             
     - name: Test string comparison
       shell: bash
-      if: 'asdsadawfdzxcvfadgdf-rg' == '*-rg'
+      if: "asdsadawfdzxcvfadgdf-rg" == "*-rg"
       run: echo "This was a triumph"
 
