@@ -24,7 +24,6 @@ jobs:
             imageVmName: Ubuntu20_04
           - image: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
             imageVmName: Ubuntu18_04
-            
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
     
@@ -254,7 +253,7 @@ jobs:
             az vm create \
               --resource-group $rgName \
               --name $vmName \
-              --image Win2019Datacenter \
+              --image "MicrosoftWindowsServer:WindowsServer:2019-datacenter-gensecond:latest" \
               --size Standard_DC4s_v2 \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
