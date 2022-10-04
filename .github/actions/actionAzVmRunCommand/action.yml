@@ -47,6 +47,7 @@ runs:
             --instance-view
             
     - name: Test string comparison
-      if: $rgName == '*-rg'
+      runs-on: ubuntu-latest
+      if: 'asdsadawfdzxcvfadgdf-rg' == '*-rg'
       run: echo "This was a triumph"
 
