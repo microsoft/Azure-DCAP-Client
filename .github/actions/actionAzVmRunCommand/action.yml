@@ -30,13 +30,17 @@ runs:
       id: commandResult
       shell: bash
       run: |
-          echo '::set-output name=result::\ 
+          echo '::set-output name=result::$(\ 
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "${{ inputs.commandName }}" \
               --instance-view\
-          '
+          )'
+            
+    - name: Echo output
+      shell: bash
+      run: echo ${{steps.commandResult.outputs.result}}
             
     - name: Check for a successful completion
       shell: bash
