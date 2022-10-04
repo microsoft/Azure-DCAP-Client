@@ -34,7 +34,7 @@ runs:
             
     - name: Echo output
       shell: bash
-      run: echo ${{steps.commandResult.outputs.result}}
+      run: echo ${{steps.commandResult.outputs.result.instanceView.output}}
             
     - name: Check for a successful completion
       shell: bash
