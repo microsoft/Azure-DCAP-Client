@@ -24,30 +24,25 @@ runs:
             --resource-group $rgName \
             --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
-            --script "${{ inputs.script }} && echo 'DCAP build step successfully completed'"
+            --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
             
     - name: Get the result of the command
       id: commandResult
       shell: bash
       run: |
           echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "${{ inputs.commandName }}" --instance-view)'
-            
+    
     - name: Show the output of the command
       shell: bash
       run: echo -e ${{steps.commandResult.outputs.result}}
-            
-    - name: Test
-      shell: bash
-      if:  ${{ contains( 'Test', 'es' ) }}
-      run: echo "Toast"
-            
+    
     - name: Test 2
       shell: bash
       if:  ${{ contains( steps.commandResult.outputs.result, 'e' ) }}
       run: echo "Toaster"
-            
+    
     - name: Check for a successful completion
       shell: bash
-      if:  ${{ contains( steps.commandResult.outputs.result, 'DCAP build step successfully completed' ) }}
+      if:  ${{ contains( steps.commandResult.outputs.result, 'DCAP_Build_Step_Successfully_Completed' ) }}
       run: echo "This was a triumph"
 
