@@ -283,6 +283,12 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
         
+      - name: test dir
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "test"
+            script: "dir"
+        
       - name: Test a command
         uses: azure/CLI@v1
         with:
