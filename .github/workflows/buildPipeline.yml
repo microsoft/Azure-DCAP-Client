@@ -307,7 +307,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "test"
-            script: "dir"
+            script: "echo this"
         
       - name: Test a command
         uses: azure/CLI@v1
