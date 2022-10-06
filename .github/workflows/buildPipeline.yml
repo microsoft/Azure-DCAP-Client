@@ -293,7 +293,7 @@ jobs:
               --name "updatePowershell" \
               --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"'
               
-      - name: Show the test result
+      - name: Show update powershell
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -303,11 +303,11 @@ jobs:
               --name "updatePowershell" \
               --instance-view
               
-      - name: test dir
+      - name: Install VSSetup
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "test"
-            script: "vcvars64.bat x64"
+            commandName: "installVSSetup"
+            script: "Install-Module -Name VSSetup"
       
       #- name: Test a command
       #  uses: ./.github/actions/actionAzVmRunCommand
