@@ -29,6 +29,7 @@ jobs:
     
     # Job environment variables
     env:
+      os: linux
       vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
 
@@ -249,6 +250,7 @@ jobs:
     
     # Job environment variables
     env:
+      os: windows
       #Windows VM name must be within 15 characters
       vmName: dcapWin${{ matrix.buildTypeAbbreviation }}${{ github.run_number }}
       rgName: dcap-github-actions-agents-rg
@@ -434,6 +436,7 @@ jobs:
     
     # Job environment variables
     env:
+      os: linux
       vmName: dcapE2ETestBuildVM${{ github.run_number }}Ubuntu20_04
       rgName: dcap-github-actions-agents-rg
 
