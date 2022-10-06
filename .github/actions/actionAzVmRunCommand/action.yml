@@ -17,7 +17,7 @@ runs:
   using: "composite"
   steps:      
     - name: Execute the command in Linux
-      if: $os == linux
+      if: ${{ env.$os }} == linux
       uses: azure/CLI@v1
       with:
         inlineScript: |
@@ -28,7 +28,7 @@ runs:
             --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
             
     - name: Execute the command in windows
-      if: $os == linux
+      if: ${{ env.$os }} == windows
       uses: azure/CLI@v1
       with:
         inlineScript: |
@@ -36,7 +36,7 @@ runs:
             --resource-group $rgName \
             --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
-            --script "cmd.exe /c ${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
+            --script "& cmd.exe /c ${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
             
     - name: Get the result of the command
       id: commandResult
