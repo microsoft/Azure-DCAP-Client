@@ -25,7 +25,7 @@ runs:
             --resource-group $rgName \
             --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
-            --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
+            --script "${{ inputs.script }} && echo "DCAP_Build_Step_Successfully_Completed""
             
     - name: Execute the command in windows
       if: ${{ env.os == 'windows' }}
