@@ -301,6 +301,26 @@ jobs:
               --name "test" \
               --instance-view
         
+      - name: Show all Powershell versions
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "allPowershellVersions1" \
+              --script "$PSVersionTable"
+              
+      - name: Show Powershell version result
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "allPowershellVersions1" \
+              --instance-view
+        
       - name: Update powershell
         uses: azure/CLI@v1
         with:
@@ -339,6 +359,26 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "powershellVersion" \
+              --instance-view
+        
+      - name: Show all Powershell versions
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "allPowershellVersions" \
+              --script "$PSVersionTable"
+              
+      - name: Show Powershell version result
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "allPowershellVersions" \
               --instance-view
       
       #- name: Test a command
