@@ -219,6 +219,17 @@ jobs:
               -g $rgName \
               -n ${{ env.vmName }}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
+              
+              
+              
+              
+            
+            
+            
+            
+            
+            
+            
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
@@ -298,7 +309,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updatePowershell" \
-              --script "(Get-Variable PSVersionTable -ValueOnly).PSVersion"
+              --script "winget install --id Microsoft.Powershell --source winget"
               
       - name: Show the test result
         uses: azure/CLI@v1
@@ -353,6 +364,27 @@ jobs:
               -g $rgName \
               -n ${{ env.vmName }}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
               
   # This job runs DCAP end to end tests 
   DCAPE2ETest:
