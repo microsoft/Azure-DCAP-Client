@@ -269,12 +269,22 @@ jobs:
       
       - name: Sleep to let the VM start
         run: sleep 60
-      
+        
       - name: Test a command
-        uses: ./.github/actions/actionAzVmRunCommand
+        uses: azure/CLI@v1
         with:
-            commandName: "test"
-            script: "dir"
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "test" \
+              --script "(Get-Variable PSVersionTable -ValueOnly).PSVersion"
+      
+      #- name: Test a command
+      #  uses: ./.github/actions/actionAzVmRunCommand
+      #  with:
+      #      commandName: "test"
+      #      script: "dir"
 
       - name: Cleanup
         if: always()
