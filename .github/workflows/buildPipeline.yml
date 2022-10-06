@@ -266,7 +266,7 @@ jobs:
               --nic-delete-option delete \
               --os-disk-delete-option delete \
               --public-ip-sku Standard
-      
+              
       - name: Sleep to let the VM start
         run: sleep 60
         
@@ -279,6 +279,56 @@ jobs:
               --vm-name $vmName \
               --name "test" \
               --script "(Get-Variable PSVersionTable -ValueOnly).PSVersion"
+              
+      - name: Show the test result
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "test" \
+              --instance-view
+        
+      - name: Update powershell
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updatePowershell" \
+              --script "(Get-Variable PSVersionTable -ValueOnly).PSVersion"
+              
+      - name: Show the test result
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updatePowershell" \
+              --instance-view
+        
+      - name: Show Powershell version
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "powershellVersion" \
+              --script "(Get-Variable PSVersionTable -ValueOnly).PSVersion"
+              
+      - name: Show Powershell version result
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "powershellVersion" \
+              --instance-view
       
       #- name: Test a command
       #  uses: ./.github/actions/actionAzVmRunCommand
