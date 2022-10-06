@@ -17,19 +17,19 @@ jobs:
       # Launch a VM and build once per each combination of linux image and buildType
       max-parallel: 1
       matrix:
-        imageVmName: ["Ubuntu20_04", "Ubuntu18_04"]
+        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
-          - image: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
-            imageVmName: Ubuntu20_04
-          - image: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
-            imageVmName: Ubuntu18_04
+          - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
+            imageName: Ubuntu20_04
+          - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
+            imageName: Ubuntu18_04
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
     
     # Job environment variables
     env:
-      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageVmName }}${{ matrix.buildType }}
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
 
       
@@ -59,7 +59,7 @@ jobs:
             az vm create \
               --resource-group $rgName \
               --name $vmName \
-              --image ${{ matrix.image }} \
+              --image ${{ matrix.imageUrn }} \
               --size Standard_DC4s_v2 \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
@@ -227,13 +227,19 @@ jobs:
       max-parallel: 1
       matrix:
         buildType: [Release, Debug]
+        include:
+          - buildType: Release
+            buildTypeAbbreviation: R
+          - buildType: Debug
+            buildTypeAbbreviation: D
             
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
     
     # Job environment variables
     env:
-      vmName: dcapWindowsBuildTestVM${{ github.run_number }}${{ matrix.imageVmName }}${{ matrix.buildType }}
+      #Windows VM name must be within 15 characters
+      vmName: dcapWin${{ matrix.buildTypeAbbreviation }}${{ github.run_number }}
       rgName: dcap-github-actions-agents-rg
 
       
@@ -264,11 +270,11 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
       
-      #- name: Install software properties common
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "installSoftwarePropertiesCommon"
-      #      script: "sudo apt install software-properties-common -y"
+      - name: Test a command
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "test"
+            script: "dir"
 
       - name: Cleanup
         if: always()
