@@ -1,6 +1,6 @@
 name: "AzVmRunCommand"
 description: "This action uses az vm run-command in order to execute a command in the target VM, show the result and fail the build if the last command didn't execute properly."
-  # Requires being logged into azure through the azure login action and setting the environment variables $rgName and $vmName 
+  # Requires being logged into azure through the azure login action and setting the environment variables $os, $rgName and $vmName 
   # with the names of the resource group and the vm we are targeting respectively 
   # WARNING: This action ONLY checks the exit code of the last command. If your script input is made of multiple commands, 
   # make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. 
@@ -16,7 +16,8 @@ inputs:
 runs:
   using: "composite"
   steps:      
-    - name: Execute the command
+    - name: Execute the command in Linux
+      if: $os == linux
       uses: azure/CLI@v1
       with:
         inlineScript: |
@@ -25,6 +26,17 @@ runs:
             --vm-name $vmName \
             --name "${{ inputs.commandName }}" \
             --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
+            
+    - name: Execute the command in windows
+      if: $os == linux
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az vm run-command create \
+            --resource-group $rgName \
+            --vm-name $vmName \
+            --name "${{ inputs.commandName }}" \
+            --script "cmd.exe /c ${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
             
     - name: Get the result of the command
       id: commandResult
