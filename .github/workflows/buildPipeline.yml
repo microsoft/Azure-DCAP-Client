@@ -303,11 +303,12 @@ jobs:
               --name "updatePowershell" \
               --instance-view   
               
-      - name: test dir
+      - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installVSSetup"
-            script: "dir"
+            commandName: "cloneAzureDcap"
+            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+       
       
       #- name: Test a command
       #  uses: ./.github/actions/actionAzVmRunCommand
