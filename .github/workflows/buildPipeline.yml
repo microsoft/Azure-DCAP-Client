@@ -301,7 +301,19 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updatePowershell" \
-              --instance-view
+              --instance-view   
+              
+      - name: Restart the VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm restart \
+            --resource-group $rgName \
+            --vm-name $vmName \
+            --verbose
+              
+      - name: Sleep to let the VM restart
+        run: sleep 60
               
       - name: Install VSSetup
         uses: ./.github/actions/actionAzVmRunCommand
