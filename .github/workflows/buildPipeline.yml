@@ -291,7 +291,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updatePowershell" \
-              --script 'iex "& *** $(irm https://aka.ms/install-powershell.ps1) *** -UseMSI"'
+              --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"'
               
       - name: Show update powershell
         uses: azure/CLI@v1
@@ -303,7 +303,7 @@ jobs:
               --name "updatePowershell" \
               --instance-view   
               
-      - name: Install VSSetup
+      - name: test dir
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installVSSetup"
