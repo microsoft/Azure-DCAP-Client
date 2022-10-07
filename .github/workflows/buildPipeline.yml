@@ -307,7 +307,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installVSSetup"
-            script: "Install-Module -Name VSSetup"
+            script: "dir"
       
       #- name: Test a command
       #  uses: ./.github/actions/actionAzVmRunCommand
