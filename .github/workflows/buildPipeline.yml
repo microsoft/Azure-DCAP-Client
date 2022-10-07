@@ -291,7 +291,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "updatePowershell" \
-              --script 'msiexec.exe /package PowerShell-7.2.6-win-x64.msi ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1'
+              --script 'iex \"& *** $(irm https://aka.ms/install-powershell.ps1) *** -UseMSI\"'
               
       - name: Show update powershell
         uses: azure/CLI@v1
@@ -302,18 +302,6 @@ jobs:
               --vm-name $vmName \
               --name "updatePowershell" \
               --instance-view   
-              
-      - name: Restart the VM
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm restart \
-            --resource-group $rgName \
-            --vm-name $vmName \
-            --verbose
-              
-      - name: Sleep to let the VM restart
-        run: sleep 60
               
       - name: Install VSSetup
         uses: ./.github/actions/actionAzVmRunCommand
