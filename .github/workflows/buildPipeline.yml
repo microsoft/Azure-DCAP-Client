@@ -293,24 +293,44 @@ jobs:
       #        --name "updatePowershell" \
       #        --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"'
         
-      - name: Update powershell
+      - name: Download powershell 7 msi package
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "updatePowershell" \
-              --script 'winget install powershell'
+              --name "downloadPowershell7" \
+              --script 'Invoke-RestMethod -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.2.6/PowerShell-7.2.6-win-x64.msi" -OutFile "C:\"'
               
-      - name: Show update powershell
+      - name: Show download powershell 7 msi package
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "updatePowershell" \
+              --name "downloadPowershell7" \
+              --instance-view
+        
+      - name: Install powershell 7 msi package
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installPowershell7" \
+              --script 'msiexec.exe /package C:\PowerShell-7.2.6-win-x64.msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1'
+              
+      - name: Show Install powershell 7 msi package
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "installPowershell7" \
               --instance-view
       
       - name: Test a command
