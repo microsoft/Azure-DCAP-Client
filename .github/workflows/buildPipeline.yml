@@ -322,7 +322,7 @@ jobs:
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "updatePowershell3" \
+              --name "updatePowershell2" \
               --instance-view
         
       - name: Update powershell for a third time
@@ -332,7 +332,7 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "updatePowershell2" \
+              --name "updatePowershell3" \
               --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
       
                     
