@@ -283,28 +283,28 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
         
-      - name: Update powershell
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell" \
-              --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"'
+     # - name: Update powershell
+     #   uses: azure/CLI@v1
+     #   with:
+     #     inlineScript: |
+     #       az vm run-command create \
+     #         --resource-group $rgName \
+     #         --vm-name $vmName \
+     #         --name "updatePowershell" \
+     #         --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"'
               
-      - name: Show update powershell
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell" \
-              --instance-view   
+     # - name: Show update powershell
+     #   uses: azure/CLI@v1
+     #   with:
+     #     inlineScript: |
+     #       az vm run-command show \
+     #         --resource-group $rgName \
+     #         --vm-name $vmName \
+     #         --name "updatePowershell" \
+     #         --instance-view   
       
-      - name: Sleep after installing powershell hoping that it solves a bug where the install isn't recognized
-        run: sleep 20
+     # - name: Sleep after installing powershell hoping that it solves a bug where the install isn't recognized
+     #   run: sleep 20
       
       - name: Test a command
         uses: ./.github/actions/actionAzVmRunCommand
