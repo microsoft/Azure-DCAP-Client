@@ -290,8 +290,8 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "Update powershell" \
-              --script 'iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"'
+              --name "updatePowershell" \
+              --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI" -Quiet"'
       
                     
       - name: Show update powershell
@@ -301,7 +301,7 @@ jobs:
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "Update powershell" \
+              --name "updatePowershell" \
               --instance-view
         
       #- name: Download powershell 7 msi package
