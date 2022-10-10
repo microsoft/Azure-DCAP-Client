@@ -303,6 +303,9 @@ jobs:
               --name "updatePowershell" \
               --instance-view   
       
+      - name: Sleep after installing powershell hoping that it solves a bug where the install isn't recognized
+        run: sleep 20
+      
       - name: Test a command
         uses: ./.github/actions/actionAzVmRunCommand
         with:
