@@ -304,7 +304,7 @@ jobs:
               --name "updatePowershell" \
               --instance-view
         
-      - name: Update powershell again
+      - name: Update powershell again since it sometimes doesn't install properly
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -315,14 +315,35 @@ jobs:
               --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
       
                     
-      - name: Show update powershell again
+      - name: Show update powershell again since it sometimes doesn't install properly
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
+              --name "updatePowershell3" \
+              --instance-view
+        
+      - name: Update powershell for a third time
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
               --name "updatePowershell2" \
+              --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
+      
+                    
+      - name: Show update powershell for a third time
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "updatePowershell3" \
               --instance-view
       
       - name: Test a command
