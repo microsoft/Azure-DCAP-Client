@@ -309,6 +309,18 @@ jobs:
             commandName: "test"
             script: "dir"
               
+      - name: Install Chocolatey
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installChocolatey"
+            script: "Set-ExecutionPolicy Bypass -Scope Process -Force && [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072 && iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+              
+      - name: Install git 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGit"
+            script: "choco install -y git"
+              
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
