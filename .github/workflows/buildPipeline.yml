@@ -291,11 +291,11 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "ifTest" \
-              --script 'dir
+              --script '$PSVersionTable
                         if($? -eq 0) 
                         { 
-                        Write-Output "dir executed sucessfully" 
-                        } else {"dir failed"}'
+                        Write-Output "command executed sucessfully" 
+                        } else {"command failed"}'
       
                     
       - name: Show testing if
@@ -316,7 +316,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "ifTest2" \
-              --script 'asfddfasffsd
+              --script 'asdffsadfasfddafdas
                         if($? -ne 0) 
                         {
                         Write-Output "command failed sucessfully" 
