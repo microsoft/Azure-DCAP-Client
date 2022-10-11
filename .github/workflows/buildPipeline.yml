@@ -291,11 +291,11 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "ifTest" \
-              --script 'dir; 
+              --script 'dir
                         if($LASTEXITCODE -eq 0) 
                         { 
                         Write-Output "dir executed sucessfully" 
-                        }'
+                        } else {"dir failed"}'
       
                     
       - name: Show testing if
@@ -316,7 +316,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "ifTest2" \
-              --script 'asfddfasffsd; 
+              --script 'asfddfasffsd
                         if($LASTEXITCODE -ne 0) 
                         {
                         Write-Output "command failed sucessfully" 
