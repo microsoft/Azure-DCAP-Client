@@ -39,7 +39,7 @@ runs:
             --script "${{ inputs.script }}
                       if($?) { 
                         Write-Output "DCAP_Build_Step_Successfully_Completed" 
-                      } 
+                      }"
             
     - name: Get the result of the command
       id: commandResult
