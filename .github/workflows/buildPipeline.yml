@@ -282,131 +282,26 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
-        
-      - name: Testing if
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "ifTest" \
-              --script 'dir
-                        if($?) 
-                        { 
-                        Write-Output "command executed sucessfully" 
-                        } else {"command failed"}'
-      
-                    
-      - name: Show testing if
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "ifTest" \
-              --instance-view
-        
-      - name: Testing if2
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "ifTest2" \
-              --script 'asdffsadfasfddafdas
-                        if(-not($?)) 
-                        {
-                        Write-Output "command failed sucessfully" 
-                        }'
-      
-                    
-      - name: Show testing if
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "ifTest2" \
-              --instance-view
-        
-      - name: Update powershell
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell" \
-              --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
-      
-                    
-      - name: Show update powershell
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell" \
-              --instance-view
-        
-      - name: Update powershell again since it sometimes doesn't install properly
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell2" \
-              --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
-      
-                    
-      - name: Show update powershell again since it sometimes doesn't install properly
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell2" \
-              --instance-view
-        
-      - name: Update powershell for a third time
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell3" \
-              --script 'Invoke-Expression "& { $(Invoke-RestMethod 'https://aka.ms/install-powershell.ps1') } -UseMSI -Quiet"'
-      
-                    
-      - name: Show update powershell for a third time
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "updatePowershell3" \
-              --instance-view
       
       - name: Test a command
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "test"
             script: "dir"
+            
+      - name: Set the service point manager security protocol
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "setServicePointManagerSecurityProtocol"
+            script: "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072"
                           
       - name: Install Chocolatey
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installChocolatey"
-            script: '[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))'
+            script: |
+                    "Set-ExecutionPolicy Bypass -Scope Process -Force
+                    iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))"
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
