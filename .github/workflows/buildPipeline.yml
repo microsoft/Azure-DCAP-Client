@@ -298,11 +298,25 @@ jobs:
                     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
                     iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))
             
-      - name: Reload Path
-        uses: ./.github/actions/actionAzVmRunCommand
+      - name: Restart powershell
+        uses: azure/CLI@v1
         with:
-            commandName: "reloadPath"
-            script: '$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")'
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "restartPowershell" \
+              --script 'Get-Process -Id $PID | Select-Object -ExpandProperty Path | ForEach-Object { Invoke-Command { & "$_" } -NoNewScope }'      
+
+      - name: Show restart powershell
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "restartPowershell" \
+              --instance-view
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
