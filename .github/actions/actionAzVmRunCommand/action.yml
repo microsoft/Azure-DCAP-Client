@@ -39,6 +39,7 @@ runs:
             --script '${{ inputs.script }}
                       if($?){ 
                       Write-Host "DCAP_Build_Step_Successfully_Completed" 
+                      Write-Host "Write a second line so that there's a line break after the success tag" 
                       }'
             
     - name: Get the result of the command
@@ -51,6 +52,7 @@ runs:
       shell: bash
       run: |
           echo -e ${{steps.commandResult.outputs.result}} 
+          # Since the command sent shows up in the output, we search for the success tag with an added line brak in order to differenciate it.
           if [[ "${{steps.commandResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
       
 
