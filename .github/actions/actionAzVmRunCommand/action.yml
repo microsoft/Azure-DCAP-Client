@@ -39,7 +39,7 @@ runs:
             --script '${{ inputs.script }}
                       if($?){ 
                       Write-Host "DCAP_Build_Step_Successfully_Completed" 
-                      Write-Host "Write a second line so that there's a line break after the success tag" 
+                      Write-Host "Write a second line to get a line break after the success tag" 
                       }'
             
     - name: Get the result of the command
