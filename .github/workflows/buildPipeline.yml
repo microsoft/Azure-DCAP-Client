@@ -291,7 +291,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "ifTest" \
-              --script '$PSVersionTable
+              --script 'dir
                         if($?) 
                         { 
                         Write-Output "command executed sucessfully" 
