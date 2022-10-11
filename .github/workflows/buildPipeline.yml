@@ -306,7 +306,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "exitPowershell" \
-              --script 'exit'      
+              --script 'dir C:\ProgramData\Chocolatey'      
 
       - name: Show exit powershell
         uses: azure/CLI@v1
