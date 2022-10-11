@@ -283,6 +283,54 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
         
+      - name: Testing if
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "ifTest" \
+              --script 'dir\n \
+                        if($LASTEXITCODE -eq 0) { \
+                          Write-Output "dir executed sucessfully" \
+                        }'
+      
+                    
+      - name: Show testing if
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "ifTest" \
+              --instance-view
+        
+      - name: Testing if2
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "ifTest2" \
+              --script 'asfddfasffsd\n \
+                        if($LASTEXITCODE -ne 0) { \
+                          Write-Output "command failed sucessfully" \
+                        }'
+      
+                    
+      - name: Show testing if
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "ifTest2" \
+              --instance-view
+        
       - name: Update powershell
         uses: azure/CLI@v1
         with:
