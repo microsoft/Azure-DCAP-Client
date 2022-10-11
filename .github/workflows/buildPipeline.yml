@@ -282,27 +282,6 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
-        
-      - name: Install Chocolatey
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installChocolatey" \
-              --script 'Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))'
-      
-
-      - name: Show testing if
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command show \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "installChocolatey" \
-              --instance-view
       
       - name: Test a command
         uses: ./.github/actions/actionAzVmRunCommand
@@ -310,14 +289,14 @@ jobs:
             commandName: "test"
             script: "dir"
                           
-      #- name: Install Chocolatey
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "installChocolatey"
-      #      script: |
-      #              Set-ExecutionPolicy Bypass -Scope Process -Force; 
-      #              [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
-      #              iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      - name: Install Chocolatey
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installChocolatey"
+            script: |
+                    Set-ExecutionPolicy Bypass -Scope Process -Force
+                    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+                    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
