@@ -298,24 +298,24 @@ jobs:
                     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
                     iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))
             
-      - name: Restart powershell
+      - name: Exit powershell
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "restartPowershell" \
-              --script 'Get-Process -Id $PID | Select-Object -ExpandProperty Path | ForEach-Object { Invoke-Command { & "$_" } -NoNewScope }'      
+              --name "exitPowershell" \
+              --script 'exit'      
 
-      - name: Show restart powershell
+      - name: Show exit powershell
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command show \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "restartPowershell" \
+              --name "exitPowershell" \
               --instance-view
               
       - name: Install git
