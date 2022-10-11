@@ -38,7 +38,7 @@ runs:
             --name "${{ inputs.commandName }}" \
             --script '${{ inputs.script }}
                       if($?){ 
-                      Write-Output "DCAP_Build_Step_Successfully_Completed" 
+                      Write-Host "DCAP_Build_Step_Successfully_Completed" 
                       }'
             
     - name: Get the result of the command
