@@ -296,7 +296,7 @@ jobs:
             script: |
                     "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
                     Set-ExecutionPolicy Bypass -Scope Process -Force
-                    iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))"
+                    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
