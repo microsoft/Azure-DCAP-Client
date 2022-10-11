@@ -292,7 +292,7 @@ jobs:
               --vm-name $vmName \
               --name "ifTest" \
               --script '$PSVersionTable
-                        if($? -eq 0) 
+                        if($?) 
                         { 
                         Write-Output "command executed sucessfully" 
                         } else {"command failed"}'
@@ -317,7 +317,7 @@ jobs:
               --vm-name $vmName \
               --name "ifTest2" \
               --script 'asdffsadfasfddafdas
-                        if($? -ne 0) 
+                        if(-not($?)) 
                         {
                         Write-Output "command failed sucessfully" 
                         }'
