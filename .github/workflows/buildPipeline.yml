@@ -292,7 +292,7 @@ jobs:
               --vm-name $vmName \
               --name "ifTest" \
               --script 'dir
-                        if($LASTEXITCODE -eq 0) 
+                        if($? -eq 0) 
                         { 
                         Write-Output "dir executed sucessfully" 
                         } else {"dir failed"}'
@@ -317,7 +317,7 @@ jobs:
               --vm-name $vmName \
               --name "ifTest2" \
               --script 'asfddfasffsd
-                        if($LASTEXITCODE -ne 0) 
+                        if($? -ne 0) 
                         {
                         Write-Output "command failed sucessfully" 
                         }'
