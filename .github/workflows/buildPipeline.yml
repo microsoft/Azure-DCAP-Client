@@ -268,7 +268,7 @@ jobs:
       - name: Test
         shell: bash
         run: |
-            command="cmd.exe /c "rmdir /s /q C:\AzureDCAP""
+            command='cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
             echo $command
               
       - name: Sleep to let the VM start
