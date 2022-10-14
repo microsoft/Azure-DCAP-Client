@@ -285,7 +285,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script '$command'
+              --script ''$command''
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
