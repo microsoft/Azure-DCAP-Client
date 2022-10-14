@@ -18,15 +18,13 @@ jobs:
       max-parallel: 1
       matrix:
         imageName: ["Ubuntu20_04", "Ubuntu18_04"]
-        sizeName: [IceLake, CoffeeLake]
+        sizeName: [CoffeeLake]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
           - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
             imageName: Ubuntu18_04
-          - sizeName: IceLake
-            size: Standard_DC4s_v3
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
           
@@ -287,6 +285,16 @@ jobs:
               --vm-name $vmName \
               --name "cautionaryCleanup" \
               --script "Remove-Item –path C:/AzureDCAP -force –recurse"
+      
+      - name: Show the result of the cleanup
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cautionaryCleanup" \
+              --instance-view
               
       - name: Clone the Azure DCAP repo
         uses: ./.github/actions/actionAzVmRunCommand
@@ -345,8 +353,18 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "cautionaryCleanup" \
-              --script "Remove-Item –path C:\AzureDCAP -force –recurse"
+              --name "cleanup" \
+              --script "Remove-Item –path C:/AzureDCAP -force –recurse"
+      
+      - name: Show the result of the cleanup
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cleanup" \
+              --instance-view
       
       - name: Stop VM
         if: always()
