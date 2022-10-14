@@ -277,14 +277,13 @@ jobs:
         run: sleep 60
       
       - name: Cleanup the clone folder in case cleanup failed during a previous run
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
+        shell: bash
+        run: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script 'cmd.exe /c 'rmdir /s /q C:\AzureDCAP''
+              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
@@ -347,14 +346,13 @@ jobs:
             if [[ "${{steps.unitTestDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
           
       - name: Cleanup the cloned repo
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
+        shell: bash
+        run: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cleanup" \
-              --script 'cmd.exe /c 'rmdir /s /q C:\AzureDCAP''
+              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
