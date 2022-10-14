@@ -18,12 +18,18 @@ jobs:
       max-parallel: 1
       matrix:
         imageName: ["Ubuntu20_04", "Ubuntu18_04"]
+        sizeName: [IceLake, CoffeeLake]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
           - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
             imageName: Ubuntu18_04
+          - sizeName: IceLake
+            size: Standard_DC4s_v3
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+          
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
     
@@ -61,7 +67,7 @@ jobs:
               --resource-group $rgName \
               --name $vmName \
               --image ${{ matrix.imageUrn }} \
-              --size Standard_DC4s_v2 \
+              --size ${{ matrix.size }} \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
@@ -236,14 +242,10 @@ jobs:
   DCAPWindowsBuildTest:          
     strategy:
       # Launch a VM and build once per each buildType
+      # Since we only have one persistent VM to perform the windows jobs, max-parallel should always be one. 
       max-parallel: 1
       matrix:
         buildType: [Release, Debug]
-        include:
-          - buildType: Release
-            buildTypeAbbreviation: R
-          - buildType: Debug
-            buildTypeAbbreviation: D
             
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
@@ -252,7 +254,7 @@ jobs:
     env:
       os: windows
       #Windows VM name must be within 15 characters
-      vmName: dcapWin${{ matrix.buildTypeAbbreviation }}${{ github.run_number }}
+      vmName: winBuildPers
       rgName: dcap-github-actions-agents-rg
 
       
@@ -265,95 +267,95 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
-      - name: Create VM
+      - name: Start VM
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az vm create \
+            az vm start \
               --resource-group $rgName \
-              --name $vmName \
-              --image "MicrosoftWindowsServer:WindowsServer:2019-datacenter-gensecond:latest" \
-              --size Standard_DC4s_v2 \
-              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
-              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
-              --nic-delete-option delete \
-              --os-disk-delete-option delete \
-              --public-ip-sku Standard
+              --name $vmName 
               
       - name: Sleep to let the VM start
         run: sleep 60
       
-      - name: Test a command
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "test"
-            script: "dir"
-                          
-      - name: Install Chocolatey
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installChocolatey"
-            script: |
-                    Set-ExecutionPolicy Bypass -Scope Process -Force
-                    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-                    iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))
-            
-      - name: Exit powershell
+      - name: Cleanup the clone folder in case cleanup failed during a previous run
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "exitPowershell" \
-              --script 'dir C:\ProgramData\Chocolatey'      
-
-      - name: Show exit powershell
+              --name "cautionaryCleanup" \
+              --script "Remove-Item –path C:\AzureDCAP -force –recurse"
+              
+      - name: Clone the Azure DCAP repo
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneDcap"
+            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git C:/AzureDCAP"
+             
+      - name: Build Azure DCAP
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az vm run-command show \
+            az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "exitPowershell" \
-              --instance-view
+              --name "buildDcap" \
+              --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
               
-      - name: Install git
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installGit"
-            script: "choco install -y git"
-              
-      - name: Clone Azure DCAP 
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "cloneAzureDcap"
-            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git"
-       
+      - name: Get the build result
+        id: buildDcapResult
+        shell: bash
+        run: |
+            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)'
+    
+      - name: Verify the build result
+        shell: bash
+        run: |
+            echo -e ${{steps.buildDcapResult.outputs.result}} 
+            if [[ "${{steps.buildDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
       
-      #- name: Test a command
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "test"
-      #      script: "dir"
-
-      - name: Cleanup
+      - name: Run Azure DCAP unit tests
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "unitTestDcap" \
+              --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the build result
+        id: unitTestDcapResult
+        shell: bash
+        run: |
+            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)'
+    
+      - name: Verify the build result
+        shell: bash
+        run: |
+            echo -e ${{steps.unitTestDcapResult.outputs.result}} 
+            if [[ "${{steps.unitTestDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+          
+      - name: Cleanup the cloned repo
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cautionaryCleanup" \
+              --script "Remove-Item –path C:\AzureDCAP -force –recurse"
+      
+      - name: Stop VM
         if: always()
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az vm delete \
-              -g $rgName \
-              -n $vmName \
-              --yes
-            az resource delete \
-              -g $rgName \
-              -n ${{ env.vmName }}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups"
-            az resource delete \
-              -g $rgName \
-              -n ${{ env.vmName }}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses"
+            az vm stop \
+              --resource-group $rgName \
+              --name $vmName
               
               
               
