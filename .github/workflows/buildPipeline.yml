@@ -286,7 +286,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script "Remove-Item –path C:\AzureDCAP -force –recurse"
+              --script "Remove-Item –path C:/AzureDCAP -force –recurse"
               
       - name: Clone the Azure DCAP repo
         uses: ./.github/actions/actionAzVmRunCommand
