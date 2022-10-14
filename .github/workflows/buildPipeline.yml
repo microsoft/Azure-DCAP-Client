@@ -278,14 +278,7 @@ jobs:
       
       - name: Cleanup the clone folder in case cleanup failed during a previous run
         shell: bash
-        run: |
-            command='cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
-            echo $command
-            az vm run-command create \
-              --resource-group $rgName \
-              --vm-name $vmName \
-              --name "cautionaryCleanup" \
-              --script '"cmd.exe /c "rmdir /s /q C:\AzureDCAP""'
+        run: az vm run-command create --resource-group $rgName --vm-name $vmName --name "cautionaryCleanup" --script "cmd.exe /c "rmdir /s /q C:\AzureDCAP""
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
