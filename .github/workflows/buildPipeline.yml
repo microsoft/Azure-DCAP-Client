@@ -285,7 +285,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cloneDcap" \
-              --script "C:\dcapBuild\DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
       - name: Get the build result
         id: cloneDcapResult
