@@ -279,7 +279,7 @@ jobs:
       - name: Cleanup the clone folder in case cleanup failed during a previous run
         shell: bash
         run: |
-            command='cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
+            command=''cmd.exe /c "rmdir /s /q C:\AzureDCAP"''
             echo $command
             az vm run-command create \
               --resource-group $rgName \
@@ -350,7 +350,7 @@ jobs:
       - name: Cleanup the cloned repo
         shell: bash
         run: |
-            command='cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
+            command=''cmd.exe /c "rmdir /s /q C:\AzureDCAP"''
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
