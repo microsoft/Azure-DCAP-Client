@@ -284,7 +284,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script 'Remove-Item –path c:\AzureDCAP -force –recurse'
+              --script 'Remove-Item –Path c:\AzureDCAP -Force –Recurse'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
@@ -354,7 +354,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cleanup" \
-              --script 'Remove-Item –path c:\AzureDCAP -force –recurse'
+              --script 'Remove-Item –Path c:\AzureDCAP -Force –Recurse'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
@@ -371,7 +371,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az vm stop \
+            az vm deallocate \
               --resource-group $rgName \
               --name $vmName
               
