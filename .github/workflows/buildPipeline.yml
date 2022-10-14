@@ -265,6 +265,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
+      - name: Test
+        shell: bash
+        run: |
+            command="cmd.exe /c "rmdir /s /q C:\AzureDCAP""
+            echo $command
+              
+      - name: Sleep to let the VM start
+        run: sleep 60
+            
       - name: Start VM
         uses: azure/CLI@v1
         with:
@@ -279,11 +288,13 @@ jobs:
       - name: Cleanup the clone folder in case cleanup failed during a previous run
         shell: bash
         run: |
+            command="cmd.exe /c "rmdir /s /q C:\AzureDCAP""
+            echo $command
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
+              --script $command
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
@@ -348,11 +359,12 @@ jobs:
       - name: Cleanup the cloned repo
         shell: bash
         run: |
+            command="cmd.exe /c "rmdir /s /q C:\AzureDCAP""
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "cleanup" \
-              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
+              --name "cautionaryCleanup" \
+              --script $command
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
