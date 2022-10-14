@@ -284,7 +284,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cautionaryCleanup" \
-              --script "cmd.exe /c "rmdir /s /q C:\AzureDCAP""
+              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
@@ -354,7 +354,7 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --name "cleanup" \
-              --script "cmd.exe /c "rmdir /s /q C:\AzureDCAP""
+              --script 'cmd.exe /c "rmdir /s /q C:\AzureDCAP"'
       
       - name: Show the result of the cleanup
         uses: azure/CLI@v1
