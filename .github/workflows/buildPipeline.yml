@@ -7,6 +7,9 @@ on:
   # Triggers the workflow on pull request events but only for the "master" branch
   pull_request:
     branches: [ "master" ]
+  # Manually trigger the workflow
+  workflow_dispatch:
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -14,7 +17,7 @@ jobs:
   # This job tests running on hardware with a custom path to libdcap_quoteprov.so
   ACCTest:          
     strategy:
-      # Launch a VM and build once per each combination of linux image and buildType
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
         imageName: ["Ubuntu20_04", "Ubuntu18_04"]
@@ -42,16 +45,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-
-      # Runs a single command using the runners shell
-      # - name: Run a one-line script
-      #   run: echo $vmName
-
-      # Runs a set of commands using the runners shell
-      # - name: Run a multi-line script
-      #   run: |
-      #     echo Add other actions to build,
-      #     echo test, and deploy your project.
           
       - uses: azure/login@v1
         with:
@@ -207,6 +200,10 @@ jobs:
             commandName: "testOpenEnclave"
             script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
 
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
       - name: Cleanup
         if: always()
         uses: azure/CLI@v1
@@ -224,17 +221,7 @@ jobs:
               -g $rgName \
               -n ${{ env.vmName }}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
-              
-              
-              
-              
-            
-            
-            
-            
-            
-            
-            
+
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
@@ -276,7 +263,6 @@ jobs:
       - name: Sleep to let the VM start
         run: sleep 60
       
-      
       - name: Clone the DCAP repo after cleaning up the previous execution
         uses: azure/CLI@v1
         with:
@@ -298,7 +284,6 @@ jobs:
         run: |
             echo -e ${{steps.cloneDcapResult.outputs.result}} 
             if [[ "${{steps.cloneDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
-      
              
       - name: Build Azure DCAP
         uses: azure/CLI@v1
@@ -321,7 +306,6 @@ jobs:
         run: |
             echo -e ${{steps.buildDcapResult.outputs.result}} 
             if [[ "${{steps.buildDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
-      
       
       - name: Run Azure DCAP unit tests
         uses: azure/CLI@v1
@@ -353,28 +337,8 @@ jobs:
             az vm deallocate \
               --resource-group $rgName \
               --name $vmName
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
+
+
   # This job runs DCAP end to end tests 
   DCAPE2ETest:
             
@@ -528,6 +492,10 @@ jobs:
         with:
             commandName: "runDcapTests"
             script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
 
       - name: Cleanup
         if: always()
