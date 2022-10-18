@@ -27,8 +27,7 @@ runs:
             --name "${{ inputs.commandName }}" \
             --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
 
-#   This action fails to execute when trying to run complex commands in windows
-#   Thus, it has been disabled for windows
+#    Due to failures related to escaping special characters through yaml, bash, powershell and cmd simultaneously, this action is currently disabled for windows.
 #    - name: Execute the command in windows
 #      if: ${{ env.os == 'windows' }}
 #      uses: azure/CLI@v1
