@@ -292,7 +292,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBuildEssential"
-            script: sudo dnf group install "C Development Tools and Libraries" "Development Tools" -y
+            script: sudo dnf group install \"C Development Tools and Libraries\" \"Development Tools\" -y
               
       - name: Install libSSL
         uses: ./.github/actions/actionAzVmRunCommand
