@@ -235,6 +235,7 @@ jobs:
       matrix:
         imageName: ["Mariner"]
         sizeName: [CoffeeLake]
+        buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
             imageName: Mariner
@@ -248,7 +249,7 @@ jobs:
     # Job environment variables
     env:
       os: linux
-      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
 
       
