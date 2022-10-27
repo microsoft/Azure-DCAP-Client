@@ -288,6 +288,12 @@ jobs:
             commandName: "updateDNF"
             script: "sudo dnf check-update -y"
               
+      - name: Install buildEssential
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuildEssential"
+            script: sudo dnf group install "C Development Tools and Libraries" "Development Tools" -y
+              
       - name: Install libSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
@@ -305,12 +311,6 @@ jobs:
         with:
             commandName: "installPkgConfig"
             script: "sudo dnf install pkg-config -y"
-              
-      - name: Install buildEssential
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installBuildEssential"
-            script: "sudo dnf group install 'C Development Tools and Libraries' 'Development Tools' -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
