@@ -19,7 +19,7 @@ jobs:
       max-parallel: 1
       matrix:
         imageName: ["Ubuntu20_04", "Ubuntu18_04"]
-        sizeName: [CoffeeLake]
+        sizeName: [IceLake, CoffeeLake]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
@@ -28,6 +28,10 @@ jobs:
             imageName: Ubuntu18_04
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
+            location: uksouth
+          - sizeName: IceLake
+            size: Standard_DC4s_v3
+            location: westus
           
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
@@ -35,7 +39,7 @@ jobs:
     # Job environment variables
     env:
       os: linux
-      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
 
       
@@ -57,6 +61,7 @@ jobs:
               --name $vmName \
               --image ${{ matrix.imageUrn }} \
               --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
@@ -230,12 +235,12 @@ jobs:
       matrix:
         imageName: ["Mariner"]
         sizeName: [CoffeeLake]
-        buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
             imageName: Mariner
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
+            location: uksouth
           
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
@@ -243,7 +248,7 @@ jobs:
     # Job environment variables
     env:
       os: linux
-      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}
       rgName: dcap-github-actions-agents-rg
 
       
@@ -265,6 +270,7 @@ jobs:
               --name $vmName \
               --image ${{ matrix.imageUrn }} \
               --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
@@ -273,23 +279,11 @@ jobs:
       
       - name: Sleep to let the VM start
         run: sleep 60
-      
-      - name: Install software properties common
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installSoftwarePropertiesCommon"
-            script: "sudo dnf install software-properties-common -y"
               
-      - name: Add ppa repository
+      - name: Update dnf
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "addPpaRepository"
-            script: "sudo add-apt-repository ppa:team-xbmc/ppa -y"
-              
-      - name: Update apt-get
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "updateAptGet"
+            commandName: "updateDNF"
             script: "sudo dnf check-update -y"
               
       - name: Install libSSL
@@ -314,7 +308,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBuildEssential"
-            script: "sudo apt-get install build-essential -y"
+            script: "sudo dnf install build-essential -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
@@ -548,13 +542,28 @@ jobs:
   # This job runs DCAP end to end tests 
   DCAPE2ETest:
             
+    strategy:
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
+      max-parallel: 1
+      matrix:
+        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
+        sizeName: [CoffeeLake]
+        include:
+          - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
+            imageName: Ubuntu20_04
+          - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
+            imageName: Ubuntu18_04
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+            location: uksouth
+            
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
     
     # Job environment variables
     env:
       os: linux
-      vmName: dcapE2ETestBuildVM${{ github.run_number }}Ubuntu20_04
+      vmName: dcapE2ETestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}
       rgName: dcap-github-actions-agents-rg
 
       
@@ -574,8 +583,9 @@ jobs:
             az vm create \
               --resource-group $rgName \
               --name $vmName \
-              --image "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest" \
-              --size Standard_DC4s_v2 \
+              --image ${{ matrix.imageUrn }} \
+              --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
               --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
