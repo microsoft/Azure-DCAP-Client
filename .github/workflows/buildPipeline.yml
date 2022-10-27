@@ -41,6 +41,7 @@ jobs:
       os: linux
       vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
+      location: ${{ matrix.location }}
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -291,13 +292,13 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installLibSSL"
-            script: "sudo dnf install libssl-dev -y"
+            script: "sudo dnf install openssl-devel -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: "sudo dnf install libcurl4-openssl-dev -y"
+            script: "sudo dnf install libcurl-devel -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
@@ -309,25 +310,25 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBuildEssential"
-            script: "sudo dnf install build-essential -y"
+            script: 'sudo dnf group install "C Development Tools and Libraries" "Development Tools" -y'
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo dnf install nlohmann-json3-dev -y"
+            script: "sudo dnf install json-devel -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "sudo dnf install sqlite3 -y"
+            script: "sudo dnf install sqlite -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo dnf install libsqlite3-dev -y"
+            script: "sudo dnf install libsq3-devel -y"
               
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
