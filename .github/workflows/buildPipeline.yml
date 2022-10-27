@@ -18,10 +18,12 @@ jobs:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
-        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
+        imageName: ["Mariner", "Ubuntu20_04", "Ubuntu18_04"]
         sizeName: [CoffeeLake]
         buildType: [RelWithDebInfo, Debug]
         include:
+          - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
+            imageName: Mariner
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
           - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
