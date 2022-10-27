@@ -22,6 +22,7 @@ runs:
       with:
         inlineScript: |
           az vm run-command create \
+            --debug \
             --resource-group $rgName \
             --vm-name $vmName \
             --location ${{ matrix.location }} \
