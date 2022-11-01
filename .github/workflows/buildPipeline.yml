@@ -328,13 +328,25 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo dnf install libsq3-devel -y"
+            script: "sudo dnf search sqlite && sudo dnf install libsqlite3x-devel -y"
               
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
             script: "sudo dnf install cmake -y"
+            
+      - name: Install libgtest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibgtest"
+            script: "sudo dnf install libgtest-devel -y"
+              
+      - name: Install Google test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGoogleTest"
+            script: "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib"
               
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
@@ -359,48 +371,30 @@ jobs:
         with:
             commandName: "makeAzureDcap"
             script: "cd /AzureDCAP/src/Linux && sudo make"
-                            
-      - name: Clone openenclave 
+              
+      - name: Make Install Azure DCAP
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "cloneOpenEnclave"
-            script: "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave"
-                            
-      - name: Update openenclave submodule
+            commandName: "makeInstallAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make install"
+              
+      - name: CMake DCAP tests
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "updateOpenEnclaveSubmodule"
-            script: "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init"
-                            
-      - name: Install Ansible
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
+              
+      - name: Make DCAP tests
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installAnsible"
-            script: "cd /openenclave && sudo scripts/ansible/install-ansible.sh"
-                            
-      - name: Setup ACC 
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+              
+      - name: Run DCAP tests
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "setupACC"
-            script: "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml"
-                            
-      - name: CMake openenclave with ninja
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "cmakeOpenEnclave"
-            script: "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}"
-                            
-      - name: Make openenclave with ninja
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "makeOpenEnclave"
-            script: "cd /openenclave/build && sudo ninja -v"
-                            
-      - name: Run openenclave tests
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "testOpenEnclave"
-            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
