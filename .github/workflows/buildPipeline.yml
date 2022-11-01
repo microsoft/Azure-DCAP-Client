@@ -597,17 +597,29 @@ jobs:
             commandName: "updateDNF"
             script: "sudo dnf check-update -y"
               
-      - name: Show available dnf groups
+      - name: Install gcc
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installLibSSL"
-            script: "dnf group list --hidden"
-              
-      #- name: Install buildEssential
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "installBuildEssential"
-      #      script: sudo dnf group install \"C Development Tools and Libraries\" \"Development Tools\" -y
+            commandName: "installGcc"
+            script: "sudo dnf install gcc -y"
+            
+      - name: Install gcc-c++
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGcc-c++"
+            script: "sudo dnf install gcc-c++ -y"
+            
+      - name: Install make
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installMake"
+            script: "sudo dnf install make -y"
+            
+      - name: Install glibc-devel
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGlibc-devel"
+            script: "sudo dnf install glibc-devel -y"
               
       - name: Install libSSL
         uses: ./.github/actions/actionAzVmRunCommand
