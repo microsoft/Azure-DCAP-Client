@@ -603,6 +603,12 @@ jobs:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
             
+      - name: Find stuff
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "findStuff"
+            script: "sudo dnf whatprovides */errno.h -y"
+            
       - name: Install glibc
         uses: ./.github/actions/actionAzVmRunCommand
         with:
