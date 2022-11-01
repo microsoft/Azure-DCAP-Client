@@ -595,7 +595,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "updateDNF"
-            script: "sudo dnf check-update -y"
+            script: "sudo dnf check-update -y && sudo dnf search git"
               
       #- name: Install buildEssential
       #  uses: ./.github/actions/actionAzVmRunCommand
