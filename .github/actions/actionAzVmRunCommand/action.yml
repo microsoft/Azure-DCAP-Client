@@ -1,0 +1,61 @@
+name: "AzVmRunCommand"
+description: "This action uses az vm run-command in order to execute a command in the target VM, show the result and fail the build if the last command didn't execute properly."
+  # Requires being logged into azure through the azure login action and setting the environment variables $os, $rgName and $vmName 
+  # with the names of the os, resource group and the vm we are targeting respectively 
+  # WARNING: This action ONLY checks the exit code of the last command. If your script input is made of multiple commands, 
+  # make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. 
+  # Some options to do this include using [set -euo pipeline] or equivalents, or using the && operator to connect console commands
+  # WARNING: This action hasn't been tested with script files. 
+inputs:
+  commandName:
+    description: "Name of the command to execute"
+    required: true
+  script:
+    description: "The script to execute"
+    required: true
+runs:
+  using: "composite"
+  steps:      
+    - name: Execute the command in Linux
+      if: ${{ env.os == 'linux' }}
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az vm run-command create \
+            --resource-group $rgName \
+            --vm-name $vmName \
+            --name "${{ inputs.commandName }}" \
+            --script "${{ inputs.script }} && echo 'DCAP_Build_Step_Successfully_Completed'"
+
+#    Due to failures related to escaping special characters through yaml, bash, powershell and cmd simultaneously, this action is currently disabled for windows.
+#    - name: Execute the command in windows
+#      if: ${{ env.os == 'windows' }}
+#      uses: azure/CLI@v1
+#      with:
+#        inlineScript: |
+#          az vm run-command create \
+#            --resource-group $rgName \
+#            --vm-name $vmName \
+#            --name "${{ inputs.commandName }}" \
+#            --script '${{ inputs.script }}
+#                      if($?){ 
+#                      Write-Host "DCAP_Build_Step_Successfully_Completed" 
+#                      Write-Host "Write a second line to get a line break after the success tag" 
+#                      }'
+            
+    - name: Get the result of the command
+      id: commandResult
+      shell: bash
+      run: |
+          echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "${{ inputs.commandName }}" --instance-view)'
+    
+    - name: Show the output of the command
+      shell: bash
+      run: |
+          echo -e ${{steps.commandResult.outputs.result}} 
+          # az vm run-command returns both the output of the commands executed AND the commands executed
+          # For this reason we have to search for the success tag + a linebreak to know that the tag is in the output
+          # If we searched only for the tag, we'd find it as part of the commands executed, even if the step failed and echo 'DCAP_Build_Step_Successfully_Completed' never executed 
+          if [[ "${{steps.commandResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+      
+

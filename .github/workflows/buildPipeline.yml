@@ -4,79 +4,514 @@ name: Build and test
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
-  push:
-    branches: [ "master" ]
+  # Triggers the workflow on pull request events but only for the "master" branch
   pull_request:
     branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  ACCTest:  
-    
-    # OS of the Github VM calling Azure CLI
-    runs-on: ubuntu-latest
-        
-    # Launch a VM and build once per each combination of linux image and buildType
+
+  # This job tests running on hardware with a custom path to libdcap_quoteprov.so
+  ACCTest:          
     strategy:
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
+      max-parallel: 1
       matrix:
-        image: [Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest, Canonical:UbuntuServer:18_04-lts-gen2:latest]
+        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
+        sizeName: [CoffeeLake]
         buildType: [RelWithDebInfo, Debug]
         include:
-          - image: Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest
-            imageVmName: Ubuntu20_04
-          - image: Canonical:UbuntuServer:18_04-lts-gen2:latest
-            imageVmName: Ubuntu18_04
-            
+          - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
+            imageName: Ubuntu20_04
+          - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
+            imageName: Ubuntu18_04
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+          
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
     # Job environment variables
     env:
-      vmName: ${{ join([dcapACCTestBuildVM, ${{ github.run_number }}, $imageVmName, $buildType], '') }}
+      os: linux
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
+      rgName: dcap-github-actions-agents-rg
+
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo $vmName
-
-      # Runs a set of commands using the runners shell
-      # - name: Run a multi-line script
-      #   run: |
-      #     echo Add other actions to build,
-      #     echo test, and deploy your project.
           
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
-      - name: Test login
+      
+      - name: Create VM
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.30.0
           inlineScript: |
-            az account show --query id
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image ${{ matrix.imageUrn }} \
+              --size ${{ matrix.size }} \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+      
+      - name: Sleep to let the VM start
+        run: sleep 60
+      
+      - name: Install software properties common
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSoftwarePropertiesCommon"
+            script: "sudo apt install software-properties-common -y"
+              
+      - name: Add ppa repository
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "addPpaRepository"
+            script: "sudo add-apt-repository ppa:team-xbmc/ppa -y"
+              
+      - name: Update apt-get
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
+              
+      - name: Install libSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
+              
+      - name: Install openSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installOpenSSL"
+            script: "sudo apt install libcurl4-openssl-dev -y"
+              
+      - name: Install PkgConfig
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
+              
+      - name: Install buildEssential
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuildEssential"
+            script: "sudo apt install build-essential -y"
+              
+      - name: Install nlohmann json
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
+              
+      - name: Install sqlite3
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
+              
+      - name: Install sqlite3 dev
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
+              
+      - name: Install CMake
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
+              
+      - name: Clone Azure DCAP 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneAzureDcap"
+            script: "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+              
+      - name: Update DCAP submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && sudo git submodule update --init --recursive"
+              
+      - name: Configure Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo ./configure"
+              
+      - name: Make Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make"
+                            
+      - name: Clone openenclave 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneOpenEnclave"
+            script: "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave"
+                            
+      - name: Update openenclave submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateOpenEnclaveSubmodule"
+            script: "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init"
+                            
+      - name: Install Ansible
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installAnsible"
+            script: "cd /openenclave && sudo scripts/ansible/install-ansible.sh"
+                            
+      - name: Setup ACC 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "setupACC"
+            script: "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml"
+                            
+      - name: CMake openenclave with ninja
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeOpenEnclave"
+            script: "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}"
+                            
+      - name: Make openenclave with ninja
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeOpenEnclave"
+            script: "cd /openenclave/build && sudo ninja -v"
+                            
+      - name: Run openenclave tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "testOpenEnclave"
+            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
+
+
+  # Test DCAP build process in Windows
+  DCAPWindowsBuildTest:          
+    strategy:
+      # Launch a VM and build once per each buildType
+      # Since we only have one persistent VM to perform the windows jobs, max-parallel should always be one. 
+      max-parallel: 1
+      matrix:
+        buildType: [Release, Debug]
             
-#      - name: Create VM
-#        uses: azure/CLI@v1
-#        with:
-#          azcliversion: 2.30.0
-#          inlineScript: |
-#            az vm create \
-#              --resource-group dcap-github-actions-agents-rg \
-#              --name $vmName \
-#              --image $image \
-#              --size Standard_DC4s_v2 \
-#              --admin-username secrets.BUILD_VM_USERNAME \
-#              --admin-password secrets.BUILD_VM_PASSWORD \
-#              --nic-delete-option delete \
-#              --os-disk-delete-option delete \
-#              --public-ip-sku Standard
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      os: windows
+      #Windows VM name must be within 15 characters
+      vmName: winBuildPers
+      rgName: dcap-github-actions-agents-rg
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
             
-  
+      - name: Start VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm start \
+              --resource-group $rgName \
+              --name $vmName 
+              
+      - name: Sleep to let the VM start
+        run: sleep 60
+      
+      - name: Clone the DCAP repo after cleaning up the previous execution
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneDcap" \
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
+              
+      - name: Get the build result
+        id: cloneDcapResult
+        shell: bash
+        run: |
+            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)'
+    
+      - name: Verify the build result
+        shell: bash
+        run: |
+            echo -e ${{steps.cloneDcapResult.outputs.result}} 
+            if [[ "${{steps.cloneDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+             
+      - name: Build Azure DCAP
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "buildDcap" \
+              --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the build result
+        id: buildDcapResult
+        shell: bash
+        run: |
+            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)'
+    
+      - name: Verify the build result
+        shell: bash
+        run: |
+            echo -e ${{steps.buildDcapResult.outputs.result}} 
+            if [[ "${{steps.buildDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+      
+      - name: Run Azure DCAP unit tests
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "unitTestDcap" \
+              --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the build result
+        id: unitTestDcapResult
+        shell: bash
+        run: |
+            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)'
+    
+      - name: Verify the build result
+        shell: bash
+        run: |
+            echo -e ${{steps.unitTestDcapResult.outputs.result}} 
+            if [[ "${{steps.unitTestDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+
+      - name: Stop VM
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm deallocate \
+              --resource-group $rgName \
+              --name $vmName
+
+
+  # This job runs DCAP end to end tests 
+  DCAPE2ETest:
+            
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      os: linux
+      vmName: dcapE2ETestBuildVM${{ github.run_number }}Ubuntu20_04
+      rgName: dcap-github-actions-agents-rg
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+          
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+            
+      - name: Create VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest" \
+              --size Standard_DC4s_v2 \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+              
+      - name: Sleep to let the VM start
+        run: sleep 60
+              
+      - name: Update apt-get
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
+              
+      - name: Install libSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
+              
+      - name: Install openSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installOpenSSL"
+            script: "sudo apt install libcurl4-openssl-dev -y"
+              
+      - name: Install PkgConfig
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
+              
+      - name: Install buildEssential
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuildEssential"
+            script: "sudo apt install build-essential -y"
+              
+      - name: Install nlohmann json
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
+              
+      - name: Install sqlite3
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
+              
+      - name: Install sqlite3 dev
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
+              
+      - name: Install libgtest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibgtest"
+            script: "sudo apt-get install libgtest-dev -y"
+              
+      - name: Install CMake
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
+              
+      - name: Install Google test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGoogleTest"
+            script: "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib"
+              
+      - name: Clone Azure DCAP 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneAzureDcap"
+            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+              
+      - name: Update submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && git submodule update --init --recursive"
+              
+      - name: Configure Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && ./configure"
+              
+      - name: Make Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && make"
+              
+      - name: Make Install Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeInstallAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make install"
+              
+      - name: CMake DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
+              
+      - name: Make DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+              
+      - name: Run DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
+              
+
       
