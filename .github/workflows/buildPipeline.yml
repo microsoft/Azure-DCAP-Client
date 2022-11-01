@@ -405,12 +405,6 @@ jobs:
             commandName: "updateAptGet"
             script: "sudo apt-get update -y"
               
-      - name: Show available dnf groups
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installLibSSL"
-            script: "dnf group list --hidden"
-              
       - name: Install libSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
@@ -602,6 +596,12 @@ jobs:
         with:
             commandName: "updateDNF"
             script: "sudo dnf check-update -y"
+              
+      - name: Show available dnf groups
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibSSL"
+            script: "dnf group list --hidden"
               
       #- name: Install buildEssential
       #  uses: ./.github/actions/actionAzVmRunCommand
