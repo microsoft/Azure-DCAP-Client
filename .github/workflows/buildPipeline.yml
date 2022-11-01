@@ -229,7 +229,7 @@ jobs:
               
   # This job tests running on hardware with a custom path to libdcap_quoteprov.so
   # Mariner is based on Fedora and requires different commands from Ubuntu 
-  ACCTestMariner:          
+  ACCTestMariner:    
     strategy:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
