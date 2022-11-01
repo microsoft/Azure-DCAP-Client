@@ -606,7 +606,7 @@ jobs:
       - name: Install gcc-c++
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installGcc-c++"
+            commandName: "installGccplusplus"
             script: "sudo dnf install gcc-c++ -y"
             
       - name: Install make
