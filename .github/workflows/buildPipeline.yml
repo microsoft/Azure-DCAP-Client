@@ -340,7 +340,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installLibgtest"
-            script: "sudo dnf install libgtest-devel -y"
+            script: "dnf search libgtest && sudo dnf install libgtest-devel -y"
               
       - name: Install Google test
         uses: ./.github/actions/actionAzVmRunCommand
