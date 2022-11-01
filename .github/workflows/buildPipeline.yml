@@ -607,7 +607,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "findStuff"
-            script: "sudo dnf whatprovides */errno.h -y"
+            script: "sudo dnf whatprovides */linux/errno.h -y"
             
       - name: Install glibc
         uses: ./.github/actions/actionAzVmRunCommand
