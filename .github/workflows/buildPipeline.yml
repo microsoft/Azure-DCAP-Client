@@ -18,8 +18,8 @@ jobs:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
-        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
         sizeName: [IceLake, CoffeeLake]
+        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
@@ -234,8 +234,8 @@ jobs:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
-        imageName: ["Mariner"]
         sizeName: [CoffeeLake]
+        imageName: ["Mariner"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
@@ -316,7 +316,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo dnf install json-devel -y"
+            script: "sudo dnf install json-devel-3 -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
@@ -548,8 +548,8 @@ jobs:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
-        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
         sizeName: [CoffeeLake]
+        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
