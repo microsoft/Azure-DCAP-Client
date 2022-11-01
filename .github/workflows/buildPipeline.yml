@@ -596,24 +596,12 @@ jobs:
         with:
             commandName: "updateDNF"
             script: "sudo dnf check-update -y"
-              
-      - name: Install gcc
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installGcc"
-            script: "sudo dnf install gcc -y"
             
-      - name: Install gcc-c++
+      - name: Update packages through dnf
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installGccplusplus"
-            script: "sudo dnf install gcc-c++ -y"
-            
-      - name: Install make
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installMake"
-            script: "sudo dnf install make -y"
+            commandName: "dnfUpgrade"
+            script: "sudo dnf upgrade -y"
             
       - name: Install glibc-devel
         uses: ./.github/actions/actionAzVmRunCommand
