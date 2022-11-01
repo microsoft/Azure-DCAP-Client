@@ -595,7 +595,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "updateDNF"
-            script: "sudo dnf check-update -y && sudo dnf search git"
+            script: "sudo dnf check-update -y"
               
       #- name: Install buildEssential
       #  uses: ./.github/actions/actionAzVmRunCommand
@@ -643,7 +643,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGit"
-            script: "sudo dnf install git-all -y"
+            script: "sudo dnf install git -y"
 
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
