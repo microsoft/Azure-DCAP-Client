@@ -639,6 +639,12 @@ jobs:
             commandName: "installSqlite3Dev"
             script: "sudo dnf install sqlite-devel -y"
               
+      - name: Install git
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGit"
+            script: "sudo dnf install git-all -y"
+
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
