@@ -316,7 +316,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo dnf install json-devel-3 -y"
+            script: "sudo dnf search json-devel && sudo dnf install json-devel -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
