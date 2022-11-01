@@ -603,6 +603,12 @@ jobs:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
             
+      - name: Install glibc
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGlibc"
+            script: "sudo dnf install glibc -y"
+            
       - name: Install glibc-devel
         uses: ./.github/actions/actionAzVmRunCommand
         with:
