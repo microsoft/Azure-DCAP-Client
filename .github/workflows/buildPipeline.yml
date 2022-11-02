@@ -586,7 +586,8 @@ jobs:
               --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
               --nic-delete-option delete \
               --os-disk-delete-option delete \
-              --public-ip-sku Standard
+              --public-ip-sku Standard \
+              --os-disk-size-gb 10
       
       - name: Sleep to let the VM start
         run: sleep 60
