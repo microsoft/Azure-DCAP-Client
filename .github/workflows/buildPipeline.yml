@@ -604,6 +604,18 @@ jobs:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
             
+      - name: Install the epel repository
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installEpel"
+            script: "sudo dnf install epel-release -y"
+            
+      - name: Install build packages
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuiltPackages"
+            script: 'sudo dnf groupinstall "Development Tools" "Development Libraries" -y'
+            
       #- name: Find stuff
       #  uses: ./.github/actions/actionAzVmRunCommand
       #  with:
