@@ -604,18 +604,6 @@ jobs:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
             
-      - name: Install the epel repository
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installEpel"
-            script: "sudo dnf install epel-release -y"
-            
-      - name: Install build packages
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installBuiltPackages"
-            script: 'sudo dnf groupinstall "Development Tools" "Development Libraries" -y'
-            
       #- name: Find stuff
       #  uses: ./.github/actions/actionAzVmRunCommand
       #  with:
@@ -693,6 +681,36 @@ jobs:
         with:
             commandName: "installCMake"
             script: "sudo dnf install cmake -y"
+            
+      - name: Install glibc-headers
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGlibcHeaders"
+            script: 'sudo dnf install glibc-headers -y'
+            
+      - name: Install kernel-headers
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installKernelHeaders"
+            script: 'sudo dnf install kernel-headers -y'
+            
+      - name: Install libtool 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibtool"
+            script: 'sudo dnf install libtool -y'
+            
+      - name: Install libmpc 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibmpc"
+            script: 'sudo dnf install libmpc -y'
+            
+      - name: Install libmpc 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibmpc"
+            script: 'sudo dnf install libmpc -y'
             
       #- name: Install libgtest
       #  uses: ./.github/actions/actionAzVmRunCommand
