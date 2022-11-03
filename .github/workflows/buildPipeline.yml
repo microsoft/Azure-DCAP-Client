@@ -682,35 +682,17 @@ jobs:
             commandName: "installCMake"
             script: "sudo dnf install cmake -y"
             
-      - name: Install glibc-headers
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installGlibcHeaders"
-            script: 'sudo dnf install glibc-headers -y'
-            
       - name: Install kernel-headers
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installKernelHeaders"
             script: 'sudo dnf install kernel-headers -y'
             
-      - name: Install libtool 
+      - name: Install binutils 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installLibtool"
-            script: 'sudo dnf install libtool -y'
-            
-      - name: Install libmpc 
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installLibmpc"
-            script: 'sudo dnf install libmpc -y'
-            
-      - name: Install libmpc 
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installLibmpc"
-            script: 'sudo dnf install libmpc -y'
+            commandName: "installBinutils"
+            script: 'sudo dnf install binutils -y'
             
       #- name: Install libgtest
       #  uses: ./.github/actions/actionAzVmRunCommand
