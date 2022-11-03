@@ -538,7 +538,7 @@ jobs:
 
   # This job runs DCAP end to end tests 
   # Mariner is based on Fedora and requires different commands from Ubuntu 
-  DCAPE2ETestMariner:    
+  MarinerBuild:    
     strategy:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
@@ -603,12 +603,6 @@ jobs:
         with:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
-            
-      #- name: Find stuff
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "findStuff"
-      #      script: "sudo dnf whatprovides */linux/errno.h -y"
             
       - name: Install kernel devel
         uses: ./.github/actions/actionAzVmRunCommand
