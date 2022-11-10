@@ -688,11 +688,29 @@ jobs:
             commandName: "installBinutils"
             script: 'sudo dnf install binutils -y'
             
-      #- name: Install libgtest
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "installLibgtest"
-      #      script: "dnf search libgtest && sudo dnf install libgtest-devel -y"
+      - name: Clone GoogleTest 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneGoogleTest"
+            script: 'sudo git clone https://github.com/google/googletest.git /GoogleTest'
+              
+      - name: CMake GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeGoogleTest"
+            script: "cd /GoogleTest && sudo mkdir build && cd build && sudo cmake .."
+            
+      - name: Make GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeGoogleTest"
+            script: "cd /GoogleTest/build && sudo make"
+            
+      - name: Make Install GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeInstallGoogleTest"
+            script: "cd /GoogleTest/build && sudo make install"
               
       #- name: Install Google test
       #  uses: ./.github/actions/actionAzVmRunCommand
@@ -730,23 +748,23 @@ jobs:
             commandName: "makeInstallAzureDcap"
             script: "cd /AzureDCAP/src/Linux && sudo make install"
               
-      #- name: CMake DCAP tests
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "cmakeDcapTests"
-      #      script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
+      - name: CMake DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
               
-      #- name: Make DCAP tests
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "makeDcapTests"
-      #      script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+      - name: Make DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
               
-      #- name: Run DCAP tests
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "runDcapTests"
-      #      script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
+      - name: Run DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
