@@ -71,14 +71,19 @@ static char PRIMARY_CERT_URL[] =
     "http://169.254.169.254/metadata/THIM/sgx/certification";
 static std::string primary_cert_url = PRIMARY_CERT_URL;
 
+#if defined __SERVICE_VM__
+static char SECONDARY_CERT_URL[] = "https://localhost:4320/sgx/certification";
+static char DEFAULT_CLIENT_ID[] = "production_service_vm";
+static char DEFAULT_COLLATERAL_VERSION[] = "v4";
+#else
 static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
-static std::string secondary_cert_url = SECONDARY_CERT_URL;
-
 static char DEFAULT_CLIENT_ID[] = "production_client";
-static std::string prod_client_id = DEFAULT_CLIENT_ID;
-
 static char DEFAULT_COLLATERAL_VERSION[] = "v3";
+#endif
+
+static std::string secondary_cert_url = SECONDARY_CERT_URL;
+static std::string prod_client_id = DEFAULT_CLIENT_ID;
 static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char CRL_CA_PROCESSOR[] = "processor";
@@ -128,11 +133,13 @@ static std::string get_collateral_version()
     {
         if (collateral_version.compare("v1") &&
             collateral_version.compare("v2") &&
-            collateral_version.compare("v3"))
+            collateral_version.compare("v3") &&
+            collateral_version.compare("v4"))
+
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values are empty, v1, or v2 or v3",
+                "Acceptable values are empty, v1, v2, v3 and v4",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -214,6 +221,7 @@ static std::string get_secondary_url()
         get_env_variable(ENV_AZDCAP_SECONDARY_BASE_CERT_URL);
 
     if (env_secondary_url.empty())
+
     {
         log(SGX_QL_LOG_INFO,
             "Using default secondary base cert URL '%s'.",
@@ -233,6 +241,7 @@ static std::string get_client_id()
     std::string env_client_id = get_env_variable(ENV_AZDCAP_CLIENT_ID);
 
     if (env_client_id.empty())
+
     {
         log(SGX_QL_LOG_INFO,
             "Using default client id '%s'.",
@@ -1362,6 +1371,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             ::tolower);
         try
         {
+#if !defined __SERVICE_VM__
             if (bypass_base.compare("false") == 0)
             {
                 log(SGX_QL_LOG_INFO,
@@ -1374,6 +1384,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     retval,
                     0);
             }
+#endif
             if (recieved_certificate)
             {
                 log(SGX_QL_LOG_INFO,

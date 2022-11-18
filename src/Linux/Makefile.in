@@ -5,10 +5,19 @@ prefix = /usr/local
 
 INCLUDES = -I##CURLINC## -I. -I.. -Iext/intel
 DEBUG ?= 0
+SERVICE_VM ?= 0
 ifeq ($(DEBUG), 1)
-    CFLAGS = -fPIC -std=c++14 -g -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+	ifeq ($(SERVICE_VM), 1)
+		CFLAGS = -fPIC -std=c++14 -g -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -D__SERVICE_VM__ -Wno-unknown-pragmas -pthread
+	else
+		CFLAGS = -fPIC -std=c++14 -g -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+	endif
 else
-    CFLAGS = -fPIC -std=c++14 -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+	ifeq ($(SERVICE_VM), 1)
+		CFLAGS = -fPIC -std=c++14 -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -D__SERVICE_VM__ -Wno-unknown-pragmas -pthread
+	else
+		CFLAGS = -fPIC -std=c++14 -Wall -I /usr/local/include/gtest/ -Werror $(INCLUDES) -D__LINUX__ -Wno-unknown-pragmas -pthread
+	endif
 endif
 
 PROVIDER_SRC = ../dcap_provider.cpp ../logging.cpp curl_easy.cpp local_cache.cpp init.cpp

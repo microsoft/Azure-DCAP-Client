@@ -246,7 +246,7 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
 }
 
 
-void local_cache_add(const std::string& id, time_t expiry, size_t data_size, const void* data)
+extern "C" void local_cache_add(const std::string& id, time_t expiry, size_t data_size, const void* data)
 {
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
     throw_if(data_size == 0, "Data cannot be empty.");
