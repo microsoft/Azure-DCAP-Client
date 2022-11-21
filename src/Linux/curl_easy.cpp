@@ -138,9 +138,10 @@ void curl_easy::perform() const
 {
 	bool finished = false;
 	int retry_delay = initial_retry_delay_ms;
+	CURLcode result;
 	
 	for(int i = 0; i < maximum_retries && !finished; i++){
-		CURLcode result = curl_easy_perform(handle);
+		result = curl_easy_perform(handle);
 		
 		if(result == CURLE_OPERATION_TIMEDOUT){
 			std::this_thread::sleep_for(std::chrono::milliseconds(retry_delay));
