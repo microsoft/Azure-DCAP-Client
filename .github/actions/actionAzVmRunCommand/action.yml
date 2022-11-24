@@ -56,7 +56,7 @@ runs:
     - name: Show the output of the command
       shell: bash
       run: |
-          echo "${{ steps.commandResult.outputs.result }}" 
+          ${{ steps.commandResult.outputs.result }}
           
     - name: Verify the output of the command
       shell: bash
