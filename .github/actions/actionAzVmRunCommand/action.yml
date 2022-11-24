@@ -57,6 +57,10 @@ runs:
       shell: bash
       run: |
           echo -e "${{ steps.commandResult.outputs.result }}" 
+          
+    - name: Verify the output of the command
+      shell: bash
+      run: |
           # az vm run-command returns both the output of the commands executed AND the commands executed
           # For this reason we have to search for the success tag + a linebreak to know that the tag is in the output
           # If we searched only for the tag, we'd find it as part of the commands executed, even if the step failed and echo 'DCAP_Build_Step_Successfully_Completed' never executed 
