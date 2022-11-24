@@ -245,6 +245,7 @@ jobs:
       #Windows VM name must be within 15 characters
       vmName: winBuildPersSub
       rgName: dcap-github-actions-agents-rg
+      location: westus
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -274,6 +275,7 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
+              --location $location \
               --name "cloneDcap" \
               --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
@@ -296,6 +298,7 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
+              --location $location \
               --name "buildDcap" \
               --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
               
@@ -318,6 +321,7 @@ jobs:
             az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
+              --location $location \
               --name "unitTestDcap" \
               --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
               
