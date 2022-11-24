@@ -49,15 +49,15 @@ runs:
       id: commandResult
       shell: bash
       run: |
-          echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name "${{ inputs.commandName }}" --instance-view)'
+          echo 'result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name "${{ inputs.commandName }}" --instance-view)' >> $GITHUB_OUTPUT
     
     - name: Show the output of the command
       shell: bash
       run: |
-          echo -e ${{steps.commandResult.outputs.result}} 
+          echo -e ${{env.result}} 
           # az vm run-command returns both the output of the commands executed AND the commands executed
           # For this reason we have to search for the success tag + a linebreak to know that the tag is in the output
           # If we searched only for the tag, we'd find it as part of the commands executed, even if the step failed and echo 'DCAP_Build_Step_Successfully_Completed' never executed 
-          if [[ "${{steps.commandResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+          if [[ "${{env.result}}" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
       
 
