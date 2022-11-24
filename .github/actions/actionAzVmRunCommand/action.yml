@@ -49,7 +49,9 @@ runs:
       id: commandResult
       shell: bash
       run: |
+          echo 'FILE_TEXT<<EOF' >> $GITHUB_OUTPUT
           echo "result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name ${{ inputs.commandName }} --instance-view)" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
     
     - name: Show the output of the command
       shell: bash
