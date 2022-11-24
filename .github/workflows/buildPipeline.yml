@@ -243,7 +243,7 @@ jobs:
     env:
       os: windows
       #Windows VM name must be within 15 characters
-      vmName: winBuildPers
+      vmName: winBuildPersSub
       rgName: dcap-github-actions-agents-rg
 
       
