@@ -44,22 +44,15 @@ runs:
 #                      Write-Host "DCAP_Build_Step_Successfully_Completed" 
 #                      Write-Host "Write a second line to get a line break after the success tag" 
 #                      }'
-            
-    - name: Get the result of the command
-      id: commandResult
-      shell: bash
-      run: |
-          echo "result<<EOF" >> $GITHUB_OUTPUT
-          echo "$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name ${{ inputs.commandName }} --instance-view)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
           
-    - name: Verify the output of the command
+    - name: Get the result of the command
       shell: bash
       run: |
-          echo -e "$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name ${{ inputs.commandName }} --instance-view)"
+          result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name ${{ inputs.commandName }} --instance-view)
+          echo -e "$result"
           # az vm run-command returns both the output of the commands executed AND the commands executed
           # For this reason we have to search for the success tag + a linebreak to know that the tag is in the output
           # If we searched only for the tag, we'd find it as part of the commands executed, even if the step failed and echo 'DCAP_Build_Step_Successfully_Completed' never executed 
-          if [[ "$(az vm run-command show --resource-group $rgName --vm-name $vmName --location ${{ matrix.location }} --name ${{ inputs.commandName }} --instance-view)" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+          if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed\n"* ]]; then echo "Step successfully executed"; else exit 1; fi 
       
 
