@@ -700,12 +700,6 @@ jobs:
             commandName: "makeInstallGoogleTest"
             script: "cd /GoogleTest/build && sudo make install"
               
-      #- name: Install Google test
-      #  uses: ./.github/actions/actionAzVmRunCommand
-      #  with:
-      #      commandName: "installGoogleTest"
-      #      script: "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib"
-              
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
