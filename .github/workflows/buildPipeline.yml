@@ -279,17 +279,12 @@ jobs:
               --name "cloneDcap" \
               --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
-      - name: Get the build result
-        id: cloneDcapResult
+      - name: Get the result of cloning the repository
         shell: bash
         run: |
-            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)'
-    
-      - name: Verify the build result
-        shell: bash
-        run: |
-            echo -e ${{steps.cloneDcapResult.outputs.result}} 
-            if [[ "${{steps.cloneDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
              
       - name: Build Azure DCAP
         uses: azure/CLI@v1
@@ -302,17 +297,12 @@ jobs:
               --name "buildDcap" \
               --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
               
-      - name: Get the build result
-        id: buildDcapResult
+      - name: Get the result of building dcap
         shell: bash
         run: |
-            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)'
-    
-      - name: Verify the build result
-        shell: bash
-        run: |
-            echo -e ${{steps.buildDcapResult.outputs.result}} 
-            if [[ "${{steps.buildDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
       
       - name: Run Azure DCAP unit tests
         uses: azure/CLI@v1
@@ -325,17 +315,12 @@ jobs:
               --name "unitTestDcap" \
               --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
               
-      - name: Get the build result
-        id: unitTestDcapResult
+      - name: Get the result of the unit tests
         shell: bash
         run: |
-            echo '::set-output name=result::$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)'
-    
-      - name: Verify the build result
-        shell: bash
-        run: |
-            echo -e ${{steps.unitTestDcapResult.outputs.result}} 
-            if [[ "${{steps.unitTestDcapResult.outputs.result}}" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi 
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
 
       - name: Stop VM
         if: always()
@@ -349,7 +334,6 @@ jobs:
 
   # This job runs DCAP end to end tests 
   DCAPE2ETest:
-            
     strategy:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
