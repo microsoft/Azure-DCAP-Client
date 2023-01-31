@@ -782,6 +782,25 @@ static inline void VerifyDurationChecks(
     }
 }
 
+static inline void VerifyDurationChecks(
+    float duration_local_cert,
+    float duration_curl_cert,
+    bool caching_enabled = false)
+{
+    if (caching_enabled)
+    {
+        // Ensure that there is a signficiant enough difference between the cert
+        // fetch to the end point and cert fetch to local cache and that local
+        // cache call is fast enough
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE = CURL_TOLERANCE;
+        EXPECT_TRUE(
+            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        EXPECT_TRUE(
+            duration_local_cert <
+            (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
+    }
+}
+
 boolean RunQuoteProviderTests(bool caching_enabled = false)
 {
     local_cache_clear();
@@ -1374,13 +1393,17 @@ TEST(testQuoteProvServiceVM, quoteProviderServiceVMTestsData)
     local_cache_clear();
 
     Log(SGX_QL_LOG_INFO, "Fetching certificate from THIMAgent.");
-    GetCertsTest();
+    auto duration_curl_cert = MeasureFunction(GetCertsTest());
 
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
     Log(SGX_QL_LOG_INFO, "Fetching certificate from cache.");
-    GetCertsTest();
+    auto duration_local_cert = MeasureFunction(GetCertsTest());
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_curl_cert,
+        caching_enabled);
 #else
     Log(SGX_QL_LOG_INFO,
         "Service VM flag was not set during compilation. No Service VM tests were executed.");
