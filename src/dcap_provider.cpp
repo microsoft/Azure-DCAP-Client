@@ -72,7 +72,7 @@ static char PRIMARY_CERT_URL[] =
 static std::string primary_cert_url = PRIMARY_CERT_URL;
 
 #if defined __SERVICE_VM__
-static char SECONDARY_CERT_URL[] = "https://localhost:4321/tdx/certification";
+static char SECONDARY_CERT_URL[] = "http://localhost:4321/tdx/certification";
 static char DEFAULT_CLIENT_ID[] = "production_service_vm";
 static char DEFAULT_COLLATERAL_VERSION[] = "v4";
 #else
