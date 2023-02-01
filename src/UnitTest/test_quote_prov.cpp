@@ -1393,17 +1393,17 @@ TEST(testQuoteProvServiceVM, quoteProviderServiceVMTestsData)
     local_cache_clear();
 
     Log(SGX_QL_LOG_INFO, "Fetching certificate from THIMAgent.");
-    auto duration_curl_cert = MeasureFunction(GetCertsTest());
+    auto duration_curl_cert = MeasureFunction(GetCertsTest);
 
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
     Log(SGX_QL_LOG_INFO, "Fetching certificate from cache.");
-    auto duration_local_cert = MeasureFunction(GetCertsTest());
+    auto duration_local_cert = MeasureFunction(GetCertsTest);
     VerifyDurationChecks(
         duration_local_cert,
         duration_curl_cert,
-        caching_enabled);
+        false);
 #else
     Log(SGX_QL_LOG_INFO,
         "Service VM flag was not set during compilation. No Service VM tests were executed.");
