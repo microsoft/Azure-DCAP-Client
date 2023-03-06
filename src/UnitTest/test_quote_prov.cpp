@@ -1238,9 +1238,13 @@ void SetupEnvironmentTDX(std::string version)
 {
 #if defined __LINUX__
     setenv(
-        "AZDCAP_PRIMARY_BASE_CERT_URL",
-        "",
-        1);
+		"AZDCAP_BASE_CERT_URL_TDX_CRL", 
+		"", 
+		1);
+    setenv(
+		"AZDCAP_BASE_CERT_URL_TDX_COLLATERAL", 
+		"", 
+		1);
     setenv(
         "ENV_AZDCAP_SECONDARY_BASE_CERT_URL",
         "",
@@ -1252,24 +1256,24 @@ void SetupEnvironmentTDX(std::string version)
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
     {
-        setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+        setenv("AZDCAP_COLLATERAL_VERSION_TDX", version.c_str(), 1);
     }
 #else
     std::stringstream version_var;
     if (!version.empty())
     {
         EXPECT_TRUE(SetEnvironmentVariableA(
-            "AZDCAP_COLLATERAL_VERSION", version.c_str()));
+            "AZDCAP_COLLATERAL_VERSION_TDX", version.c_str()));
     }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_PRIMARY_BASE_CERT_URL",
         ""));
     EXPECT_TRUE(SetEnvironmentVariableA(
-        "AZDCAP_SECONDARY_BASE_CERT_URL",
-        ""));
+        "AZDCAP_SECONDARY_BASE_CERT_URL", ""));
     EXPECT_TRUE(SetEnvironmentVariableA(
-        "AZDCAP_BASE_CERT_URL",
-        ""));
+		"AZDCAP_BASE_CERT_URL_TDX_CRL", ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+		"AZDCAP_BASE_CERT_URL_TDX_COLLATERAL", ""));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
@@ -1281,24 +1285,6 @@ void SetupEnvironmentToReachSecondary()
     setenv("AZDCAP_BYPASS_BASE_URL", "true", 1);
 #else
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_BYPASS_BASE_URL", "true"));
-#endif
-}
-
-TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
-{
-    libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironmentTDX("");
-    GetVerificationCollateralTestTDX();
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
 #endif
 }
 
@@ -1396,6 +1382,24 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironmentTDX("");
+    GetVerificationCollateralTestTDX();
 
 #if defined __LINUX__
     dlclose(library);
