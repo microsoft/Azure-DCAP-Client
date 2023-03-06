@@ -44,6 +44,10 @@ typedef struct _access_permission
 } permission_type_t;
 #endif
 
+#ifndef tdx_ql_qve_collateral_t
+typedef sgx_ql_qve_collateral_t tdx_ql_qve_collateral_t;
+#endif
+
 typedef void (*measured_function_t)(void);
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
@@ -55,6 +59,9 @@ typedef quote3_error_t (*sgx_ql_free_quote_config_t)(
 
 typedef quote3_error_t (*sgx_ql_free_quote_verification_collateral_t)(
     sgx_ql_qve_collateral_t* p_quote_collateral);
+
+typedef quote3_error_t (*tdx_ql_free_quote_verification_collateral_t)(
+    tdx_ql_qve_collateral_t* p_quote_collateral);
 
 typedef quote3_error_t (*sgx_ql_free_qve_identity_t)(
     char* p_qve_identity,
@@ -68,13 +75,20 @@ typedef quote3_error_t (*sgx_ql_get_quote_verification_collateral_t)(
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral);
 
-typedef quote3_error_t (*sgx_ql_get_quote_verification_collateral_with_params_t)(
+typedef quote3_error_t (
+    *sgx_ql_get_quote_verification_collateral_with_params_t)(
     const uint8_t* fmspc,
     const uint16_t fmspc_size,
     const char* pck_ca,
     const void* custom_param,
     const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral);
+
+typedef quote3_error_t (*tdx_ql_get_quote_verification_collateral_t)(
+    const uint8_t* fmspc,
+    const uint16_t fmspc_size,
+    const char* pck_ca,
+    tdx_ql_qve_collateral_t** pp_quote_collateral);
 
 typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     char** pp_qve_identity,
@@ -97,102 +111,105 @@ static sgx_ql_get_quote_config_t sgx_ql_get_quote_config;
 static sgx_ql_set_logging_function_t sgx_ql_set_logging_function;
 static sgx_ql_free_quote_verification_collateral_t
     sgx_ql_free_quote_verification_collateral;
+static tdx_ql_free_quote_verification_collateral_t
+    tdx_ql_free_quote_verification_collateral;
 static sgx_ql_free_qve_identity_t sgx_ql_free_qve_identity;
 static sgx_ql_free_root_ca_crl_t sgx_ql_free_root_ca_crl;
 static sgx_ql_get_quote_verification_collateral_t
     sgx_ql_get_quote_verification_collateral;
 static sgx_ql_get_quote_verification_collateral_with_params_t
     sgx_ql_get_quote_verification_collateral_with_params;
+static tdx_ql_get_quote_verification_collateral_t
+    tdx_ql_get_quote_verification_collateral;
 static sgx_ql_get_qve_identity_t sgx_ql_get_qve_identity;
 static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 
 // Test FMSPC
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
-static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
+static constexpr uint8_t ICX_TEST_FMSPC[] =
+    {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
+static constexpr uint8_t TDX_TEST_FMSPC[] =
+    {0x00, 0x80, 0x6F, 0x05, 0x00, 0x00};
 
 const uint16_t custom_param_length = 45;
-const char *custom_param = "tcbEvaluationDataNumber=11;region=us central";
+const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
 std::string tcbEvaluationDataNumber = "11";
 
 const uint16_t incorrect_custom_param_length = 24;
 const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
 
 // Test input (choose an arbitrary Azure server)
-static uint8_t qe_id[16] = {
-    0x00,
-    0xfb,
-    0xe6,
-    0x73,
-    0x33,
-    0x36,
-    0xea,
-    0xf7,
-    0xa4,
-    0xe3,
-    0xd8,
-    0xb9,
-    0x66,
-    0xa8,
-    0x2e,
-    0x64};
+static uint8_t qe_id[16] = {0x00,
+                            0xfb,
+                            0xe6,
+                            0x73,
+                            0x33,
+                            0x36,
+                            0xea,
+                            0xf7,
+                            0xa4,
+                            0xe3,
+                            0xd8,
+                            0xb9,
+                            0x66,
+                            0xa8,
+                            0x2e,
+                            0x64};
 
-static sgx_cpu_svn_t cpusvn = {
-    0x04,
-    0x04,
-    0x02,
-    0x04,
-    0xff,
-    0x80,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static sgx_cpu_svn_t cpusvn = {0x04,
+                               0x04,
+                               0x02,
+                               0x04,
+                               0xff,
+                               0x80,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00};
 
 static sgx_isv_svn_t pcesvn = 6;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
-static uint8_t icx_qe_id[16] = {
-    0x0f,
-    0xe3,
-    0x21,
-    0xfa,
-    0xa3,
-    0x1e,
-    0x76,
-    0xda,
-    0x3e,
-    0xaa,
-    0xd8,
-    0x27,
-    0xab,
-    0x69,
-    0x07,
-    0x19};
+static uint8_t icx_qe_id[16] = {0x0f,
+                                0xe3,
+                                0x21,
+                                0xfa,
+                                0xa3,
+                                0x1e,
+                                0x76,
+                                0xda,
+                                0x3e,
+                                0xaa,
+                                0xd8,
+                                0x27,
+                                0xab,
+                                0x69,
+                                0x07,
+                                0x19};
 
-static sgx_cpu_svn_t icx_cpusvn = {
-    0x04,
-    0x04,
-    0x03,
-    0x08,
-    0xff,
-    0xff,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static sgx_cpu_svn_t icx_cpusvn = {0x04,
+                                   0x04,
+                                   0x03,
+                                   0x08,
+                                   0xff,
+                                   0xff,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00,
+                                   0x00};
 
 static sgx_isv_svn_t icx_pcesvn = 10;
 
@@ -221,8 +238,6 @@ static void Log(sgx_ql_log_level_t level, const char* message)
     }
     printf("[%s]: %s\n", levelText, message);
 }
-
-
 
 #if defined __LINUX__
 static void* LoadFunctions()
@@ -264,6 +279,11 @@ static void* LoadFunctions()
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
+    tdx_ql_free_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_free_quote_verification_collateral_t>(
+            dlsym(library, "tdx_ql_free_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_free_quote_verification_collateral, nullptr);
+
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         dlsym(library, "sgx_ql_free_qve_identity"));
     EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
@@ -281,6 +301,11 @@ static void* LoadFunctions()
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
+
+    tdx_ql_get_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_get_quote_verification_collateral_t>(
+            dlsym(library, "tdx_ql_get_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         dlsym(library, "sgx_ql_get_qve_identity"));
@@ -331,6 +356,12 @@ static HINSTANCE LoadFunctions()
                 hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
+    tdx_ql_free_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_free_quote_verification_collateral_t>(
+            GetProcAddress(
+                hLibCapdll, "tdx_ql_free_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_free_quote_verification_collateral, nullptr);
+
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_free_qve_identity"));
     EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
@@ -349,6 +380,12 @@ static HINSTANCE LoadFunctions()
         sgx_ql_get_quote_verification_collateral_with_params_t>(GetProcAddress(
         hLibCapdll, "sgx_ql_get_quote_verification_collateral_with_params"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral_with_params, nullptr);
+
+    tdx_ql_get_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_get_quote_verification_collateral_t>(
+            GetProcAddress(
+                hLibCapdll, "tdx_ql_get_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_qve_identity"));
@@ -404,25 +441,26 @@ static void GetCertsTest()
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
-        0x04,
-        0x04,
-        0x02,
-        0x04,
-        0x01,
-        0x80,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00};
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {0x04,
+                                              0x04,
+                                              0x02,
+                                              0x04,
+                                              0x01,
+                                              0x80,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00};
     constexpr sgx_isv_svn_t pcesvn_mapped = 5;
-    ASSERT_TRUE(0 == memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
+    ASSERT_TRUE(
+        0 ==
+        memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
     ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
     ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
     ASSERT_TRUE(0 < config->cert_data_size);
@@ -445,25 +483,26 @@ static void GetCertsTestICXV3()
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
-        0x04,
-        0x04,
-        0x03,
-        0x03,
-        0xff,
-        0xff,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00};
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {0x04,
+                                              0x04,
+                                              0x03,
+                                              0x03,
+                                              0xff,
+                                              0xff,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00,
+                                              0x00};
     constexpr sgx_isv_svn_t pcesvn_mapped = 10;
-    ASSERT_TRUE(0 == memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
+    ASSERT_TRUE(
+        0 ==
+        memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
     ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
     ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
     ASSERT_TRUE(0 < config->cert_data_size);
@@ -477,7 +516,8 @@ static inline void VerifyCrlOutput(sgx_ql_get_revocation_info_params_t params)
 {
     boolean TEST_SUCCESS = false;
     sgx_ql_revocation_info_t* output;
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
+    ASSERT_TRUE(
+        SGX_PLAT_ERROR_OK == sgx_ql_get_revocation_info(&params, &output));
     ASSERT_TRUE(0 < output->tcb_info_size);
     ASSERT_TRUE(nullptr != output->tcb_info);
     ASSERT_TRUE(1 == output->crl_count);
@@ -494,7 +534,9 @@ static inline void VerifyCrlOutput(sgx_ql_get_revocation_info_params_t params)
 static void GetCrlTest()
 {
     // This is the CRL DP used by Intel for leaf certs
-    static const char* TEST_CRL_URL = "https://api.trustedservices.intel.com/sgx/certification/v1/pckcrl?ca=processor";
+    static const char* TEST_CRL_URL =
+        "https://api.trustedservices.intel.com/sgx/certification/v1/"
+        "pckcrl?ca=processor";
     sgx_ql_get_revocation_info_params_t params = {
         SGX_QL_REVOCATION_INFO_VERSION_1,
         sizeof(TEST_FMSPC),
@@ -509,7 +551,9 @@ static void GetCrlTest()
 //
 static void GetCrlTestICXV3()
 {
-    static const char* TEST_CRL_URL = "https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl?ca=platform&encoding=pem";
+    static const char* TEST_CRL_URL =
+        "https://api.trustedservices.intel.com/sgx/certification/v3/"
+        "pckcrl?ca=platform&encoding=pem";
     sgx_ql_get_revocation_info_params_t params = {
         SGX_QL_REVOCATION_INFO_VERSION_1,
         sizeof(ICX_TEST_FMSPC),
@@ -519,9 +563,8 @@ static void GetCrlTestICXV3()
     VerifyCrlOutput(params);
 }
 
-static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
+static inline void VerifyCollateralCommon(sgx_ql_qve_collateral_t* collateral)
 {
-    boolean TEST_SUCCESS = false;
     ASSERT_TRUE(collateral != nullptr);
     ASSERT_TRUE(collateral->version == 1);
     ASSERT_TRUE(collateral->pck_crl != nullptr);
@@ -541,13 +584,37 @@ static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
 
     // Make sure all collateral is terminated with a null character
     ASSERT_TRUE(collateral->pck_crl[collateral->pck_crl_size - 1] == '\0');
-    ASSERT_TRUE(collateral->pck_crl_issuer_chain[collateral->pck_crl_issuer_chain_size - 1] == '\0');
-    ASSERT_TRUE(collateral->qe_identity[collateral->qe_identity_size - 1] == '\0');
-    ASSERT_TRUE(collateral->qe_identity_issuer_chain[collateral->qe_identity_issuer_chain_size - 1] == '\0');
-    ASSERT_TRUE(collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
+    ASSERT_TRUE(
+        collateral
+            ->pck_crl_issuer_chain[collateral->pck_crl_issuer_chain_size - 1] ==
+        '\0');
+    ASSERT_TRUE(
+        collateral->qe_identity[collateral->qe_identity_size - 1] == '\0');
+    ASSERT_TRUE(
+        collateral->qe_identity_issuer_chain
+            [collateral->qe_identity_issuer_chain_size - 1] == '\0');
+    ASSERT_TRUE(
+        collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
     ASSERT_TRUE(collateral->tcb_info[collateral->tcb_info_size - 1] == '\0');
-    ASSERT_TRUE(collateral->tcb_info_issuer_chain[collateral->tcb_info_issuer_chain_size - 1] == '\0');
+    ASSERT_TRUE(
+        collateral->tcb_info_issuer_chain
+            [collateral->tcb_info_issuer_chain_size - 1] == '\0');
+}
+
+static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
+{
+    boolean TEST_SUCCESS = false;
+    VerifyCollateralCommon(collateral);
     sgx_ql_free_quote_verification_collateral(collateral);
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
+}
+
+static inline void VerifyCollateralTDX(tdx_ql_qve_collateral_t* collateral)
+{
+    boolean TEST_SUCCESS = false;
+    VerifyCollateralCommon(collateral);
+    tdx_ql_free_quote_verification_collateral(collateral);
     TEST_SUCCESS = true;
     ASSERT_TRUE(TEST_SUCCESS);
 }
@@ -559,10 +626,7 @@ static void GetVerificationCollateralTest()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
-        TEST_FMSPC,
-        sizeof(TEST_FMSPC),
-        "processor",
-        &collateral);
+        TEST_FMSPC, sizeof(TEST_FMSPC), "processor", &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
 }
@@ -573,12 +637,13 @@ static void GetVerificationCollateralTest()
 static void GetVerificationCollateralTestWithParams()
 {
     // Test input (choose an arbitrary Azure server)
- 
+
     sgx_ql_qve_collateral_t* collateral = nullptr;
     std::string tcbInfoTcbEvaluationDataNumber;
     std::string enclaveIdentityTcbEvaluationDataNumber;
     nlohmann::json json_body;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+    quote3_error_t result =
+        sgx_ql_get_quote_verification_collateral_with_params(
             TEST_FMSPC,
             sizeof(TEST_FMSPC),
             "processor",
@@ -591,13 +656,16 @@ static void GetVerificationCollateralTestWithParams()
         json_body.flatten(),
         "/tcbInfo/tcbEvaluationDataNumber",
         &tcbInfoTcbEvaluationDataNumber);
-    ASSERT_TRUE(tcbInfoTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    ASSERT_TRUE(
+        tcbInfoTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
     json_body = nlohmann::json::parse(collateral->qe_identity);
     extract_from_json(
         json_body.flatten(),
         "/enclaveIdentity/tcbEvaluationDataNumber",
         &enclaveIdentityTcbEvaluationDataNumber);
-    ASSERT_TRUE(enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    ASSERT_TRUE(
+        enclaveIdentityTcbEvaluationDataNumber.compare(
+            tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -610,7 +678,8 @@ static void GetVerificationCollateralTestWithIncorrectParams()
 
     sgx_ql_qve_collateral_t* collateral = nullptr;
     nlohmann::json json_body;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+    quote3_error_t result =
+        sgx_ql_get_quote_verification_collateral_with_params(
             TEST_FMSPC,
             sizeof(TEST_FMSPC),
             "processor",
@@ -627,10 +696,7 @@ static void GetVerificationCollateralTestICXV3()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
-        ICX_TEST_FMSPC,
-        sizeof(ICX_TEST_FMSPC),
-        "platform",
-        &collateral);
+        ICX_TEST_FMSPC, sizeof(ICX_TEST_FMSPC), "platform", &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateral(collateral);
 }
@@ -643,12 +709,13 @@ static void GetVerificationCollateralTestICXV3WithParams()
     sgx_ql_qve_collateral_t* collateral = nullptr;
     std::string tcbEvaluationDataNumber;
     std::string enclaveIdentityTcbEvaluationDataNumber;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+    quote3_error_t result =
+        sgx_ql_get_quote_verification_collateral_with_params(
             ICX_TEST_FMSPC,
             sizeof(ICX_TEST_FMSPC),
             "platform",
             custom_param,
-            custom_param_length, 
+            custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
@@ -663,7 +730,8 @@ static void GetVerificationCollateralTestICXV3WithParams()
         "/enclaveIdentity/tcbEvaluationDataNumber",
         &enclaveIdentityTcbEvaluationDataNumber);
     ASSERT_TRUE(
-        enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+        enclaveIdentityTcbEvaluationDataNumber.compare(
+            tcbEvaluationDataNumber) == 0);
     VerifyCollateral(collateral);
 }
 
@@ -673,7 +741,8 @@ static void GetVerificationCollateralTestICXV3WithParams()
 static void GetVerificationCollateralTestICXV3WithIncorrectParams()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
+    quote3_error_t result =
+        sgx_ql_get_quote_verification_collateral_with_params(
             ICX_TEST_FMSPC,
             sizeof(ICX_TEST_FMSPC),
             "platform",
@@ -681,6 +750,15 @@ static void GetVerificationCollateralTestICXV3WithIncorrectParams()
             incorrect_custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_NO_QUOTE_COLLATERAL_DATA == result);
+}
+
+static void GetVerificationCollateralTestTDX()
+{
+    tdx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = tdx_ql_get_quote_verification_collateral(
+        TDX_TEST_FMSPC, sizeof(TDX_TEST_FMSPC), "processor", &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateralTDX(collateral);
 }
 
 static boolean GetQveIdentityTest()
@@ -701,7 +779,8 @@ static boolean GetQveIdentityTest()
     EXPECT_TRUE(qve_identity_size > 0);
     EXPECT_TRUE(qve_identity_issuer_chain_size > 0);
     EXPECT_TRUE(qve_identity[qve_identity_size - 1] == '\0');
-    EXPECT_TRUE(qve_identity_issuer_chain[qve_identity_issuer_chain_size - 1] == '\0');
+    EXPECT_TRUE(
+        qve_identity_issuer_chain[qve_identity_issuer_chain_size - 1] == '\0');
     sgx_ql_free_qve_identity(qve_identity, qve_identity_issuer_chain);
     TEST_SUCCESS = true;
     return TEST_SUCCESS;
@@ -782,7 +861,8 @@ boolean RunQuoteProviderTests(bool caching_enabled = false)
     auto duration_local_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
     GetRootCACrlTest();
-    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTest);
+    auto duration_local_verification =
+        MeasureFunction(GetVerificationCollateralTest);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
@@ -824,7 +904,8 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     local_cache_clear();
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
-    auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_curl_verification =
+        MeasureFunction(GetVerificationCollateralTestICXV3);
     GetRootCACrlTest();
 
     //
@@ -833,7 +914,8 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
     GetRootCACrlTest();
-    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_local_verification =
+        MeasureFunction(GetVerificationCollateralTestICXV3);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
@@ -1038,8 +1120,7 @@ boolean RunCachePermissionTests(libary_type_t* library)
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
-        {GENERIC_WRITE, DENY_ACCESS}
-    };
+        {GENERIC_WRITE, DENY_ACCESS}};
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
@@ -1069,7 +1150,8 @@ boolean RunCachePermissionTests(libary_type_t* library)
     return true;
 }
 
-boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* library)
+boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(
+    libary_type_t* library)
 {
 #if defined __LINUX__
     auto permission_folder = "./test_permission";
@@ -1081,8 +1163,7 @@ boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* l
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
-        {GENERIC_WRITE, DENY_ACCESS}
-    };
+        {GENERIC_WRITE, DENY_ACCESS}};
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
@@ -1264,6 +1345,25 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
 #endif
 }
 
+TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    EXPECT_TRUE(
+        SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    GetVerificationCollateralTestTDX();
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
 TEST(testQuoteProv, quoteProviderTestsWithIncorrectCustomParam)
 {
     libary_type_t library = LoadFunctions();
@@ -1334,7 +1434,8 @@ TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
     SetupEnvironment("v2");
     SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
-    ASSERT_TRUE(RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
+    ASSERT_TRUE(
+        RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
 
 #if defined __LINUX__
     dlclose(library);

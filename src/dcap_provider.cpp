@@ -55,6 +55,10 @@ static const std::map<std::string, std::string> localhost_metadata = {
 
 }; // namespace headers
 
+#ifndef tdx_ql_qve_collateral_t
+typedef sgx_ql_qve_collateral_t tdx_ql_qve_collateral_t;
+#endif
+
 // New API version used to request PEM encoded CRLs
 constexpr char API_VERSION_10_2018[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION_02_2020[] = "api-version=2020-02-12-preview";
@@ -63,6 +67,14 @@ constexpr char API_VERSION_07_2021[] = "api-version=2021-07-22-preview";
 static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string default_cert_url = DEFAULT_CERT_URL;
+
+static char TDX_CERT_URL[] =
+    "https://pckcache-dev-webapp-wus2.azurewebsites.net/sgx/certification";
+static std::string tdx_cert_url = TDX_CERT_URL;
+
+static char TDX_COLLATERAL_URL[] =
+    "https://pckcache-dev-webapp-wus2.azurewebsites.net/tdx/certification";
+static std::string tdx_collateral_url = TDX_COLLATERAL_URL;
 
 static char DEFAULT_BYPASS_BASE_URL[] = "false";
 static std::string default_bypass_base_url = DEFAULT_BYPASS_BASE_URL;
@@ -80,6 +92,9 @@ static std::string prod_client_id = DEFAULT_CLIENT_ID;
 
 static char DEFAULT_COLLATERAL_VERSION[] = "v3";
 static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
+
+static char TDX_COLLATERAL_VERSION[] = "v4";
+static std::string tdx_collateral_version = TDX_COLLATERAL_VERSION;
 
 static char CRL_CA_PROCESSOR[] = "processor";
 static char CRL_CA_PLATFORM[] = "platform";
@@ -112,17 +127,30 @@ static std::string get_env_variable(std::string env_variable)
     return retval.first;
 }
 
-static std::string get_collateral_version()
+static std::string get_collateral_version(
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
     std::string collateral_version =
         get_env_variable(ENV_AZDCAP_COLLATERAL_VER);
 
     if (collateral_version.empty())
     {
-        log(SGX_QL_LOG_INFO,
-            "Using default collateral version '%s'.",
-            default_collateral_version.c_str());
-        return default_collateral_version;
+        if (prod_type == SGX_PROD_TYPE_TDX)
+        {
+            log(SGX_QL_LOG_INFO,
+                "Using tdx collateral version '%s'.",
+                tdx_collateral_version.c_str());
+
+            return tdx_collateral_version;
+        }
+        else
+        {
+            log(SGX_QL_LOG_INFO,
+                "Using default collateral version '%s'.",
+                default_collateral_version.c_str());
+
+            return default_collateral_version;
+        }
     }
     else
     {
@@ -150,16 +178,39 @@ static std::string get_collateral_version()
     }
 }
 
-static std::string get_base_url()
+static std::string get_base_url(sgx_prod_type_t prod_type, bool requestingCertificate = false)
 {
     std::string env_base_url = get_env_variable(ENV_AZDCAP_BASE_URL);
 
     if (env_base_url.empty())
     {
-        log(SGX_QL_LOG_INFO,
-            "Using default primary base cert URL '%s'.",
-            default_cert_url.c_str());
-        return default_cert_url;
+        if (prod_type == SGX_PROD_TYPE_TDX)
+        {
+            if (requestingCertificate)
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Using tdx base cert URL '%s'.",
+                    tdx_cert_url.c_str());
+
+                return tdx_cert_url;
+            }
+            else
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Using tdx base collateral URL '%s'.",
+                    tdx_collateral_url.c_str());
+
+                return tdx_collateral_url;
+            }
+        }
+        else
+        {
+            log(SGX_QL_LOG_INFO,
+                "Using default primary base cert URL '%s'.",
+                default_cert_url.c_str());
+
+                return default_cert_url;
+        }
     }
 
     log(SGX_QL_LOG_WARNING,
@@ -861,14 +912,15 @@ static quote3_error_t convert_to_intel_error(sgx_plat_error_t platformError)
 
 static std::string build_pck_crl_url(
     std::string crl_name,
-    std::string api_version)
+    std::string api_version,
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
-    std::string version = get_collateral_version();
+    std::string version = get_collateral_version(prod_type);
     std::stringstream url;
     std::string escaped =
         curl_easy::escape(crl_name.data(), (int)crl_name.size());
     std::string client_id = get_client_id();
-    url << get_base_url();
+    url << get_base_url(prod_type, true);
     if (!version.empty())
     {
         url << "/" << version;
@@ -1038,12 +1090,13 @@ char get_base64_char(uint8_t val)
 static std::string build_tcb_info_url(
     const std::string& fmspc,
     const void* custom_param = nullptr,
-    const uint16_t custom_param_length = 0)
+    const uint16_t custom_param_length = 0,
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
-    std::string version = get_collateral_version();
+    std::string version = get_collateral_version(prod_type);
     std::string client_id = get_client_id();
     std::stringstream tcb_info_url;
-    tcb_info_url << get_base_url();
+    tcb_info_url << get_base_url(prod_type);
 
     if (!version.empty())
     {
@@ -1107,14 +1160,15 @@ static std::string build_enclave_id_url(
     bool qve,
     std::string& expected_issuer_chain_header,
     const void* custom_param = nullptr,
-    const uint16_t custom_param_length = 0)
+    const uint16_t custom_param_length = 0,
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
-    std::string version = get_collateral_version();
+    std::string version = get_collateral_version(prod_type);
     std::string client_id = get_client_id();
     std::stringstream qe_id_url;
     expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
 
-    qe_id_url << get_base_url();
+    qe_id_url << get_base_url(prod_type);
 
     // Select the correct issuer header name
     if (!version.empty())
@@ -1902,7 +1956,7 @@ extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
     return SGX_PLAT_ERROR_OK;
 }
 
-extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
+quote3_error_t ql_free_quote_verification_collateral(
     sgx_ql_qve_collateral_t* p_quote_collateral)
 {
     delete[] p_quote_collateral->pck_crl;
@@ -1915,6 +1969,20 @@ extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
     delete[] p_quote_collateral;
     p_quote_collateral = nullptr;
     return SGX_QL_SUCCESS;
+}
+
+extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
+    sgx_ql_qve_collateral_t* p_quote_collateral)
+{
+    return ql_free_quote_verification_collateral(
+        (p_quote_collateral));
+}
+
+extern "C" quote3_error_t tdx_ql_free_quote_verification_collateral(
+    tdx_ql_qve_collateral_t* p_quote_collateral)
+{
+    return ql_free_quote_verification_collateral(
+        (tdx_ql_qve_collateral_t*)p_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_free_qve_identity(
@@ -1935,6 +2003,7 @@ extern "C" quote3_error_t sgx_ql_free_root_ca_crl(char* p_root_ca_crl)
 }
 
 quote3_error_t sgx_ql_fetch_quote_verification_collateral(
+    sgx_prod_type_t prod_type,
     const uint8_t* fmspc,
     const uint16_t fmspc_size,
     const char* pck_ca,
@@ -2012,7 +2081,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         std::string qe_identity_issuer_chain;
 
         // Get PCK CRL
-        std::string pck_crl_url = build_pck_crl_url(requested_ca, API_VERSION_02_2020);
+        std::string pck_crl_url =
+            build_pck_crl_url(requested_ca, API_VERSION_02_2020, prod_type);
         operation_result = get_collateral(
             CollateralTypes::PckCrl,
             pck_crl_url,
@@ -2029,7 +2099,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url =
-            build_pck_crl_url(root_crl_name, API_VERSION_02_2020);
+            build_pck_crl_url(root_crl_name, API_VERSION_02_2020, prod_type);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -2049,7 +2119,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         try
         {
             tcb_info_url = build_tcb_info_url(
-                str_fmspc, custom_param, custom_param_length);
+                str_fmspc, custom_param, custom_param_length, prod_type);
         }
         catch (exception& e)
         {
@@ -2079,7 +2149,11 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         try
         {
             qe_identity_url = build_enclave_id_url(
-                false, issuer_chain_header, custom_param, custom_param_length);
+                false,
+                issuer_chain_header,
+                custom_param,
+                custom_param_length,
+                prod_type);
         }
         catch (exception& e)
         {
@@ -2190,7 +2264,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        fmspc, fmspc_size, pck_ca, pp_quote_collateral);
+        SGX_PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
@@ -2201,13 +2275,25 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
+    sgx_prod_type_t; 
     return sgx_ql_fetch_quote_verification_collateral(
+        SGX_PROD_TYPE_SGX,
         fmspc,
         fmspc_size,
         pck_ca,
         pp_quote_collateral,
         custom_param,
         custom_param_length);
+}
+
+extern "C" quote3_error_t tdx_ql_get_quote_verification_collateral(
+    const uint8_t* fmspc,
+    const uint16_t fmspc_size,
+    const char* pck_ca,
+    tdx_ql_qve_collateral_t** pp_quote_collateral)
+{
+    return sgx_ql_fetch_quote_verification_collateral(
+        SGX_PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_qve_identity(

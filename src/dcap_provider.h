@@ -108,6 +108,12 @@ typedef enum _sgx_ql_log_level_t {
     SGX_QL_LOG_NONE
 } sgx_ql_log_level_t;
 
+typedef enum _sgx_prod_type_t
+{
+    SGX_PROD_TYPE_SGX = 0,
+    SGX_PROD_TYPE_TDX = 1,
+} sgx_prod_type_t;
+
 /// Function signature used for logging from within the library
 typedef void (
     *sgx_ql_logging_function_t)(sgx_ql_log_level_t level, const char* message);
