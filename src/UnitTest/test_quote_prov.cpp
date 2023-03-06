@@ -1234,6 +1234,47 @@ void SetupEnvironment(std::string version)
 #endif
 }
 
+void SetupEnvironmentTDX(std::string version)
+{
+#if defined __LINUX__
+    setenv(
+        "AZDCAP_PRIMARY_BASE_CERT_URL",
+        "",
+        1);
+    setenv(
+        "ENV_AZDCAP_SECONDARY_BASE_CERT_URL",
+        "",
+        1);
+    setenv(
+        "ENV_AZDCAP_BASE_URL",
+        "",
+        1);
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+    if (!version.empty())
+    {
+        setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
+    }
+#else
+    std::stringstream version_var;
+    if (!version.empty())
+    {
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_COLLATERAL_VERSION", version.c_str()));
+    }
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_PRIMARY_BASE_CERT_URL",
+        ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_SECONDARY_BASE_CERT_URL",
+        ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_BASE_CERT_URL",
+        ""));
+    EXPECT_TRUE(
+        SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+#endif
+}
+
 void SetupEnvironmentToReachSecondary()
 {
 #if defined __LINUX__
@@ -1353,8 +1394,7 @@ TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
     //
     // Get the data from the service
     //
-    EXPECT_TRUE(
-        SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    SetupEnvironment("v4");
     GetVerificationCollateralTestTDX();
 
 #if defined __LINUX__
