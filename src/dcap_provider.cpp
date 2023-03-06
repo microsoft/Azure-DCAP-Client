@@ -1018,9 +1018,9 @@ static std::string build_pck_crl_url(
 {
     std::string version;
     if (prod_type == SGX_PROD_TYPE_TDX)
-        version = get_collateral_version_tdx();
-    else
-        version = get_collateral_version();
+		version = get_collateral_version_tdx();
+	else
+		version = get_collateral_version();
 
 	std::stringstream url;
     std::string escaped =
@@ -2437,7 +2437,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
-    sgx_prod_type_t;
     return sgx_ql_fetch_quote_verification_collateral(
         SGX_PROD_TYPE_SGX,
         fmspc,
