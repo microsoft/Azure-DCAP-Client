@@ -1284,6 +1284,24 @@ void SetupEnvironmentToReachSecondary()
 #endif
 }
 
+TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironmentTDX("v4");
+    GetVerificationCollateralTestTDX();
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
 TEST(testQuoteProv, quoteProviderTestsData)
 {
     libary_type_t library = LoadFunctions();
@@ -1378,24 +1396,6 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
-#endif
-}
-
-TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
-{
-    libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironmentTDX("v4");
-    GetVerificationCollateralTestTDX();
 
 #if defined __LINUX__
     dlclose(library);
