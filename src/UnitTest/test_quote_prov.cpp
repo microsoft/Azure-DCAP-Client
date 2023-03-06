@@ -1394,7 +1394,7 @@ TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
     //
     // Get the data from the service
     //
-    SetupEnvironment("v4");
+    SetupEnvironmentTDX("v4");
     GetVerificationCollateralTestTDX();
 
 #if defined __LINUX__
