@@ -156,11 +156,12 @@ static std::string get_collateral_version(
     {
         if (collateral_version.compare("v1") &&
             collateral_version.compare("v2") &&
-            collateral_version.compare("v3"))
+            collateral_version.compare("v3") &&
+            collateral_version.compare("v4"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values are empty, v1, or v2 or v3",
+                "Acceptable values are empty, v1, v2, v3 or v4",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
