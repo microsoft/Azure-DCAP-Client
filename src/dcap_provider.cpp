@@ -1029,13 +1029,6 @@ static std::string build_pck_crl_url(
     std::string client_id = get_client_id();
 
     if (prod_type == SGX_PROD_TYPE_TDX)
-        log(SGX_QL_LOG_INFO,
-            "prod_type is TDX in the build_pck_crl_url_function");
-    else
-        log(SGX_QL_LOG_INFO,
-            "prod_type is SGX in the build_pck_crl_url_function");
-
-    if (prod_type == SGX_PROD_TYPE_TDX)
         url << get_base_url_tdx(true);
     else
         url << get_base_url();
@@ -2433,8 +2426,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
-    log(SGX_QL_LOG_INFO,
-        "sgx_ql_get_quote_verification_collateral was called");
     return sgx_ql_fetch_quote_verification_collateral(
         SGX_PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
@@ -2463,7 +2454,6 @@ extern "C" quote3_error_t tdx_ql_get_quote_verification_collateral(
     const char* pck_ca,
     tdx_ql_qve_collateral_t** pp_quote_collateral)
 {
-    log(SGX_QL_LOG_INFO, "tdx_ql_get_quote_verification_collateral was called");
     return sgx_ql_fetch_quote_verification_collateral(
         SGX_PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
