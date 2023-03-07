@@ -1016,7 +1016,7 @@ static std::string build_pck_crl_url(
     std::string api_version,
     sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
-    log(SGX_QL_LOG_INFO,
+    log(SGX_QL_LOG_WARNING,
         "prod_type is %s in the build_pck_crl_url_function",
         prod_type);
 
@@ -2232,7 +2232,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             return SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
-        log(SGX_QL_LOG_INFO,
+        log(SGX_QL_LOG_WARNING,
             "prod_type is %s in the main fetch function",
             prod_type);
 
@@ -2433,7 +2433,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     const char* pck_ca,
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
-    log(SGX_QL_LOG_INFO, "sgx_ql_get_quote_verification_collateral was called");
+    log(SGX_QL_LOG_WARNING,
+        "sgx_ql_get_quote_verification_collateral was called");
     return sgx_ql_fetch_quote_verification_collateral(
         SGX_PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
@@ -2462,7 +2463,7 @@ extern "C" quote3_error_t tdx_ql_get_quote_verification_collateral(
     const char* pck_ca,
     tdx_ql_qve_collateral_t** pp_quote_collateral)
 {
-    log(SGX_QL_LOG_INFO, "tdx_ql_get_quote_verification_collateral was called");
+    log(SGX_QL_LOG_WARNING, "tdx_ql_get_quote_verification_collateral was called");
     return sgx_ql_fetch_quote_verification_collateral(
         SGX_PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
