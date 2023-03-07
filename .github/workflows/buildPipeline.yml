@@ -579,12 +579,6 @@ jobs:
       
       - name: Sleep to let the VM start
         run: sleep 60
-              
-      - name: Update dnf
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "updateDNF"
-            script: "sudo dnf check-update -y"
             
       - name: Update packages through dnf
         uses: ./.github/actions/actionAzVmRunCommand

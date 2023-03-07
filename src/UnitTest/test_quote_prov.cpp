@@ -756,7 +756,7 @@ static void GetVerificationCollateralTestTDX()
 {
     tdx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = tdx_ql_get_quote_verification_collateral(
-        TDX_TEST_FMSPC, sizeof(TDX_TEST_FMSPC), "platform", &collateral);
+        TDX_TEST_FMSPC, sizeof(TDX_TEST_FMSPC), "processor", &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     VerifyCollateralTDX(collateral);
 }
