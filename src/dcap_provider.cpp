@@ -101,8 +101,6 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
 static char PLATFORM_CRL_NAME[] =
     "https%3a%2f%2fapi.trustedservices.intel.com%2fsgx%2fcertification%2fv3%"
     "2fpckcrl%3fca%3dplatform%26encoding%3dpem";
-static char ROOT_CRL_NAME_TDX[] =
-    "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
 static char PROCESSOR_CRL_NAME_TDX[] = "processor";
 static char PLATFORM_CRL_NAME_TDX[] = "platform";
 
@@ -150,7 +148,7 @@ static std::string get_collateral_version()
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values for sgx are empty, v1, v2, v3 and v4",
+                "Acceptable values for sgx are empty, v1, v2, v3 or v4",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -986,12 +984,12 @@ static quote3_error_t convert_to_intel_error(sgx_plat_error_t platformError)
 static std::string build_pck_crl_url(
     std::string crl_name,
     std::string api_version,
-    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
     std::string version;
     std::stringstream url;
     std::string client_id;
-    if (prod_type == PROD_TYPE_TDX)
+    if (prod_type == SGX_PROD_TYPE_TDX)
     {
         version = get_collateral_version_tdx();
 
@@ -1229,17 +1227,17 @@ static std::string build_tcb_info_url(
     const std::string& fmspc,
     const void* custom_param = nullptr,
     const uint16_t custom_param_length = 0,
-    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
     std::string version;
-    if (prod_type == PROD_TYPE_TDX)
+    if (prod_type == SGX_PROD_TYPE_TDX)
         version = get_collateral_version_tdx();
     else
         version = get_collateral_version();
     std::string client_id = get_client_id();
     std::stringstream tcb_info_url;
 
-    if (prod_type == PROD_TYPE_TDX)
+    if (prod_type == SGX_PROD_TYPE_TDX)
     {
         string base_url = get_base_url_tdx();
 
@@ -1321,10 +1319,10 @@ static std::string build_enclave_id_url(
     std::string& expected_issuer_chain_header,
     const void* custom_param = nullptr,
     const uint16_t custom_param_length = 0,
-    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
 {
     std::string version;
-    if (prod_type == PROD_TYPE_TDX)
+    if (prod_type == SGX_PROD_TYPE_TDX)
         version = get_collateral_version_tdx();
     else
         version = get_collateral_version();
@@ -1332,7 +1330,7 @@ static std::string build_enclave_id_url(
     std::stringstream qe_id_url;
     expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
 
-    if (prod_type == PROD_TYPE_TDX)
+    if (prod_type == SGX_PROD_TYPE_TDX)
     {
         string base_url = get_base_url_tdx();
 
@@ -2256,8 +2254,8 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         std::string requested_ca;
-        std::string root_crl_name;
-        if (prod_type == PROD_TYPE_TDX)
+        std::string root_crl_name = ROOT_CRL_NAME;
+        if (prod_type == SGX_PROD_TYPE_TDX)
         {
             if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
             {
@@ -2268,8 +2266,6 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             {
                 requested_ca = PLATFORM_CRL_NAME_TDX;
             }
-
-            root_crl_name = ROOT_CRL_NAME;
         }
 		else
 		{
@@ -2282,8 +2278,6 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 			{
 				requested_ca = PLATFORM_CRL_NAME;
             }
-
-            root_crl_name = ROOT_CRL_NAME;
 		}
 
         if (requested_ca.empty())
@@ -2325,7 +2319,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 
         // Get Root CA CRL
         std::string root_ca_crl_url;
-        if (prod_type == PROD_TYPE_TDX)
+        if (prod_type == SGX_PROD_TYPE_TDX)
             root_ca_crl_url = build_root_ca_crl_url_tdx();
         else
             root_ca_crl_url = build_pck_crl_url(
@@ -2497,7 +2491,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
+        SGX_PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
@@ -2509,7 +2503,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        PROD_TYPE_SGX,
+        SGX_PROD_TYPE_SGX,
         fmspc,
         fmspc_size,
         pck_ca,
@@ -2525,7 +2519,7 @@ extern "C" quote3_error_t tdx_ql_get_quote_verification_collateral(
     tdx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
+        SGX_PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_qve_identity(
