@@ -1013,8 +1013,12 @@ static std::string build_pck_crl_url(
     {
         version = get_collateral_version();
 
+		log(SGX_QL_LOG_INFO, "Debug 1.");
+
         std::string escaped =
             curl_easy::escape(crl_name.data(), (int)crl_name.size());
+
+        log(SGX_QL_LOG_INFO, "Debug 2.");
 
         client_id = get_client_id();
 
