@@ -68,13 +68,9 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string default_cert_url = DEFAULT_CERT_URL;
 
-static char TDX_CERT_URL[] =
-    "https://pckcache-dev-webapp-wus2.azurewebsites.net/sgx/certification";
-static std::string tdx_cert_url = TDX_CERT_URL;
-
-static char TDX_COLLATERAL_URL[] =
-    "https://pckcache-dev-webapp-wus2.azurewebsites.net/tdx/certification";
-static std::string tdx_collateral_url = TDX_COLLATERAL_URL;
+static char TDX_BASE_URL[] =
+    "https://thimt2-dev-cbn01p.thim.azure-test.net/sgx/certification";
+static std::string tdx_base_url = TDX_BASE_URL;
 
 static char DEFAULT_BYPASS_BASE_URL[] = "false";
 static std::string default_bypass_base_url = DEFAULT_BYPASS_BASE_URL;
@@ -105,6 +101,10 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
 static char PLATFORM_CRL_NAME[] =
     "https%3a%2f%2fapi.trustedservices.intel.com%2fsgx%2fcertification%2fv3%"
     "2fpckcrl%3fca%3dplatform%26encoding%3dpem";
+static char ROOT_CRL_NAME_TDX[] =
+    "https%3a%2f%2fcertificates.trustedservices.intel.com%2fintelsgxrootca.crl";
+static char PROCESSOR_CRL_NAME_TDX[] = "processor";
+static char PLATFORM_CRL_NAME_TDX[] = "platform";
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
@@ -150,7 +150,7 @@ static std::string get_collateral_version()
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values are empty, v1, v2, v3 or v4",
+                "Acceptable values for sgx are empty, v1, v2, v3 and v4",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -183,14 +183,11 @@ static std::string get_collateral_version_tdx()
     }
     else
     {
-        if (collateral_version.compare("v1") &&
-            collateral_version.compare("v2") &&
-            collateral_version.compare("v3") &&
-            collateral_version.compare("v4"))
+        if (collateral_version.compare("v4"))
         {
             log(SGX_QL_LOG_ERROR,
                 "Value specified in environment variable '%s' is invalid. "
-                "Acceptable values are empty, v1, v2, v3 or v4",
+                "Acceptable values for tdx are empty or v4",
                 collateral_version.c_str(),
                 MAX_ENV_VAR_LENGTH);
 
@@ -228,54 +225,29 @@ static std::string get_base_url()
     return env_base_url;
 }
 
-static std::string get_base_url_tdx(bool requestingCertificate = false)
+static std::string get_base_url_tdx()
 {
     std::string result;
 
-    std::string env_base_url_cert =
-        get_env_variable(ENV_AZDCAP_BASE_URL_TDX_CRL);
-    std::string env_base_url_collateral =
-        get_env_variable(ENV_AZDCAP_BASE_URL_TDX_COLLATERAL);
+    std::string env_base_url =
+        get_env_variable(ENV_AZDCAP_BASE_URL_TDX);
 
-    if (requestingCertificate)
+    if (env_base_url.empty())
     {
-        if (env_base_url_cert.empty())
-        {
-            log(SGX_QL_LOG_INFO,
-                "Using tdx base cert URL '%s'.",
-                tdx_cert_url.c_str());
+        log(SGX_QL_LOG_INFO,
+            "Using tdx base URL '%s'.",
+            tdx_base_url.c_str());
 
-            result = tdx_cert_url;
-        }
-        else
-        {
-            log(SGX_QL_LOG_WARNING,
-                "Using %s envvar for tdx base cert URL, set to '%s'.",
-                ENV_AZDCAP_BASE_URL,
-                env_base_url_cert.c_str());
-
-            result = env_base_url_cert;
-        }
+        result = tdx_base_url;
     }
     else
     {
-        if (env_base_url_collateral.empty())
-        {
-            log(SGX_QL_LOG_INFO,
-                "Using tdx base collateral URL '%s'.",
-                tdx_collateral_url.c_str());
+        log(SGX_QL_LOG_WARNING,
+            "Using %s envvar for tdx base URL, set to '%s'.",
+            ENV_AZDCAP_BASE_URL_TDX,
+            env_base_url.c_str());
 
-            result = tdx_collateral_url;
-        }
-        else
-        {
-            log(SGX_QL_LOG_WARNING,
-                "Using %s envvar for tdx base collateral URL, set to '%s'.",
-                ENV_AZDCAP_BASE_URL,
-                env_base_url_collateral.c_str());
-
-            result = env_base_url_collateral;
-        }
+        result = env_base_url;
     }
 
     return result;
@@ -1014,35 +986,81 @@ static quote3_error_t convert_to_intel_error(sgx_plat_error_t platformError)
 static std::string build_pck_crl_url(
     std::string crl_name,
     std::string api_version,
-    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
 {
-
     std::string version;
-    if (prod_type == SGX_PROD_TYPE_TDX)
-		version = get_collateral_version_tdx();
-	else
-		version = get_collateral_version();
+    std::stringstream url;
+    std::string client_id;
+    if (prod_type == PROD_TYPE_TDX)
+    {
+        version = get_collateral_version_tdx();
 
-	std::stringstream url;
-    std::string escaped =
-        curl_easy::escape(crl_name.data(), (int)crl_name.size());
+        client_id = get_client_id();
+
+        url << get_base_url_tdx();
+
+        if (!version.empty())
+        {
+            url << "/" << version;
+        }
+
+        url << "/pckcrl?ca=" << crl_name << "&";
+
+        if (!client_id.empty())
+        {
+            url << "clientid=" << client_id;
+        }
+	}
+    else
+    {
+        version = get_collateral_version();
+
+        std::string escaped =
+            curl_easy::escape(crl_name.data(), (int)crl_name.size());
+
+        client_id = get_client_id();
+
+        url << get_base_url();
+
+        if (!version.empty())
+        {
+            url << "/" << version;
+        }
+
+        url << "/pckcrl?uri=" << escaped << "&";
+
+        if (!client_id.empty())
+        {
+            url << "clientid=" << client_id << '&';
+        }
+
+        url << api_version;
+	}
+
+    return url.str();
+}
+
+static std::string build_root_ca_crl_url_tdx()
+{
+    std::string version = get_collateral_version_tdx();
+
+    std::stringstream url;
     std::string client_id = get_client_id();
 
-    if (prod_type == SGX_PROD_TYPE_TDX)
-        url << get_base_url_tdx(true);
-    else
-        url << get_base_url();
+    url << get_base_url_tdx();
 
     if (!version.empty())
     {
         url << "/" << version;
     }
-    url << "/pckcrl?uri=" << escaped << "&";
+
+    url << "/rootcacrl?";
+
     if (!client_id.empty())
     {
-        url << "clientid=" << client_id << '&';
+        url << "clientid=" << client_id;
     }
-    url << api_version;
+
     return url.str();
 }
 
@@ -1211,18 +1229,33 @@ static std::string build_tcb_info_url(
     const std::string& fmspc,
     const void* custom_param = nullptr,
     const uint16_t custom_param_length = 0,
-    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
 {
     std::string version;
-    if (prod_type == SGX_PROD_TYPE_TDX)
+    if (prod_type == PROD_TYPE_TDX)
         version = get_collateral_version_tdx();
     else
         version = get_collateral_version();
     std::string client_id = get_client_id();
     std::stringstream tcb_info_url;
 
-    if (prod_type == SGX_PROD_TYPE_TDX)
-        tcb_info_url << get_base_url_tdx(false);
+    if (prod_type == PROD_TYPE_TDX)
+    {
+        string base_url = get_base_url_tdx();
+
+        auto found = base_url.find("/sgx/");
+        if (found != std::string::npos)
+        {
+            base_url = base_url.replace(found, 5, "/tdx/");
+        }
+        else
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error substituting sgx by tdx in the base url.");
+        }
+
+        tcb_info_url << base_url;
+    }
     else
         tcb_info_url << get_base_url();
 
@@ -1288,10 +1321,10 @@ static std::string build_enclave_id_url(
     std::string& expected_issuer_chain_header,
     const void* custom_param = nullptr,
     const uint16_t custom_param_length = 0,
-    sgx_prod_type_t prod_type = SGX_PROD_TYPE_SGX)
+    sgx_prod_type_t prod_type = PROD_TYPE_SGX)
 {
     std::string version;
-    if (prod_type == SGX_PROD_TYPE_TDX)
+    if (prod_type == PROD_TYPE_TDX)
         version = get_collateral_version_tdx();
     else
         version = get_collateral_version();
@@ -1299,8 +1332,23 @@ static std::string build_enclave_id_url(
     std::stringstream qe_id_url;
     expected_issuer_chain_header = headers::QE_ISSUER_CHAIN;
 
-    if (prod_type == SGX_PROD_TYPE_TDX)
-        qe_id_url << get_base_url_tdx(false);
+    if (prod_type == PROD_TYPE_TDX)
+    {
+        string base_url = get_base_url_tdx();
+
+        auto found = base_url.find("/sgx/");
+        if (found != std::string::npos)
+        {
+            base_url = base_url.replace(found, 5, "/tdx/");
+        }
+        else
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error substituting sgx by tdx in the base url.");
+        }
+
+        qe_id_url << base_url;
+    }
     else
         qe_id_url << get_base_url();
 
@@ -1310,7 +1358,7 @@ static std::string build_enclave_id_url(
         qe_id_url << "/" << version;
         if (version != "v1")
         {
-            expected_issuer_chain_header = headers::ENCLAVE_ID_ISSUER_CHAIN;
+			expected_issuer_chain_header = headers::ENCLAVE_ID_ISSUER_CHAIN;
         }
     }
 
@@ -2208,17 +2256,35 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         std::string requested_ca;
-        std::string root_crl_name = ROOT_CRL_NAME;
-        if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
+        std::string root_crl_name;
+        if (prod_type == PROD_TYPE_TDX)
         {
-            requested_ca = PROCESSOR_CRL_NAME;
-        }
+            if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
+            {
+                requested_ca = PROCESSOR_CRL_NAME_TDX;
+            }
 
-        if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
-        {
-            requested_ca = PLATFORM_CRL_NAME;
+            if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
+            {
+                requested_ca = PLATFORM_CRL_NAME_TDX;
+            }
+
             root_crl_name = ROOT_CRL_NAME;
         }
+		else
+		{
+			if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
+			{
+				requested_ca = PROCESSOR_CRL_NAME;
+			}
+
+			if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
+			{
+				requested_ca = PLATFORM_CRL_NAME;
+            }
+
+            root_crl_name = ROOT_CRL_NAME;
+		}
 
         if (requested_ca.empty())
         {
@@ -2258,8 +2324,12 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         // Get Root CA CRL
-        std::string root_ca_crl_url =
-            build_pck_crl_url(root_crl_name, API_VERSION_02_2020, prod_type);
+        std::string root_ca_crl_url;
+        if (prod_type == PROD_TYPE_TDX)
+            root_ca_crl_url = build_root_ca_crl_url_tdx();
+        else
+            root_ca_crl_url = build_pck_crl_url(
+                root_crl_name, API_VERSION_02_2020, prod_type);
         operation_result = get_collateral(
             CollateralTypes::PckRootCrl,
             root_ca_crl_url,
@@ -2427,7 +2497,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral(
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        SGX_PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
+        PROD_TYPE_SGX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
@@ -2439,7 +2509,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_verification_collateral_with_params(
     sgx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        SGX_PROD_TYPE_SGX,
+        PROD_TYPE_SGX,
         fmspc,
         fmspc_size,
         pck_ca,
@@ -2455,7 +2525,7 @@ extern "C" quote3_error_t tdx_ql_get_quote_verification_collateral(
     tdx_ql_qve_collateral_t** pp_quote_collateral)
 {
     return sgx_ql_fetch_quote_verification_collateral(
-        SGX_PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
+        PROD_TYPE_TDX, fmspc, fmspc_size, pck_ca, pp_quote_collateral);
 }
 
 extern "C" quote3_error_t sgx_ql_get_qve_identity(

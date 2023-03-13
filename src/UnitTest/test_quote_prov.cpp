@@ -1271,9 +1271,7 @@ void SetupEnvironmentTDX(std::string version)
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_SECONDARY_BASE_CERT_URL", ""));
     EXPECT_TRUE(SetEnvironmentVariableA(
-		"AZDCAP_BASE_CERT_URL_TDX_CRL", ""));
-    EXPECT_TRUE(SetEnvironmentVariableA(
-		"AZDCAP_BASE_CERT_URL_TDX_COLLATERAL", ""));
+		"AZDCAP_BASE_CERT_URL_TDX", ""));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
