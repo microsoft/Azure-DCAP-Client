@@ -209,9 +209,13 @@ size_t curl_easy::write_callback(
 
     try
     {
+		log(SGX_QL_LOG_INFO, "Debug 1");
         const size_t full_size = size * nmemb;
+		log(SGX_QL_LOG_INFO, "Debug 1");
         auto self = static_cast<curl_easy*>(user_data);
+		log(SGX_QL_LOG_INFO, "Debug 1");
         self->body.insert(self->body.end(), ptr, ptr + full_size);
+		log(SGX_QL_LOG_INFO, "Debug 1");
         return full_size;
     }
     catch (std::bad_alloc&)
