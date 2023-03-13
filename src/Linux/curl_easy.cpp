@@ -89,6 +89,7 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+    easy->set_opt_or_throw(CURLOPT_VERBOSE, 1);
 
     if (p_body != nullptr && !p_body->empty())
     {
@@ -194,7 +195,6 @@ size_t curl_easy::write_callback(
     size_t nmemb,
     void* user_data)
 {
-	log(SGX_QL_LOG_ERROR, "Debug 1");
     // CURL promises that the total size will never be greater than
     // CURL_MAX_WRITE_SIZE.
     if (size > CURL_MAX_WRITE_SIZE || nmemb > CURL_MAX_WRITE_SIZE)
@@ -202,23 +202,17 @@ size_t curl_easy::write_callback(
         log(SGX_QL_LOG_ERROR, "Write callback buffer size is too large");
         return 0;
     }
-	log(SGX_QL_LOG_ERROR, "Debug 2");
 
     static_assert(
         CURL_MAX_WRITE_SIZE * CURL_MAX_WRITE_SIZE <
             std::numeric_limits<size_t>::max(),
         "Possible integer overflow.");
 
-	log(SGX_QL_LOG_ERROR, "Debug 3");
     try
     {
-		log(SGX_QL_LOG_ERROR, "Debug 4");
         const size_t full_size = size * nmemb;
-		log(SGX_QL_LOG_ERROR, "Debug 5");
         auto self = static_cast<curl_easy*>(user_data);
-		log(SGX_QL_LOG_ERROR, "Debug 6");
         self->body.insert(self->body.end(), ptr, ptr + full_size);
-		log(SGX_QL_LOG_ERROR, "Debug 7");
         return full_size;
     }
     catch (std::bad_alloc&)
