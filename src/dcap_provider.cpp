@@ -2300,44 +2300,6 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         std::vector<uint8_t> qe_identity;
         std::string qe_identity_issuer_chain;
 
-        // Get PCK CRL
-        std::string pck_crl_url =
-            build_pck_crl_url(requested_ca, API_VERSION_02_2020, prod_type);
-        operation_result = get_collateral(
-            CollateralTypes::PckCrl,
-            pck_crl_url,
-            headers::CRL_ISSUER_CHAIN,
-            pck_crl,
-            pck_issuer_chain);
-        if (operation_result != SGX_QL_SUCCESS)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Error fetching PCK CRL: %d",
-                operation_result);
-            return operation_result;
-        }
-
-        // Get Root CA CRL
-        std::string root_ca_crl_url;
-        if (prod_type == SGX_PROD_TYPE_TDX)
-            root_ca_crl_url = build_root_ca_crl_url_tdx();
-        else
-            root_ca_crl_url = build_pck_crl_url(
-                root_crl_name, API_VERSION_02_2020, prod_type);
-        operation_result = get_collateral(
-            CollateralTypes::PckRootCrl,
-            root_ca_crl_url,
-            headers::CRL_ISSUER_CHAIN,
-            root_ca_crl,
-            root_ca_chain);
-        if (operation_result != SGX_QL_SUCCESS)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Error fetching Root CA CRL: %d",
-                operation_result);
-            return operation_result;
-        }
-
         // Get Tcb Info & Issuer Chain
         std::string tcb_info_url;
         try
@@ -2404,6 +2366,45 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
                 operation_result);
             return operation_result;
         }
+
+        // Get PCK CRL
+        std::string pck_crl_url =
+            build_pck_crl_url(requested_ca, API_VERSION_02_2020, prod_type);
+        operation_result = get_collateral(
+            CollateralTypes::PckCrl,
+            pck_crl_url,
+            headers::CRL_ISSUER_CHAIN,
+            pck_crl,
+            pck_issuer_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching PCK CRL: %d",
+                operation_result);
+            return operation_result;
+        }
+
+        // Get Root CA CRL
+        std::string root_ca_crl_url;
+        if (prod_type == SGX_PROD_TYPE_TDX)
+            root_ca_crl_url = build_root_ca_crl_url_tdx();
+        else
+            root_ca_crl_url = build_pck_crl_url(
+                root_crl_name, API_VERSION_02_2020, prod_type);
+        operation_result = get_collateral(
+            CollateralTypes::PckRootCrl,
+            root_ca_crl_url,
+            headers::CRL_ISSUER_CHAIN,
+            root_ca_crl,
+            root_ca_chain);
+        if (operation_result != SGX_QL_SUCCESS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Error fetching Root CA CRL: %d",
+                operation_result);
+            return operation_result;
+        }
+
 
         // Allocate the memory for the structure
         size_t buffer_size = sizeof(sgx_ql_qve_collateral_t);
