@@ -228,7 +228,6 @@ size_t curl_easy::header_callback(
     size_t nitems,
     void* user_data)
 {
-	log(SGX_QL_LOG_INFO, "Debug 1.");
     // CURL promises that the total size will never be greater than
     // CURL_MAX_WRITE_SIZE.
     if (size > CURL_MAX_HTTP_HEADER || nitems > CURL_MAX_HTTP_HEADER)
@@ -247,7 +246,6 @@ size_t curl_easy::header_callback(
         return 0;
     }
 
-	log(SGX_QL_LOG_INFO, "Debug 2.");
     // CURL likes to pass the header/body separator line as a header (CRLF).
     // Just
     // skip it.
@@ -256,7 +254,6 @@ size_t curl_easy::header_callback(
         return buffer_size;
     }
 
-	log(SGX_QL_LOG_INFO, "Debug 3.");
     // look for the delimiter
     size_t field_name_end_index = 0;
     while (field_name_end_index < buffer_size &&
@@ -265,7 +262,7 @@ size_t curl_easy::header_callback(
         ++field_name_end_index;
     }
 
-	log(SGX_QL_LOG_INFO, "Debug 4.");
+	log(SGX_QL_LOG_INFO, "Buffer contents: %s", buffer);
     if (field_name_end_index >= buffer_size)
     {
         // CURL, for some reason, considers the status line a "header". Skip it
@@ -273,7 +270,6 @@ size_t curl_easy::header_callback(
         return is_http_version(buffer, buffer_size) ? buffer_size : 0;
     }
 
-	log(SGX_QL_LOG_INFO, "Debug 5.");
     // next, find the start of the header data
     size_t content_start_index = field_name_end_index + 1;
     while (content_start_index < buffer_size &&
@@ -309,7 +305,6 @@ size_t curl_easy::header_callback(
 
     static_cast<curl_easy*>(user_data)->headers[field_name] = content;
 
-	log(SGX_QL_LOG_INFO, "Debug 6.");
     return buffer_size;
 }
 
