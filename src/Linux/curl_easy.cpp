@@ -49,8 +49,9 @@ static bool is_http_version(const char* buffer, size_t buffer_size)
     static constexpr char HTTP_VERSION2[] = "HTTP/2";
     static constexpr char HTTP_VERSION3[] = "HTTP/3";
 	if(buffer_size >= sizeof(HTTP_VERSION1) - 1 && 0 == memcmp(buffer, HTTP_VERSION1, sizeof(HTTP_VERSION1) - 1 ||
-	   buffer_size >= sizeof(HTTP_VERSION2) - 1 && 0 == memcmp(buffer, HTTP_VERSION2, sizeof(HTTP_VERSION2) - 1 ||
-	   buffer_size >= sizeof(HTTP_VERSION3) - 1 && 0 == memcmp(buffer, HTTP_VERSION3, sizeof(HTTP_VERSION3) - 1)
+		buffer_size >= sizeof(HTTP_VERSION2) - 1 && 0 == memcmp(buffer, HTTP_VERSION2, sizeof(HTTP_VERSION2) - 1 ||
+		buffer_size >= sizeof(HTTP_VERSION3) - 1 && 0 == memcmp(buffer, HTTP_VERSION3, sizeof(HTTP_VERSION3) - 1)
+		result = true;
 	
     return result;
 }
