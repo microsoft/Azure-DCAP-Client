@@ -43,9 +43,16 @@ static bool is_optional_whitespace(char c)
 
 static bool is_http_version(const char* buffer, size_t buffer_size)
 {
-    static constexpr char HTTP_VERSION[] = "HTTP/1.1";
-    return buffer_size >= sizeof(HTTP_VERSION) - 1 &&
-           0 == memcmp(buffer, HTTP_VERSION, sizeof(HTTP_VERSION) - 1);
+	bool result = false;
+	
+    static constexpr char HTTP_VERSION1[] = "HTTP/1.1";
+    static constexpr char HTTP_VERSION2[] = "HTTP/2";
+    static constexpr char HTTP_VERSION3[] = "HTTP/3";
+	if(buffer_size >= sizeof(HTTP_VERSION1) - 1 && 0 == memcmp(buffer, HTTP_VERSION1, sizeof(HTTP_VERSION1) - 1 ||
+	   buffer_size >= sizeof(HTTP_VERSION2) - 1 && 0 == memcmp(buffer, HTTP_VERSION2, sizeof(HTTP_VERSION2) - 1 ||
+	   buffer_size >= sizeof(HTTP_VERSION3) - 1 && 0 == memcmp(buffer, HTTP_VERSION3, sizeof(HTTP_VERSION3) - 1)
+	
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -89,7 +96,6 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    easy->set_opt_or_throw(CURLOPT_VERBOSE, 1);
 
     if (p_body != nullptr && !p_body->empty())
     {
@@ -262,7 +268,6 @@ size_t curl_easy::header_callback(
         ++field_name_end_index;
     }
 
-	log(SGX_QL_LOG_INFO, "Buffer contents: %s", buffer);
     if (field_name_end_index >= buffer_size)
     {
         // CURL, for some reason, considers the status line a "header". Skip it
