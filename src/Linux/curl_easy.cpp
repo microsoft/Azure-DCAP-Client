@@ -308,6 +308,10 @@ size_t curl_easy::header_callback(
         to_lower(std::string(buffer, field_name_end_index));
     const std::string content(
         buffer + content_start_index, content_end_index - content_start_index);
+		
+	log(SGX_QL_LOG_INFO,
+		"Added header with name: %s",
+		field_name);
 
     static_cast<curl_easy*>(user_data)->headers[field_name] = content;
 
