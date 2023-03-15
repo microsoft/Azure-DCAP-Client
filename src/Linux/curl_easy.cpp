@@ -32,7 +32,7 @@ static std::string to_lower(const std::string& inout)
         c = std::tolower(c, loc);
     }
 
-    return inout;
+    return retval;
 }
 
 // OWS is defined in RFC 7230 as "OWS = *( SP / HTAB )"
