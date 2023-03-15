@@ -311,7 +311,7 @@ size_t curl_easy::header_callback(
 		
 	log(SGX_QL_LOG_INFO,
 		"Added header with name: %s",
-		field_name);
+		field_name.c_str());
 
     static_cast<curl_easy*>(user_data)->headers[field_name] = content;
 
