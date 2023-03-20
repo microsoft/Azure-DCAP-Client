@@ -711,6 +711,18 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
     pck_cert_url(cached_file_name, version, qe_id, cpu_svn, pce_svn, pce_id, eppid_json, false);
 }
 
+extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, time_t expiry, size_t data_size, const void* data)
+{
+	std::string version = get_collateral_version();
+
+	std::stringstream cached_file_name;
+	cached_file_name << get_secondary_url();
+
+	pck_cert_url(cached_file_name, version, qe_id, cpu_svn, pce_svn, pce_id, "", false);
+
+	local_cache_add(cached_file_name.str(), expiry, data_size, data);
+}
+
 //
 // Build a complete cert chain from a completed curl object.
 //
