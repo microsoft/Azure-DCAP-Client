@@ -1213,8 +1213,7 @@ static std::string build_tcb_info_url(
     }
 
     tcb_info_url << "/tcb?";
-    tcb_info_url << "fmspc="
-                 << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "&";
+    tcb_info_url << "fmspc=" << format_as_hex_string(fmspc.c_str(), fmspc.size()) << "&";
 
     if (custom_param != nullptr)
     {

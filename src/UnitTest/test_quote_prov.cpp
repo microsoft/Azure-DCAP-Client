@@ -1145,7 +1145,7 @@ boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* l
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
         {GENERIC_READ, DENY_ACCESS},
         {GENERIC_WRITE, DENY_ACCESS}
-	};
+    };
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_CACHE", permission_folder));
 #endif
 
