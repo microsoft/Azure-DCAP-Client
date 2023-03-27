@@ -68,8 +68,12 @@ static char DEFAULT_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string default_cert_url = DEFAULT_CERT_URL;
 
+static char HTTPS_URL[] =
+    "https://";
+static std::string https_url = HTTPS_URL;
+
 static char TDX_BASE_URL[] =
-    "https://thimt2-dev-cbn01p.thim.azure-test.net/sgx/certification";
+    ".thim.azure-test.net/sgx/certification";
 static std::string tdx_base_url = TDX_BASE_URL;
 
 static char DEFAULT_BYPASS_BASE_URL[] = "false";
@@ -82,6 +86,9 @@ static std::string primary_cert_url = PRIMARY_CERT_URL;
 static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string secondary_cert_url = SECONDARY_CERT_URL;
+
+static char AZURE_INSTANCE_METADATA_SERVICE_URL[] = "http://169.254.169.254/metadata/instance?api-version=2021-02-01";
+static std::string azure_instance_metadata_service_url = AZURE_INSTANCE_METADATA_SERVICE_URL;
 
 static char DEFAULT_CLIENT_ID[] = "production_client";
 static std::string prod_client_id = DEFAULT_CLIENT_ID;
@@ -103,6 +110,9 @@ static char PLATFORM_CRL_NAME[] =
 static char PROCESSOR_CRL_NAME_TDX[] = "processor";
 static char PLATFORM_CRL_NAME_TDX[] = "platform";
 
+static char REGION_CACHE_NAME[] = "region";
+static std::string region_cache_name = REGION_CACHE_NAME;
+
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
 enum class CollateralTypes
@@ -123,6 +133,51 @@ static std::string get_env_variable(std::string env_variable)
         log(SGX_QL_LOG_WARNING, retval.second.c_str());
     }
     return retval.first;
+}
+
+static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
+    const std::string& cert_url, bool checkExpiration = true)
+{
+    try
+    {
+        return local_cache_get(cert_url, checkExpiration);
+    }
+    catch (const std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
+        return nullptr;
+    }
+}
+
+//
+// extract raw value from response body, if exists
+//
+sgx_plat_error_t extract_from_json(
+    const nlohmann::json& json,
+    const std::string& item,
+    std::string* out_header)
+{
+    try
+    {
+        nlohmann::json raw_value = json[item];
+        if (!raw_value.is_string())
+        {
+            raw_value = raw_value.dump();
+        }
+        log(SGX_QL_LOG_INFO,
+            "Fetched %s value from JSON. \n", item.c_str());
+        if (out_header != nullptr)
+        {
+            *out_header = raw_value;
+        }
+    }
+    catch (const exception& ex)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Required information '%s' is missing. \n", item.c_str());
+        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
+    }
+    return SGX_PLAT_ERROR_OK;
 }
 
 static std::string get_collateral_version()
@@ -221,12 +276,128 @@ static std::string get_base_url()
     return env_base_url;
 }
 
-static std::string get_base_url_tdx()
+static bool get_region_url_from_service(std::string& url) 
+{
+    bool result = false;
+	
+	log(SGX_QL_LOG_INFO, "Retrieving region url from '%s'.", azure_instance_metadata_service_url.c_str());
+
+    const auto curl_operation = curl_easy::create(azure_instance_metadata_service_url, nullptr);
+	std::map<std::string, std::string> metadata_header{ {"Metadata", "true"} };
+	curl_operation->set_headers(metadata_header);
+
+    curl_operation->perform();
+
+	log(SGX_QL_LOG_INFO, "Curl operation to '%s' performed successfully.", azure_instance_metadata_service_url.c_str());
+
+    std::vector<uint8_t> response_body = curl_operation->get_body();
+    nlohmann::json json_body = nlohmann::json::parse(response_body);
+	if(extract_from_json(json_body["compute"], "location", &url) == SGX_PLAT_ERROR_OK)
+	{		
+		log(SGX_QL_LOG_INFO,
+			"Retrieved region url from Azure Instance Metadata Service with value '%s'.",
+			url.c_str());
+
+		result = true;
+	}
+
+	return result;
+}
+
+static bool get_region_url_from_cache(std::string& url) 
+{
+    bool result = false;
+	
+	if (auto cache_hit = try_cache_get(region_cache_name, false)) {
+		url = std::string(cache_hit->begin(), cache_hit->end());
+
+		log(SGX_QL_LOG_INFO,
+			"Retrieved region url from cache with value '%s'.",
+			url.c_str());
+
+		bool result = true;
+	}
+	else
+	{
+		log(SGX_QL_LOG_INFO, 
+			"Failed to retrieve region url from cache.");
+	}
+
+	return result;
+}
+
+static std::string get_region_url() 
 {
     std::string result;
+	log(SGX_QL_LOG_INFO, "Attempting to retrieve region url from cache.");
 
+	if (get_region_url_from_cache(result))
+	{
+		log(SGX_QL_LOG_INFO, "Region url successfully retrieved from cache.");
+	}
+	else
+	{		
+		log(SGX_QL_LOG_INFO, "Region url not found in cache. Attempting to retrieve it from Azure Instance Metadata Service.");
+
+		if (get_region_url_from_service(result))
+		{
+			log(SGX_QL_LOG_INFO, "Region url successfully retrieved from Azure Instance Metadata Service. Proceeding to store it in cache.");
+
+			time_t max_age = 0;
+			tm* max_age_s = localtime(&max_age);
+			//We don't check expiration for region cache, so there's no need to worry about its expiration date
+			int cache_time_seconds = 0;
+
+			max_age_s->tm_sec += cache_time_seconds;
+			time_t expiration_time = time(nullptr) + mktime(max_age_s);
+
+			log(SGX_QL_LOG_INFO,
+				"Caching region url '%s' for '%d' seconds",
+				result.c_str(),
+				cache_time_seconds);
+
+			local_cache_add(region_cache_name, expiration_time, result.size(), result.c_str());
+		}
+	}
+
+	return result;
+}
+
+//This function can throw a curl_easy::error
+static std::string get_base_url_tdx()
+{
+    std::stringstream result;
+	
+    std::string env_region_url =
+        get_env_variable(ENV_AZDCAP_REGION_URL);
     std::string env_base_url =
         get_env_variable(ENV_AZDCAP_BASE_URL_TDX);
+
+	result << https_url;
+
+    if (env_region_url.empty())
+    {
+		std::string region_url = get_region_url();
+
+        log(SGX_QL_LOG_INFO,
+            "Using region URL '%s'.",
+            region_url.c_str());
+
+        result << region_url;
+    }
+    else
+    {
+        log(SGX_QL_LOG_WARNING,
+            "Using %s envvar for region URL, set to '%s'.",
+            ENV_AZDCAP_REGION_URL,
+            env_region_url.c_str());
+
+        result << env_region_url;
+    }
+	
+	log(SGX_QL_LOG_INFO,
+            "Region URL is '%s'.",
+            result.str().c_str());
 
     if (env_base_url.empty())
     {
@@ -234,7 +405,7 @@ static std::string get_base_url_tdx()
             "Using tdx base URL '%s'.",
             tdx_base_url.c_str());
 
-        result = tdx_base_url;
+        result << tdx_base_url;
     }
     else
     {
@@ -243,10 +414,14 @@ static std::string get_base_url_tdx()
             ENV_AZDCAP_BASE_URL_TDX,
             env_base_url.c_str());
 
-        result = env_base_url;
+        result << env_base_url;
     }
 
-    return result;
+	log(SGX_QL_LOG_INFO,
+            "Using '%s' as the full base TDX url.",
+            result.str().c_str());
+
+    return result.str();
 }
 
 static std::string bypass_base_url()
@@ -501,37 +676,6 @@ std::string get_collateral_friendly_name(CollateralTypes collateral_type)
             return std::string();
         }
     }
-}
-
-//
-// extract raw value from response body, if exists
-//
-sgx_plat_error_t extract_from_json(
-    const nlohmann::json& json,
-    const std::string& item,
-    std::string* out_header)
-{
-    try
-    {
-        nlohmann::json raw_value = json[item];
-        if (!raw_value.is_string())
-        {
-            raw_value = raw_value.dump();
-        }
-        log(SGX_QL_LOG_INFO,
-            "Fetched %s value from JSON. \n", item.c_str());
-        if (out_header != nullptr)
-        {
-            *out_header = raw_value;
-        }
-    }
-    catch (const exception& ex)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Required information '%s' is missing. \n", item.c_str());
-        return SGX_PLAT_ERROR_UNEXPECTED_SERVER_RESPONSE;
-    }
-    return SGX_PLAT_ERROR_OK;
 }
 //
 // get raw value for header_item item if exists
@@ -1338,20 +1482,6 @@ static std::string build_enclave_id_url(
     }
     qe_id_url << API_VERSION_10_2018;
     return qe_id_url.str();
-}
-
-static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
-    const std::string& cert_url)
-{
-    try
-    {
-        return local_cache_get(cert_url);
-    }
-    catch (const std::runtime_error& error)
-    {
-        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
-        return nullptr;
-    }
 }
 
 static std::string get_issuer_chain_cache_name(std::string url)
@@ -2400,6 +2530,14 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             "Unknown exception thrown, error: %s",
             error.what());
         return SGX_QL_ERROR_UNEXPECTED;
+    }
+    catch (const curl_easy::error& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "curl error thrown, error code: %x: %s",
+            error.code,
+            error.what());
+		return SGX_QL_NETWORK_ERROR;
     }
 }
 

@@ -343,7 +343,7 @@ void local_cache_add(
 }
 
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
-    const std::string& id)
+    const std::string& id, bool checkExpiration = true)
 {
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
 
@@ -362,7 +362,7 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     CacheEntryHeaderV1 header{};
     cache_file.read(reinterpret_cast<char*>(&header), sizeof(header));
 
-    if (header.expiry <= time(nullptr))
+    if (checkExpiration && header.expiry <= time(nullptr))
     {
         cache_file.close();
         unlink(file_name.c_str());
