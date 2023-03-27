@@ -138,7 +138,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     curl->sessionHandle.reset(WinHttpOpen(
         nullptr,
-        WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS,
         0));
@@ -229,6 +229,22 @@ std::unique_ptr<curl_easy> curl_easy::create(
         throw_on_error(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(SecureProtocols)");
+    }
+
+    DWORD ignoreSecurityPolicyOptions = 
+		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE | 
+		SECURITY_FLAG_IGNORE_UNKNOWN_CA | 
+		SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+    if (!WinHttpSetOption(
+            curl->request.get(),
+            SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE,
+            &ignoreSecurityPolicyOptions,
+            sizeof(ignoreSecurityPolicyOptions)))
+    {
+        throw_on_error(
+            GetLastError(),
+            "curl_easy::create/WinHttpSetOption(ignoreSecurityPolicyOptions)");
     }
 
     if (p_body != nullptr)

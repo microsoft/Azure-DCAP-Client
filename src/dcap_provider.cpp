@@ -87,7 +87,8 @@ static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
 static std::string secondary_cert_url = SECONDARY_CERT_URL;
 
-static char AZURE_INSTANCE_METADATA_SERVICE_URL[] = "http://169.254.169.254/metadata/instance?api-version=2021-02-01";
+static char AZURE_INSTANCE_METADATA_SERVICE_URL[] = 
+	"http://169.254.169.254/metadata/instance?api-version=2021-02-01";
 static std::string azure_instance_metadata_service_url = AZURE_INSTANCE_METADATA_SERVICE_URL;
 
 static char DEFAULT_CLIENT_ID[] = "production_client";
