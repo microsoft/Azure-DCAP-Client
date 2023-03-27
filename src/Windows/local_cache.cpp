@@ -274,7 +274,7 @@ void local_cache_add(const std::string& id, time_t expiry, size_t data_size, con
 }
 
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
-    const std::string& id, bool checkExpiration = true)
+    const std::string& id, bool checkExpiration)
 {
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
     init();
