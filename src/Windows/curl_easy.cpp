@@ -235,10 +235,10 @@ std::unique_ptr<curl_easy> curl_easy::create(
 		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE | 
 		SECURITY_FLAG_IGNORE_UNKNOWN_CA | 
 		SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+		SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
     if (!WinHttpSetOption(
             curl->request.get(),
-            SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE,
+            WINHTTP_OPTION_SECURITY_FLAGS,
             &ignoreSecurityPolicyOptions,
             sizeof(ignoreSecurityPolicyOptions)))
     {
