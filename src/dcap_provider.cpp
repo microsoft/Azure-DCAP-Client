@@ -383,7 +383,8 @@ static std::string get_base_url_tdx()
             "Using region URL '%s'.",
             region_url.c_str());
 
-        result << region_url;
+        //result << region_url;
+        result << "useast2euap";
     }
     else
     {
@@ -392,8 +393,7 @@ static std::string get_base_url_tdx()
             ENV_AZDCAP_REGION_URL,
             env_region_url.c_str());
 		
-        //result << env_region_url;
-        result << "useast2euap";
+        result << env_region_url;
     }
 	
 	log(SGX_QL_LOG_INFO,
