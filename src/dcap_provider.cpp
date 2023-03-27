@@ -73,7 +73,7 @@ static char HTTPS_URL[] =
 static std::string https_url = HTTPS_URL;
 
 static char TDX_BASE_URL[] =
-    ".thim.azure-test.net/sgx/certification";
+    ".thim.azure.net/sgx/certification";
 static std::string tdx_base_url = TDX_BASE_URL;
 
 static char DEFAULT_BYPASS_BASE_URL[] = "false";
