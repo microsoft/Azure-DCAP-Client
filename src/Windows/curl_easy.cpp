@@ -138,7 +138,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     curl->sessionHandle.reset(WinHttpOpen(
         nullptr,
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+        WINHTTP_ACCESS_TYPE_NO_PROXY,
         WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS,
         0));

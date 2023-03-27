@@ -383,8 +383,7 @@ static std::string get_base_url_tdx()
             "Using region URL '%s'.",
             region_url.c_str());
 
-        //result << region_url;
-        result << "useast2euap";
+        result << region_url;
     }
     else
     {
