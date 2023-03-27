@@ -71,7 +71,7 @@ static std::string default_cert_url = DEFAULT_CERT_URL;
 static char HTTPS_URL[] =
     "https://";
 static std::string https_url = HTTPS_URL;
-//debug
+
 static char TDX_BASE_URL[] =
     ".thim.azure.net/sgx/certification";
 static std::string tdx_base_url = TDX_BASE_URL;
