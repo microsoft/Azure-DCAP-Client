@@ -315,7 +315,7 @@ static bool get_region_url_from_cache(std::string& url)
 			"Retrieved region url from cache with value '%s'.",
 			url.c_str());
 
-		bool result = true;
+		result = true;
 	}
 	else
 	{
@@ -2524,13 +2524,6 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         sgx_ql_free_quote_verification_collateral(p_quote_collateral);
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    catch (const std::exception& error)
-    {
-        log(SGX_QL_LOG_ERROR,
-            "Unknown exception thrown, error: %s",
-            error.what());
-        return SGX_QL_ERROR_UNEXPECTED;
-    }
     catch (const curl_easy::error& error)
     {
         log(SGX_QL_LOG_ERROR,
@@ -2538,6 +2531,13 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             error.code,
             error.what());
 		return SGX_QL_NETWORK_ERROR;
+    }
+    catch (const std::exception& error)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Unknown exception thrown, error: %s",
+            error.what());
+        return SGX_QL_ERROR_UNEXPECTED;
     }
 }
 
