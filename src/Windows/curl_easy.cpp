@@ -186,6 +186,9 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
+        log(SGX_QL_LOG_INFO,
+            "lpszHostName is %s",
+            urlComponents.lpszHostName);
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;
@@ -219,7 +222,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     // Specify TLS 1.2
     DWORD protocolOptions =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
     if (!WinHttpSetOption(
             curl->sessionHandle.get(),
             WINHTTP_OPTION_SECURE_PROTOCOLS,
