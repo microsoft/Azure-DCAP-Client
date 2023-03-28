@@ -179,22 +179,19 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpCrackUrl");
     }
-    std::wstring hostName(urlComponents.lpszScheme);
-	hostName += L"://";
-    hostName += urlComponents.lpszHostName;
-    log(SGX_QL_LOG_INFO,
-        "hostName is %ls",
-        hostName.c_str());
 
     curl->connectionHandle.reset(WinHttpConnect(
         curl->sessionHandle.get(),
-        hostName.c_str(),
+        urlComponents.lpszHostName,
         urlComponents.nPort,
         0));
     if (!curl->connectionHandle)
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
+    log(SGX_QL_LOG_INFO,
+        "lpszUrlPath is %ls",
+        urlComponents.lpszUrlPath);
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;

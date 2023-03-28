@@ -283,7 +283,7 @@ static bool get_region_url_from_service(std::string& url)
 	
 	log(SGX_QL_LOG_INFO, "Retrieving region url from '%s'.", azure_instance_metadata_service_url.c_str());
 
-    const auto curl_operation = curl_easy::create(azure_instance_metadata_service_url, nullptr);
+    const auto curl_operation = curl_easy::create(azure_instance_metadata_service_url, 0);
 	std::map<std::string, std::string> metadata_header{ {"Metadata", "true"} };
 	curl_operation->set_headers(metadata_header);
 
