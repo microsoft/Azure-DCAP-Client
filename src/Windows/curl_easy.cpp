@@ -167,6 +167,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     urlComponents.lpszUrlPath = urlBuffer.get();
     urlComponents.dwExtraInfoLength = (DWORD)-1;
     urlComponents.lpszExtraInfo = extraBuffer.get();
+
     log(SGX_QL_LOG_INFO,
         "winhttp url is %s",
         UnicodeStringFromUtf8String(url).c_str());
@@ -189,6 +190,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
+
     log(SGX_QL_LOG_INFO,
         "lpszUrlPath is %ls",
         urlComponents.lpszUrlPath);
