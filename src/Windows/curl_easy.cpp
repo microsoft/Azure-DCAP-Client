@@ -168,10 +168,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
     urlComponents.dwExtraInfoLength = (DWORD)-1;
     urlComponents.lpszExtraInfo = extraBuffer.get();
 
-    log(SGX_QL_LOG_INFO,
-        "winhttp url is %s",
-        UnicodeStringFromUtf8String(url).c_str());
-
     if (!WinHttpCrackUrl(
             UnicodeStringFromUtf8String(url).c_str(),
             0,
@@ -190,10 +186,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
-
-    log(SGX_QL_LOG_INFO,
-        "lpszUrlPath is %ls",
-        urlComponents.lpszUrlPath);
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;
@@ -238,22 +230,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(SecureProtocols)");
     }
-	/*
-    DWORD ignoreSecurityPolicyOptions = 
-		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE | 
-		SECURITY_FLAG_IGNORE_UNKNOWN_CA | 
-		SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-    if (!WinHttpSetOption(
-            curl->request.get(),
-            SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE,
-            &ignoreSecurityPolicyOptions,
-            sizeof(ignoreSecurityPolicyOptions)))
-    {
-        throw_on_error(
-            GetLastError(),
-            "curl_easy::create/WinHttpSetOption(ignoreSecurityPolicyOptions)");
-    }*/
 
     if (p_body != nullptr)
     {
