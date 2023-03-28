@@ -182,6 +182,9 @@ std::unique_ptr<curl_easy> curl_easy::create(
     std::wstring hostName(urlComponents.lpszScheme);
 	hostName += L"://";
     hostName += urlComponents.lpszHostName;
+    log(SGX_QL_LOG_INFO,
+        "hostName is %ls",
+        hostName.c_str());
 
     curl->connectionHandle.reset(WinHttpConnect(
         curl->sessionHandle.get(),
@@ -192,9 +195,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
-    log(SGX_QL_LOG_INFO,
-        "hostName is %ls",
-        hostName.c_str());
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;
