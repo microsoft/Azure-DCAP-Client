@@ -167,6 +167,9 @@ std::unique_ptr<curl_easy> curl_easy::create(
     urlComponents.lpszUrlPath = urlBuffer.get();
     urlComponents.dwExtraInfoLength = (DWORD)-1;
     urlComponents.lpszExtraInfo = extraBuffer.get();
+    log(SGX_QL_LOG_INFO,
+        "winhttp url is %s",
+        UnicodeStringFromUtf8String(url).c_str());
 
     if (!WinHttpCrackUrl(
             UnicodeStringFromUtf8String(url).c_str(),
@@ -186,9 +189,9 @@ std::unique_ptr<curl_easy> curl_easy::create(
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
-        log(SGX_QL_LOG_INFO,
-            "lpszHostName is %s",
-            urlComponents.lpszHostName);
+    log(SGX_QL_LOG_INFO,
+        "lpszHostName is %ls",
+        urlComponents.lpszHostName);
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;
@@ -208,7 +211,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     }
 
     // Enable following redirects on this request.
-    DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+    DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
     if (!WinHttpSetOption(
             curl->request.get(),
             WINHTTP_OPTION_REDIRECT_POLICY,
