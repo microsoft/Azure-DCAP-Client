@@ -183,15 +183,16 @@ std::unique_ptr<curl_easy> curl_easy::create(
     curl->connectionHandle.reset(WinHttpConnect(
         curl->sessionHandle.get(),
         urlComponents.lpszHostName,
-        urlComponents.nPort,
+        //urlComponents.nPort,
+		INTERNET_DEFAULT_HTTP_PORT,
         0));
     if (!curl->connectionHandle)
     {
         throw_on_error(GetLastError(), "curl_easy::create/WinHttpConnect");
     }
     log(SGX_QL_LOG_INFO,
-        "lpszHostName is %ls",
-        urlComponents.lpszHostName);
+        "lpszScheme is %ls",
+        urlComponents.lpszScheme);
 
     std::wstring urlToRetrieve(urlComponents.lpszUrlPath);
     urlToRetrieve += urlComponents.lpszExtraInfo;
