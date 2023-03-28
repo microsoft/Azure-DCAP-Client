@@ -219,7 +219,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     // Specify TLS 1.2
     DWORD protocolOptions =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
     if (!WinHttpSetOption(
             curl->sessionHandle.get(),
             WINHTTP_OPTION_SECURE_PROTOCOLS,
@@ -230,22 +230,22 @@ std::unique_ptr<curl_easy> curl_easy::create(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(SecureProtocols)");
     }
-
+	/*
     DWORD ignoreSecurityPolicyOptions = 
 		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE | 
 		SECURITY_FLAG_IGNORE_UNKNOWN_CA | 
 		SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-		SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
     if (!WinHttpSetOption(
             curl->request.get(),
-            WINHTTP_OPTION_SECURITY_FLAGS,
+            SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE,
             &ignoreSecurityPolicyOptions,
             sizeof(ignoreSecurityPolicyOptions)))
     {
         throw_on_error(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(ignoreSecurityPolicyOptions)");
-    }
+    }*/
 
     if (p_body != nullptr)
     {
