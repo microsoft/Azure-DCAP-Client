@@ -205,7 +205,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     }
 
     // Enable following redirects on this request.
-    DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+    DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
     if (!WinHttpSetOption(
             curl->request.get(),
             WINHTTP_OPTION_REDIRECT_POLICY,

@@ -353,9 +353,8 @@ static std::string get_region_url()
 			time_t expiration_time = time(nullptr) + mktime(max_age_s);
 
 			log(SGX_QL_LOG_INFO,
-				"Caching region url '%s' for '%d' seconds",
-				result.c_str(),
-				cache_time_seconds);
+				"Caching region url '%s'",
+				result.c_str());
 
 			local_cache_add(region_cache_name, expiration_time, result.size(), result.c_str());
 		}
