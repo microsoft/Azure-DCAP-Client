@@ -1237,7 +1237,7 @@ void SetupEnvironmentTDX(std::string version)
         1);
     setenv(
         "AZDCAP_REGION_URL",
-        "useast2euap",
+        "",
         1);
     setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
     if (!version.empty())
@@ -1260,7 +1260,7 @@ void SetupEnvironmentTDX(std::string version)
 		"AZDCAP_BASE_CERT_URL_TDX", ""));
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_REGION_URL",
-        "useast2euap"));
+        ""));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
 #endif
