@@ -343,6 +343,9 @@ static std::string get_region_url()
 		if (get_region_url_from_service(result))
 		{
 			log(SGX_QL_LOG_INFO, "Region url successfully retrieved from Azure Instance Metadata Service. Proceeding to store it in cache.");
+						
+			std::transform(result.begin(), result.end(), result.begin(),
+				[](unsigned char c) { return std::tolower(c); });
 
 			time_t max_age = 0;
 			tm* max_age_s = localtime(&max_age);

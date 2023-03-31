@@ -739,6 +739,7 @@ static void GetVerificationCollateralTestICXV3WithIncorrectParams()
 
 static void GetVerificationCollateralTestTDX()
 {
+	local_cache_clear();
     tdx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = tdx_ql_get_quote_verification_collateral(
         TDX_TEST_FMSPC, sizeof(TDX_TEST_FMSPC), "processor", &collateral);
