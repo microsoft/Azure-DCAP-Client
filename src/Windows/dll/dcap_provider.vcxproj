@@ -94,6 +94,7 @@
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.h" />
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\private.h" />
     <ClInclude Include="..\..\environment.h" />
+    <ClInclude Include="..\..\sgx_ql_lib_common.h" />
     <ClInclude Include="..\curl_easy.h" />
     <ClInclude Include="evtx_logging.h" />
     <ClInclude Include="ext\intel\sgx_ql_lib_common.h" />

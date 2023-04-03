@@ -44,10 +44,6 @@ typedef struct _access_permission
 } permission_type_t;
 #endif
 
-#ifndef tdx_ql_qve_collateral_t
-typedef sgx_ql_qve_collateral_t tdx_ql_qve_collateral_t;
-#endif
-
 typedef void (*measured_function_t)(void);
 
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(

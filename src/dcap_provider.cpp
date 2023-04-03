@@ -55,10 +55,6 @@ static const std::map<std::string, std::string> localhost_metadata = {
 
 }; // namespace headers
 
-#ifndef tdx_ql_qve_collateral_t
-typedef sgx_ql_qve_collateral_t tdx_ql_qve_collateral_t;
-#endif
-
 // New API version used to request PEM encoded CRLs
 constexpr char API_VERSION_10_2018[] = "api-version=2018-10-01-preview";
 constexpr char API_VERSION_02_2020[] = "api-version=2020-02-12-preview";
@@ -2464,7 +2460,17 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         memset(p_quote_collateral, 0, buffer_size);
 
         // Fill in the buffer contents
-        p_quote_collateral->version = 1;
+		if (prod_type == SGX_PROD_TYPE_TDX)
+        {
+			p_quote_collateral->major_version = 4;
+			p_quote_collateral->minor_version = 0;
+			p_quote_collateral->tee_type = 0x81;
+        }
+		else
+		{
+			p_quote_collateral->version = 1;
+			p_quote_collateral->tee_type = 0x0;
+		}
         quote3_error_t result;
         result = fill_qpl_string_buffer(
             pck_issuer_chain,

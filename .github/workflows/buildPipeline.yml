@@ -493,7 +493,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "makeDcapTests"
-            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+            script: "cd /AzureDCAP/src/ && sudo cp sgx_ql_lib_common.h /usr/include/ && cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
               
       - name: Run DCAP tests
         uses: ./.github/actions/actionAzVmRunCommand
@@ -734,7 +734,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "makeDcapTests"
-            script: "cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+            script: "cd /AzureDCAP/src/ && sudo cp sgx_ql_lib_common.h /usr/include/ && cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
               
       - name: Run DCAP tests
         uses: ./.github/actions/actionAzVmRunCommand
