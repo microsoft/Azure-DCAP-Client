@@ -559,7 +559,8 @@ static void GetCrlTestICXV3()
 static inline void VerifyCollateralCommon(sgx_ql_qve_collateral_t* collateral)
 {
     ASSERT_TRUE(collateral != nullptr);
-    ASSERT_TRUE(collateral->version == 1);
+    ASSERT_TRUE(collateral->version == 1 || (collateral->major_version == 4 && collateral->minor_version == 0));
+    ASSERT_TRUE(collateral->tee_type == 0x0 || collateral->tee_type == 0x81);
     ASSERT_TRUE(collateral->pck_crl != nullptr);
     ASSERT_TRUE(collateral->pck_crl_size > 0);
     ASSERT_TRUE(collateral->pck_crl_issuer_chain != nullptr);
