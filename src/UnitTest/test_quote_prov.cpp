@@ -1218,11 +1218,7 @@ void SetupEnvironmentTDX(std::string version)
 {
 #if defined __LINUX__
     setenv(
-		"AZDCAP_BASE_CERT_URL_TDX_CRL", 
-		"", 
-		1);
-    setenv(
-		"AZDCAP_BASE_CERT_URL_TDX_COLLATERAL", 
+		"AZDCAP_PRIMARY_BASE_CERT_URL", 
 		"", 
 		1);
     setenv(
@@ -1230,7 +1226,7 @@ void SetupEnvironmentTDX(std::string version)
         "",
         1);
     setenv(
-        "ENV_AZDCAP_BASE_URL",
+        "AZDCAP_BASE_CERT_URL_TDX",
         "",
         1);
     setenv(
@@ -1244,11 +1240,6 @@ void SetupEnvironmentTDX(std::string version)
     }
 #else
     std::stringstream version_var;
-    if (!version.empty())
-    {
-        EXPECT_TRUE(SetEnvironmentVariableA(
-            "AZDCAP_COLLATERAL_VERSION_TDX", version.c_str()));
-    }
     EXPECT_TRUE(SetEnvironmentVariableA(
         "AZDCAP_PRIMARY_BASE_CERT_URL",
         ""));
@@ -1261,6 +1252,11 @@ void SetupEnvironmentTDX(std::string version)
         "eastus2euap"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    if (!version.empty())
+    {
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_COLLATERAL_VERSION_TDX", version.c_str()));
+    }
 #endif
 }
 
