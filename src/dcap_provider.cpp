@@ -38,6 +38,7 @@ namespace headers
 constexpr char PCK_CERT_ISSUER_CHAIN[] = "sgx-Pck-Certificate-Issuer-Chain";
 constexpr char CRL_ISSUER_CHAIN[] = "SGX-PCK-CRL-Issuer-Chain";
 constexpr char TCB_INFO_ISSUER_CHAIN[] = "SGX-TCB-Info-Issuer-Chain";
+constexpr char TCB_INFO_ISSUER_CHAIN_TDX[] = "TCB-Info-Issuer-Chain";
 constexpr char TCB_INFO[] = "sgx-Tcbm";
 constexpr char CONTENT_TYPE[] = "Content-Type";
 constexpr char QE_ISSUER_CHAIN[] = "SGX-QE-Identity-Issuer-Chain";
@@ -1949,8 +1950,17 @@ extern "C" sgx_plat_error_t sgx_ql_get_revocation_info(
                 *tcb_info_operation,
                 headers::TCB_INFO_ISSUER_CHAIN,
                 &tcb_issuer_chain);
-            if (result != SGX_PLAT_ERROR_OK)
-                return result;
+			
+			if (result != SGX_PLAT_ERROR_OK) 
+			{
+				result = get_unescape_header(
+					*tcb_info_operation,
+					headers::TCB_INFO_ISSUER_CHAIN_TDX,
+					&tcb_issuer_chain);
+
+				if (result != SGX_PLAT_ERROR_OK)
+					return result;
+			}
         }
 
         // last, pack it all up into a single buffer
@@ -2412,10 +2422,20 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
             tcb_issuer_chain);
         if (operation_result != SGX_QL_SUCCESS)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Error fetching TCB Info: %d",
-                operation_result);
-            return operation_result;
+			operation_result = get_collateral(
+				CollateralTypes::TcbInfo,
+				tcb_info_url,
+				headers::TCB_INFO_ISSUER_CHAIN_TDX,
+				tcb_info,
+				tcb_issuer_chain);
+
+			if (operation_result != SGX_QL_SUCCESS)
+			{
+				log(SGX_QL_LOG_ERROR,
+					"Error fetching TCB Info: %d",
+					operation_result);
+				return operation_result;
+			}
         }
 
         // Get QE Identity & Issuer Chain
