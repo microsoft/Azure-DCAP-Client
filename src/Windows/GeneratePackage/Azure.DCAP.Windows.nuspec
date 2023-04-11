@@ -29,5 +29,7 @@
         <file src=".\InstallAzureDCAP.ps1" target="tools" />
         <!-- A readme.txt to display when the package is installed -->
         <file src=".\README.txt" target="" />
+        <!-- NOTICE.txt with the distribution licenses of the open source files used in dcap-->
+        <file src=".\NOTICE.txt" target="" />
     </files>
 </package>
