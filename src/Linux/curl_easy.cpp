@@ -32,7 +32,7 @@ static std::string to_lower(const std::string& inout)
         c = std::tolower(c, loc);
     }
 
-    return inout;
+    return retval;
 }
 
 // OWS is defined in RFC 7230 as "OWS = *( SP / HTAB )"
@@ -43,9 +43,17 @@ static bool is_optional_whitespace(char c)
 
 static bool is_http_version(const char* buffer, size_t buffer_size)
 {
-    static constexpr char HTTP_VERSION[] = "HTTP/1.1";
-    return buffer_size >= sizeof(HTTP_VERSION) - 1 &&
-           0 == memcmp(buffer, HTTP_VERSION, sizeof(HTTP_VERSION) - 1);
+	bool result = false;
+	
+    static constexpr char HTTP_VERSION1[] = "HTTP/1.1";
+    static constexpr char HTTP_VERSION2[] = "HTTP/2";
+    static constexpr char HTTP_VERSION3[] = "HTTP/3";
+	if((buffer_size >= sizeof(HTTP_VERSION1) - 1 && 0 == memcmp(buffer, HTTP_VERSION1, sizeof(HTTP_VERSION1) - 1)) ||
+		(buffer_size >= sizeof(HTTP_VERSION2) - 1 && 0 == memcmp(buffer, HTTP_VERSION2, sizeof(HTTP_VERSION2) - 1)) ||
+		(buffer_size >= sizeof(HTTP_VERSION3) - 1 && 0 == memcmp(buffer, HTTP_VERSION3, sizeof(HTTP_VERSION3) - 1)))
+		result = true;
+	
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
