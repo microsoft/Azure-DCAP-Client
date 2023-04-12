@@ -105,8 +105,6 @@ static char PROCESSOR_CRL_NAME[] = "https%3a%2f%2fcertificates.trustedservices."
                                    "intel.com%2fintelsgxpckprocessor.crl";
 static char PLATFORM_CRL_NAME[] =
     "https%3a%2f%2fapi.trustedservices.intel.com%2fsgx%2fcertification%2fv3%2fpckcrl%3fca%3dplatform%26encoding%3dpem";
-static char PROCESSOR_CRL_NAME_TDX[] = "processor";
-static char PLATFORM_CRL_NAME_TDX[] = "platform";
 
 static char REGION_CACHE_NAME[] = "region";
 static std::string region_cache_name = REGION_CACHE_NAME;
@@ -1090,26 +1088,19 @@ static std::string build_pck_crl_url(
 {
     std::string version;
     std::stringstream url;
-    std::string client_id;
+    std::string client_id = get_client_id();
+
     if (prod_type == SGX_PROD_TYPE_TDX)
     {
         version = get_collateral_version_tdx();
 
-        client_id = get_client_id();
-
         url << get_base_url_tdx();
 
-        if (!version.empty())
-        {
-            url << "/" << version;
-        }
+        url << "/" << version;
 
         url << "/pckcrl?ca=" << crl_name << "&";
 
-        if (!client_id.empty())
-        {
-            url << "clientid=" << client_id;
-        }
+        url << "clientid=" << client_id;
 	}
     else
     {
@@ -1117,8 +1108,6 @@ static std::string build_pck_crl_url(
 
         std::string escaped =
             curl_easy::escape(crl_name.data(), (int)crl_name.size());
-
-        client_id = get_client_id();
 
         url << get_base_url();
 
@@ -1149,17 +1138,11 @@ static std::string build_root_ca_crl_url_tdx()
 
     url << get_base_url_tdx();
 
-    if (!version.empty())
-    {
-        url << "/" << version;
-    }
+    url << "/" << version;
 
     url << "/rootcacrl?";
 
-    if (!client_id.empty())
-    {
-        url << "clientid=" << client_id;
-    }
+    url << "clientid=" << client_id;
 
     return url.str();
 }
@@ -1343,7 +1326,8 @@ static std::string build_tcb_info_url(
         else
         {
             log(SGX_QL_LOG_ERROR,
-                "Error substituting sgx by tdx in the base url.");
+                "Error substituting sgx by tdx in the base url during tcb info url build.");
+			throw SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         tcb_info_url << base_url;
@@ -1435,7 +1419,8 @@ static std::string build_enclave_id_url(
         else
         {
             log(SGX_QL_LOG_ERROR,
-                "Error substituting sgx by tdx in the base url.");
+                "Error substituting sgx by tdx in the base url during qeid url build.");
+			throw SGX_QL_ERROR_INVALID_PARAMETER;
         }
 
         qe_id_url << base_url;
@@ -2320,12 +2305,12 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         {
             if (strcmp(CRL_CA_PROCESSOR, pck_ca) == 0)
             {
-                requested_ca = PROCESSOR_CRL_NAME_TDX;
+                requested_ca = CRL_CA_PROCESSOR;
             }
 
             if (strcmp(CRL_CA_PLATFORM, pck_ca) == 0)
             {
-                requested_ca = PLATFORM_CRL_NAME_TDX;
+                requested_ca = CRL_CA_PLATFORM;
             }
         }
 		else
