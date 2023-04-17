@@ -472,7 +472,6 @@ static std::string get_secondary_url()
         get_env_variable(ENV_AZDCAP_SECONDARY_BASE_CERT_URL);
 
     if (env_secondary_url.empty())
-
     {
         log(SGX_QL_LOG_INFO,
             "Using default secondary base cert URL '%s'.",
@@ -492,7 +491,6 @@ static std::string get_client_id()
     std::string env_client_id = get_env_variable(ENV_AZDCAP_CLIENT_ID);
 
     if (env_client_id.empty())
-
     {
         log(SGX_QL_LOG_INFO,
             "Using default client id '%s'.",

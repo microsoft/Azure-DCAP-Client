@@ -1406,24 +1406,6 @@ TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
 #endif
 }
 
-TEST(testQuoteProv, quoteProviderTestsVerifyStoreCertificate)
-{
-    libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironmentTDX("v4");
-    GetVerificationCollateralTestTDX();
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
-#endif
-}
-
 TEST(testQuoteProv, quoteProviderTestsWithIncorrectCustomParam)
 {
     libary_type_t library = LoadFunctions();
