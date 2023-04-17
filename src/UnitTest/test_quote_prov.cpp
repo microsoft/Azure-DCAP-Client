@@ -56,6 +56,9 @@ typedef quote3_error_t (*sgx_ql_free_quote_config_t)(
 typedef quote3_error_t (*sgx_ql_free_quote_verification_collateral_t)(
     sgx_ql_qve_collateral_t* p_quote_collateral);
 
+typedef quote3_error_t (*tdx_ql_free_quote_verification_collateral_t)(
+    tdx_ql_qve_collateral_t* p_quote_collateral);
+
 typedef quote3_error_t (*sgx_ql_free_qve_identity_t)(
     char* p_qve_identity,
     char* p_qve_identity_issuer_chain);
@@ -76,6 +79,12 @@ typedef quote3_error_t (
     const void* custom_param,
     const uint16_t custom_param_length,
     sgx_ql_qve_collateral_t** pp_quote_collateral);
+
+typedef quote3_error_t (*tdx_ql_get_quote_verification_collateral_t)(
+    const uint8_t* fmspc,
+    const uint16_t fmspc_size,
+    const char* pck_ca,
+    tdx_ql_qve_collateral_t** pp_quote_collateral);
 
 typedef quote3_error_t (*sgx_ql_get_qve_identity_t)(
     char** pp_qve_identity,
@@ -98,19 +107,24 @@ static sgx_ql_get_quote_config_t sgx_ql_get_quote_config;
 static sgx_ql_set_logging_function_t sgx_ql_set_logging_function;
 static sgx_ql_free_quote_verification_collateral_t
     sgx_ql_free_quote_verification_collateral;
+static tdx_ql_free_quote_verification_collateral_t
+    tdx_ql_free_quote_verification_collateral;
 static sgx_ql_free_qve_identity_t sgx_ql_free_qve_identity;
 static sgx_ql_free_root_ca_crl_t sgx_ql_free_root_ca_crl;
 static sgx_ql_get_quote_verification_collateral_t
     sgx_ql_get_quote_verification_collateral;
 static sgx_ql_get_quote_verification_collateral_with_params_t
     sgx_ql_get_quote_verification_collateral_with_params;
+static tdx_ql_get_quote_verification_collateral_t
+    tdx_ql_get_quote_verification_collateral;
 static sgx_ql_get_qve_identity_t sgx_ql_get_qve_identity;
 static sgx_ql_get_root_ca_crl_t sgx_ql_get_root_ca_crl;
 
 // Test FMSPC
 static constexpr uint8_t TEST_FMSPC[] = {0x00, 0x90, 0x6E, 0xA1, 0x00, 0x00};
-static constexpr uint8_t ICX_TEST_FMSPC[] =
-    {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
+static constexpr uint8_t ICX_TEST_FMSPC[] = {0x00, 0x60, 0x6a, 0x00, 0x00, 0x00};
+static constexpr uint8_t TDX_TEST_FMSPC[] =
+    {0x00, 0x80, 0x6F, 0x05, 0x00, 0x00};
 
 const uint16_t custom_param_length = 45;
 const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
@@ -260,6 +274,11 @@ static void* LoadFunctions()
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
+    tdx_ql_free_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_free_quote_verification_collateral_t>(
+            dlsym(library, "tdx_ql_free_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_free_quote_verification_collateral, nullptr);
+
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         dlsym(library, "sgx_ql_free_qve_identity"));
     EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
@@ -277,6 +296,11 @@ static void* LoadFunctions()
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
+
+    tdx_ql_get_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_get_quote_verification_collateral_t>(
+            dlsym(library, "tdx_ql_get_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         dlsym(library, "sgx_ql_get_qve_identity"));
@@ -327,6 +351,12 @@ static HINSTANCE LoadFunctions()
                 hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
+    tdx_ql_free_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_free_quote_verification_collateral_t>(
+            GetProcAddress(
+                hLibCapdll, "tdx_ql_free_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_free_quote_verification_collateral, nullptr);
+
     sgx_ql_free_qve_identity = reinterpret_cast<sgx_ql_free_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_free_qve_identity"));
     EXPECT_NE(sgx_ql_free_qve_identity, nullptr);
@@ -345,6 +375,12 @@ static HINSTANCE LoadFunctions()
         sgx_ql_get_quote_verification_collateral_with_params_t>(GetProcAddress(
         hLibCapdll, "sgx_ql_get_quote_verification_collateral_with_params"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral_with_params, nullptr);
+
+    tdx_ql_get_quote_verification_collateral =
+        reinterpret_cast<tdx_ql_get_quote_verification_collateral_t>(
+            GetProcAddress(
+                hLibCapdll, "tdx_ql_get_quote_verification_collateral"));
+    EXPECT_NE(tdx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_qve_identity = reinterpret_cast<sgx_ql_get_qve_identity_t>(
         GetProcAddress(hLibCapdll, "sgx_ql_get_qve_identity"));
@@ -522,11 +558,11 @@ static void GetCrlTestICXV3()
     VerifyCrlOutput(params);
 }
 
-static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
+static inline void VerifyCollateralCommon(sgx_ql_qve_collateral_t* collateral)
 {
-    boolean TEST_SUCCESS = false;
     ASSERT_TRUE(collateral != nullptr);
-    ASSERT_TRUE(collateral->version == 1);
+    ASSERT_TRUE(collateral->version == 1 || (collateral->major_version == 4 && collateral->minor_version == 0));
+    ASSERT_TRUE(collateral->tee_type == 0x0 || collateral->tee_type == 0x81);
     ASSERT_TRUE(collateral->pck_crl != nullptr);
     ASSERT_TRUE(collateral->pck_crl_size > 0);
     ASSERT_TRUE(collateral->pck_crl_issuer_chain != nullptr);
@@ -556,10 +592,23 @@ static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
     ASSERT_TRUE(
         collateral->root_ca_crl[collateral->root_ca_crl_size - 1] == '\0');
     ASSERT_TRUE(collateral->tcb_info[collateral->tcb_info_size - 1] == '\0');
-    ASSERT_TRUE(
-        collateral->tcb_info_issuer_chain
-            [collateral->tcb_info_issuer_chain_size - 1] == '\0');
+    ASSERT_TRUE(collateral->tcb_info_issuer_chain[collateral->tcb_info_issuer_chain_size - 1] == '\0');
+}
+
+static inline void VerifyCollateral(sgx_ql_qve_collateral_t* collateral)
+{
+    boolean TEST_SUCCESS = false;
+    VerifyCollateralCommon(collateral);
     sgx_ql_free_quote_verification_collateral(collateral);
+    TEST_SUCCESS = true;
+    ASSERT_TRUE(TEST_SUCCESS);
+}
+
+static inline void VerifyCollateralTDX(tdx_ql_qve_collateral_t* collateral)
+{
+    boolean TEST_SUCCESS = false;
+    VerifyCollateralCommon(collateral);
+    tdx_ql_free_quote_verification_collateral(collateral);
     TEST_SUCCESS = true;
     ASSERT_TRUE(TEST_SUCCESS);
 }
@@ -582,7 +631,6 @@ static void GetVerificationCollateralTest()
 static void GetVerificationCollateralTestWithParams()
 {
     // Test input (choose an arbitrary Azure server)
-
     sgx_ql_qve_collateral_t* collateral = nullptr;
     std::string tcbInfoTcbEvaluationDataNumber;
     std::string enclaveIdentityTcbEvaluationDataNumber;
@@ -695,6 +743,16 @@ static void GetVerificationCollateralTestICXV3WithIncorrectParams()
             incorrect_custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_NO_QUOTE_COLLATERAL_DATA == result);
+}
+
+static void GetVerificationCollateralTestTDX()
+{
+	local_cache_clear();
+    tdx_ql_qve_collateral_t* collateral = nullptr;
+    quote3_error_t result = tdx_ql_get_quote_verification_collateral(
+        TDX_TEST_FMSPC, sizeof(TDX_TEST_FMSPC), "processor", &collateral);
+    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    VerifyCollateralTDX(collateral);
 }
 
 static boolean GetQveIdentityTest()
@@ -1189,6 +1247,52 @@ void SetupEnvironment(std::string version)
 #endif
 }
 
+void SetupEnvironmentTDX(std::string version)
+{
+#if defined __LINUX__
+    setenv(
+		"AZDCAP_PRIMARY_BASE_CERT_URL", 
+		"", 
+		1);
+    setenv(
+        "ENV_AZDCAP_SECONDARY_BASE_CERT_URL",
+        "",
+        1);
+    setenv(
+        "AZDCAP_BASE_CERT_URL_TDX",
+        "",
+        1);
+    setenv(
+        "AZDCAP_REGION_URL",
+        "eastus2euap",
+        1);
+    setenv("AZDCAP_CLIENT_ID", "AzureDCAPTestsLinux", 1);
+    if (!version.empty())
+    {
+        setenv("AZDCAP_COLLATERAL_VERSION_TDX", version.c_str(), 1);
+    }
+#else
+    std::stringstream version_var;
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_PRIMARY_BASE_CERT_URL",
+        ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_SECONDARY_BASE_CERT_URL", ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+		"AZDCAP_BASE_CERT_URL_TDX", ""));
+    EXPECT_TRUE(SetEnvironmentVariableA(
+        "AZDCAP_REGION_URL",
+        "eastus2euap"));
+    EXPECT_TRUE(
+        SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
+    if (!version.empty())
+    {
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_COLLATERAL_VERSION_TDX", version.c_str()));
+    }
+#endif
+}
+
 void SetupEnvironmentToReachSecondary()
 {
 #if defined __LINUX__
@@ -1292,6 +1396,24 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
     ASSERT_TRUE(GetQveIdentityTest());
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, quoteProviderTestsGetVerificationCollateralTDX)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironmentTDX("v4");
+    GetVerificationCollateralTestTDX();
 
 #if defined __LINUX__
     dlclose(library);

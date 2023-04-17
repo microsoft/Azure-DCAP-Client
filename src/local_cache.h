@@ -34,6 +34,6 @@ extern "C" void local_cache_add(
 // Throws std::exception (or subtype) on error.
 //
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
-    const std::string& id);
+    const std::string& id, bool checkExpiration = true);
 
 #endif

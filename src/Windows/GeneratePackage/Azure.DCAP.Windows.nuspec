@@ -2,14 +2,15 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.11.2</version>
+        <version>1.12.0</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes>
-		*Enable certificate fetch from host agent for quote generation
-  		*Enable customer to provide tcb baseline for evidence verification
+		Added support for TDX quote validation through the following API 
+		*quote3_error_t tdx_ql_get_quote_verification_collateral(const uint8_t *fmspc, uint16_t fmspc_size, const char *pck_ca, tdx_ql_qve_collateral_t **pp_quote_collateral)
+		*quote3_error_t tdx_ql_free_quote_verification_collateral(tdx_ql_qve_collateral_t *p_quote_collateral)
 	  </releaseNotes>
         <description>
             This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
@@ -28,5 +29,7 @@
         <file src=".\InstallAzureDCAP.ps1" target="tools" />
         <!-- A readme.txt to display when the package is installed -->
         <file src=".\README.txt" target="" />
+        <!-- NOTICE.txt with the distribution licenses of the open source files used in dcap-->
+        <file src=".\NOTICE.txt" target="" />
     </files>
 </package>
