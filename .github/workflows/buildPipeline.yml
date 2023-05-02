@@ -138,6 +138,18 @@ jobs:
             commandName: "installCMake"
             script: "sudo apt-get install cmake -y"
               
+      - name: Set Environment variables
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "setEnvironmentVariables"
+            script: "sudo export AZDCAP_BASE_CERT_URL_TDX=.thim.azure-test.net/sgx/certification && sudo export AZDCAP_REGION_URL=thimt2-dev-cbn01p"
+              
+      - name: Check Environment variables
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "checkEnvironmentVariables"
+            script: "printenv AZDCAP_BASE_CERT_URL_TDX && printenv AZDCAP_REGION_URL"
+              
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
