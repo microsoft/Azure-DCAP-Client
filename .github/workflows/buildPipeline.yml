@@ -142,7 +142,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "setEnvironmentVariables"
-            script: "sudo export AZDCAP_BASE_CERT_URL_TDX=.thim.azure-test.net/sgx/certification && sudo export AZDCAP_REGION_URL=thimt2-dev-cbn01p"
+            script: "export AZDCAP_BASE_CERT_URL_TDX=.thim.azure-test.net/sgx/certification && export AZDCAP_REGION_URL=thimt2-dev-cbn01p"
               
       - name: Check Environment variables
         uses: ./.github/actions/actionAzVmRunCommand
