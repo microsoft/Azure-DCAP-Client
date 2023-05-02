@@ -214,7 +214,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "testOpenEnclave"
-            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
+            script: "export AZDCAP_BASE_CERT_URL_TDX=.thim.azure-test.net/sgx/certification && export AZDCAP_REGION_URL=thimt2-dev-cbn01p && cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
