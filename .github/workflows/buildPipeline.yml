@@ -31,7 +31,7 @@ jobs:
             location: uksouth
           - sizeName: IceLake
             size: Standard_DC4s_v3
-            location: useast2euap
+            location: eastus2euap
           
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest
