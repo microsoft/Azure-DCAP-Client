@@ -232,6 +232,7 @@ jobs:
               -n ${{ env.vmName }}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
               
+              
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
