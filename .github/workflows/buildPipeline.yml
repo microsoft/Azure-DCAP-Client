@@ -281,8 +281,8 @@ jobs:
           inlineScript: |
             az vm run-command create \
               --command-id RunPowerShellScript \
-              --resource-group $rgName \
-              --vm-name $vmName \
+              --resource-group dcap-github-actions-agents-rg \
+              --vm-name winBuildPersSub \
               --location $location \
               --name "cloneDcap" \
               --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
@@ -301,7 +301,7 @@ jobs:
             az vm run-command create \
               --command-id RunPowerShellScript \
               --resource-group $rgName \
-              --vm-name $vmName \
+              --vm-name winBuildPersSub \
               --location $location \
               --name "buildDcap" \
               --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
