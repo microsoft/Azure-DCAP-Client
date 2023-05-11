@@ -278,6 +278,7 @@ jobs:
       - name: Clone the DCAP repo after cleaning up the previous execution
         uses: azure/CLI@v1
         with:
+          azcliversion: 2.47.0
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
@@ -296,6 +297,7 @@ jobs:
       - name: Build Azure DCAP
         uses: azure/CLI@v1
         with:
+          azcliversion: 2.47.0
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
@@ -314,6 +316,7 @@ jobs:
       - name: Run Azure DCAP unit tests
         uses: azure/CLI@v1
         with:
+          azcliversion: 2.47.0
           inlineScript: |
             az vm run-command create \
               --resource-group $rgName \
