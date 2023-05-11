@@ -274,6 +274,15 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
+              
+      - name: Clone the DCAP repo after cleaning up the previous execution
+        run: az vm run-command create \
+              --command-id RunPowerShellScript \
+              --resource-group dcap-github-actions-agents-rg \
+              --vm-name winBuildPersSub \
+              --location westus \
+              --name "cloneDcap2" \
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
       
       - name: Clone the DCAP repo after cleaning up the previous execution
         uses: azure/CLI@v1
@@ -283,7 +292,7 @@ jobs:
               --command-id RunPowerShellScript \
               --resource-group dcap-github-actions-agents-rg \
               --vm-name winBuildPersSub \
-              --location $location \
+              --location westus \
               --name "cloneDcap" \
               --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
