@@ -277,22 +277,9 @@ jobs:
               
       - name: Clone the DCAP repo after cleaning up the previous execution
         run: az vm run-command create \
-              --command-id RunPowerShellScript \
-              --resource-group dcap-github-actions-agents-rg \
-              --vm-name winBuildPersSub \
-              --location westus \
-              --name "cloneDcap2" \
-              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
-      
-      - name: Clone the DCAP repo after cleaning up the previous execution
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --command-id RunPowerShellScript \
-              --resource-group dcap-github-actions-agents-rg \
-              --vm-name winBuildPersSub \
-              --location westus \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --location $location \
               --name "cloneDcap" \
               --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
@@ -304,13 +291,9 @@ jobs:
             if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
              
       - name: Build Azure DCAP
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --command-id RunPowerShellScript \
+        run: az vm run-command create \
               --resource-group $rgName \
-              --vm-name winBuildPersSub \
+              --vm-name $vmName \
               --location $location \
               --name "buildDcap" \
               --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
@@ -323,11 +306,7 @@ jobs:
             if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
       
       - name: Run Azure DCAP unit tests
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az vm run-command create \
-              --command-id RunPowerShellScript \
+        run: az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
               --location $location \
