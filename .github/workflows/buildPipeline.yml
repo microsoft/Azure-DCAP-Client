@@ -276,7 +276,7 @@ jobs:
         run: sleep 60
               
       - name: Clone the DCAP repo after cleaning up the previous execution
-        run: az vm run-command create --resource-group $rgName --vm-name $vmName --location $location --name "cloneDcap" --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
+        run: az vm run-command create --resource-group "dcap-github-actions-agents-rg" --vm-name "winBuildPersSub" --location "westus" --name "cloneDcap" --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
               
       - name: Get the result of cloning the repository
         shell: bash
