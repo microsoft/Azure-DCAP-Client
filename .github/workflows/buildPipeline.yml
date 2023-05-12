@@ -202,13 +202,13 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "testOpenEnclave"
-            script: "export AZDCAP_REGION_URL=\"thimt2-dev-cbn01p\" && export AZDCAP_BASE_CERT_URL_TDX=\".thim.azure-test.net/sgx/certification\" && cd /openenclave/build && ctest --output-on-failure -E samples"
+            script: "export AZDCAP_REGION_URL=\"thimt2-dev-cbn01p\" && export AZDCAP_BASE_CERT_URL_TDX=\".thim.azure-test.net/sgx/certification\" && cd /openenclave/build && LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -E samples"
                             
       - name: Run openenclave samples test
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "testOpenEnclaveSamples"
-            script: "cd /openenclave/build && sudo ctest --output-on-failure -R samples"
+            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -R samples"
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
