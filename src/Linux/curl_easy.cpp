@@ -25,8 +25,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Constants
 ///////////////////////////////////////////////////////////////////////////////
-static constexpr int maximum_retries = 5;
-static constexpr int initial_retry_delay_ms = 20;
+static constexpr int MAXIMUM_RETRIES = 5;
+static constexpr int INITIAL_RETRY_DELAY_MS = 20;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Local Helper Functions
@@ -145,10 +145,10 @@ curl_easy::~curl_easy()
 void curl_easy::perform() const
 {
 	bool finished = false;
-	int retry_delay = initial_retry_delay_ms;
+	int retry_delay = INITIAL_RETRY_DELAY_MS;
 	CURLcode result;
 	
-	for(int i = 0; i < maximum_retries && !finished; i++){
+	for(int i = 0; i < MAXIMUM_RETRIES && !finished; i++){
 		result = curl_easy_perform(handle);
 		
 		if(result == CURLE_OPERATION_TIMEDOUT){
