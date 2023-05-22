@@ -80,19 +80,24 @@ static char PRIMARY_CERT_URL[] =
     "http://169.254.169.254/metadata/THIM/sgx/certification";
 static std::string primary_cert_url = PRIMARY_CERT_URL;
 
+#if defined __SERVICE_VM__
+static char SECONDARY_CERT_URL[] = "http://localhost:4321/tdx/certification";
+static char DEFAULT_CLIENT_ID[] = "production_service_vm";
+static char DEFAULT_COLLATERAL_VERSION[] = "v4";
+#else
 static char SECONDARY_CERT_URL[] =
     "https://global.acccache.azure.net/sgx/certification";
+static char DEFAULT_CLIENT_ID[] = "production_client";
+static char DEFAULT_COLLATERAL_VERSION[] = "v3";
+#endif
+
 static std::string secondary_cert_url = SECONDARY_CERT_URL;
+static std::string prod_client_id = DEFAULT_CLIENT_ID;
+static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char AZURE_INSTANCE_METADATA_SERVICE_URL[] = 
 	"http://169.254.169.254/metadata/instance?api-version=2021-02-01";
 static std::string azure_instance_metadata_service_url = AZURE_INSTANCE_METADATA_SERVICE_URL;
-
-static char DEFAULT_CLIENT_ID[] = "production_client";
-static std::string prod_client_id = DEFAULT_CLIENT_ID;
-
-static char DEFAULT_COLLATERAL_VERSION[] = "v3";
-static std::string default_collateral_version = DEFAULT_COLLATERAL_VERSION;
 
 static char TDX_COLLATERAL_VERSION[] = "v4";
 static std::string tdx_collateral_version = TDX_COLLATERAL_VERSION;
@@ -896,6 +901,17 @@ static void pck_cert_url(
     url << API_VERSION_07_2021;
 }
 
+static stringstream build_cache_url(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id) {
+	std::string version = get_collateral_version();
+
+	std::stringstream cached_file_name;
+	cached_file_name << get_secondary_url();
+
+	pck_cert_url(cached_file_name, version, qe_id, cpu_svn, pce_svn, pce_id, "", false);
+
+	return cached_file_name;
+}
+
 static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certificate_fetch_url& certificate_url, std::stringstream& cached_file_name)
 {
     const std::string qe_id =
@@ -920,8 +936,14 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
     certificate_url.secondary_base_url << get_secondary_url();
     pck_cert_url(certificate_url.secondary_base_url, version, qe_id, cpu_svn, pce_svn, pce_id, eppid_json);
 
-    cached_file_name << get_secondary_url();
-    pck_cert_url(cached_file_name, version, qe_id, cpu_svn, pce_svn, pce_id, eppid_json, false);
+	cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
+}
+
+extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, time_t expiry, size_t data_size, const void* data)
+{
+	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
+
+	local_cache_add(cached_file_name.str(), expiry, data_size, data);
 }
 
 //
@@ -1660,6 +1682,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             ::tolower);
         try
         {
+#if !defined __SERVICE_VM__
             if (bypass_base.compare("false") == 0)
             {
                 log(SGX_QL_LOG_INFO,
@@ -1672,6 +1695,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     retval,
                     0);
             }
+#endif
             if (recieved_certificate)
             {
                 log(SGX_QL_LOG_INFO,

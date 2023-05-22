@@ -22,7 +22,7 @@ void local_cache_clear();
 // expiration, the cached item will no longer be returned.
 // Throws std::exception (or subtype) on error.
 //
-void local_cache_add(
+extern "C" void local_cache_add(
     const std::string& id,
     time_t expiry,
     size_t data_size,

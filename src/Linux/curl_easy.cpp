@@ -10,6 +10,8 @@
 #include <limits>
 #include <locale>
 #include "private.h"
+#include <chrono>
+#include <thread>
 
 #ifdef __LINUX__
 #include <openssl/err.h>
@@ -19,6 +21,12 @@
 #include <shlwapi.h>
 #include <strsafe.h>
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+static constexpr int MAXIMUM_RETRIES = 5;
+static constexpr int INITIAL_RETRY_DELAY_MS = 20;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Local Helper Functions
@@ -136,7 +144,21 @@ curl_easy::~curl_easy()
 
 void curl_easy::perform() const
 {
-    CURLcode result = curl_easy_perform(handle);
+	bool finished = false;
+	int retry_delay = INITIAL_RETRY_DELAY_MS;
+	CURLcode result;
+	
+	for(int i = 0; i < MAXIMUM_RETRIES && !finished; i++){
+		result = curl_easy_perform(handle);
+		
+		if(result == CURLE_OPERATION_TIMEDOUT){
+			std::this_thread::sleep_for(std::chrono::milliseconds(retry_delay));
+			retry_delay *= 2;
+		}else{
+			finished = true;
+		}
+	}
+		
     if (result == CURLE_HTTP_RETURNED_ERROR)
     {
         long http_code = 0;

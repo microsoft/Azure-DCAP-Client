@@ -198,11 +198,17 @@ jobs:
             commandName: "makeOpenEnclave"
             script: "cd /openenclave/build && sudo ninja -v"
                             
-      - name: Run openenclave tests
+      - name: Run openenclave tests excluding samples test
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "testOpenEnclave"
-            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure"
+            script: "export AZDCAP_REGION_URL=\"thimt2-dev-cbn01p\" && export AZDCAP_BASE_CERT_URL_TDX=\".thim.azure-test.net/sgx/certification\" && cd /openenclave/build && LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -E samples"
+                            
+      - name: Run openenclave samples test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "testOpenEnclaveSamples"
+            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -R samples"
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
@@ -226,6 +232,7 @@ jobs:
               -n ${{ env.vmName }}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
               
+              
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
@@ -245,7 +252,7 @@ jobs:
       #Windows VM name must be within 15 characters
       vmName: winBuildPersSub
       rgName: dcap-github-actions-agents-rg
-      location: westus
+      location: uksouth
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -347,7 +354,7 @@ jobs:
           #  imageName: Ubuntu18_04
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
-            location: uksouth
+            location: westus
             
     # OS of the Github VM calling Azure CLI
     runs-on: ubuntu-latest

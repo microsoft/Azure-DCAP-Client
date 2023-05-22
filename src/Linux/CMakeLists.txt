@@ -4,7 +4,12 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
  
-add_definitions(-D__LINUX__)
+option(__SERVICE_VM__ "Compile Service VM Tests." OFF)
+if(__SERVICE_VM__)
+	add_definitions(-D__LINUX__ -D__SERVICE_VM__)
+else()
+	add_definitions(-D__LINUX__)
+endif(__SERVICE_VM__)
 
 find_package(OpenSSL REQUIRED)
 

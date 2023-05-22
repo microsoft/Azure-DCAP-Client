@@ -126,7 +126,7 @@ static constexpr uint8_t TDX_TEST_FMSPC[] =
     {0x00, 0x80, 0x6F, 0x05, 0x00, 0x00};
 
 const uint16_t custom_param_length = 45;
-const char *custom_param = "tcbEvaluationDataNumber=11;region=us central";
+const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
 std::string tcbEvaluationDataNumber = "11";
 
 const uint16_t incorrect_custom_param_length = 24;
@@ -236,8 +236,6 @@ static void Log(sgx_ql_log_level_t level, const char* message)
     }
     printf("[%s]: %s\n", levelText, message);
 }
-
-
 
 #if defined __LINUX__
 static void* LoadFunctions()
@@ -699,7 +697,7 @@ static void GetVerificationCollateralTestICXV3WithParams()
             sizeof(ICX_TEST_FMSPC),
             "platform",
             custom_param,
-            custom_param_length, 
+            custom_param_length,
             &collateral);
     ASSERT_TRUE(SGX_QL_SUCCESS == result);
     nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
@@ -825,6 +823,25 @@ static inline void VerifyDurationChecks(
         EXPECT_TRUE(
             duration_local_verification <
             (NUMBER_VERIFICATION_CURL_CALLS * PERMISSION_CHECK_TEST_TOLERANCE));
+    }
+}
+
+static inline void VerifyDurationChecks(
+    float duration_local_cert,
+    float duration_curl_cert,
+    bool caching_enabled = false)
+{
+    if (caching_enabled)
+    {
+        // Ensure that there is a signficiant enough difference between the cert
+        // fetch to the end point and cert fetch to local cache and that local
+        // cache call is fast enough
+        constexpr auto PERMISSION_CHECK_TEST_TOLERANCE = CURL_TOLERANCE;
+        EXPECT_TRUE(
+            fabs(duration_curl_cert - duration_local_cert) > CURL_TOLERANCE);
+        EXPECT_TRUE(
+            duration_local_cert <
+            (CURL_TOLERANCE + PERMISSION_CHECK_TEST_TOLERANCE));
     }
 }
 
@@ -1459,7 +1476,44 @@ TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
     SetupEnvironment("v2");
     SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
-    ASSERT_TRUE(RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
+    ASSERT_TRUE(
+        RunCachePermissionTestsWithCustomParamToFetchCollateral(&library));
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProvServiceVM, quoteProviderServiceVMTestsData)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+#if defined __SERVICE_VM__
+    //
+    // Get the data from THIMAgent
+    //
+    Log(SGX_QL_LOG_INFO, "Clearing Cache.");
+    local_cache_clear();
+
+    Log(SGX_QL_LOG_INFO, "Fetching certificate from THIMAgent.");
+    auto duration_curl_cert = MeasureFunction(GetCertsTest);
+
+    //
+    // Second pass: Ensure that we ONLY get data from the cache
+    //
+    Log(SGX_QL_LOG_INFO, "Fetching certificate from cache.");
+    auto duration_local_cert = MeasureFunction(GetCertsTest);
+    VerifyDurationChecks(
+        duration_local_cert,
+        duration_curl_cert,
+        false);
+#else
+    Log(SGX_QL_LOG_INFO,
+        "Service VM flag was not set during compilation. No Service VM tests were executed.");
+#endif
 
 #if defined __LINUX__
     dlclose(library);
