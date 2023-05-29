@@ -10,6 +10,8 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <new>
@@ -35,6 +37,8 @@ static const string LEVEL_INFO = "INFO";
 static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
 static const string LEVEL_UNKNOWN = "UNKNOWN";
+
+static const string logFileName = "dcapLog.txt";
 
 static inline bool convert_string_to_level(const string level, sgx_ql_log_level_t &sqx_ql_level)
 {
@@ -139,6 +143,11 @@ void log_message(sgx_ql_log_level_t level, const char* message)
         {
             if (level <= debug_log_level)
             {
+				ofstream logFile;
+				logFile.open(logFileName);
+				logFile << "Azure Quote Provider: libdcap_quoteprov.so [" << log_level_string(level).c_str() << "]: " << message << endl;
+				logFile.close();
+
                 printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
             }
         }
