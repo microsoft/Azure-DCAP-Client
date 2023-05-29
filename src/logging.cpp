@@ -144,7 +144,7 @@ void log_message(sgx_ql_log_level_t level, const char* message)
             if (level <= debug_log_level)
             {
 				ofstream logFile;
-				logFile.open(logFileName);
+				logFile.open(logFileName, ios::app | ios::out);
 				logFile << "Azure Quote Provider: libdcap_quoteprov.so [" << log_level_string(level).c_str() << "]: " << message << endl;
 				logFile.close();
 
