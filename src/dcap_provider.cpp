@@ -1661,7 +1661,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     try
     {
         bool recieved_certificate = false;
-        quote3_error_t retval;
+        quote3_error_t retval = SGX_QL_CERTS_UNAVAILABLE;
         sgx_ql_config_t temp_config{};
         nlohmann::json json_body;
         certificate_fetch_url certificate_url;
@@ -1807,7 +1807,11 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             if (get_cert_cache_expiration_time(cache_control, cached_file_name.str(), expiry))
             {
                 local_cache_add(cached_file_name.str(), expiry, buf_size, *pp_quote_config);
-            }
+			}
+			else 
+			{
+				log(SGX_QL_LOG_ERROR, "Unable to retrieve the certificate expiry when writing to local cache.");
+			}
         }
         else
         {
@@ -2360,7 +2364,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
         }
 
         std::string str_fmspc((char*)fmspc, fmspc_size);
-        quote3_error_t operation_result;
+        quote3_error_t operation_result = SGX_QL_ERROR_UNEXPECTED;
         std::vector<uint8_t> pck_crl;
         std::string pck_issuer_chain;
         std::vector<uint8_t> root_ca_crl;
@@ -2500,7 +2504,7 @@ quote3_error_t sgx_ql_fetch_quote_verification_collateral(
 			p_quote_collateral->version = 1;
 			p_quote_collateral->tee_type = 0x0;
 		}
-        quote3_error_t result;
+        quote3_error_t result = SGX_QL_ERROR_UNEXPECTED;
         result = fill_qpl_string_buffer(
             pck_issuer_chain,
             p_quote_collateral->pck_crl_issuer_chain,
