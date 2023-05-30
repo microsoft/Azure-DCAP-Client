@@ -132,6 +132,15 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
+        FILE *f = fopen(logFileName.c_str(), "a");
+        if(f == NULL){
+                printf("Error opening log file");
+                exit(1);
+        }
+        fprintf(f, "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+        fflush(f);
+        fclose(f);
+	
     if (logger_callback != nullptr)
     {
         logger_callback(level, message);
@@ -143,11 +152,6 @@ void log_message(sgx_ql_log_level_t level, const char* message)
         {
             if (level <= debug_log_level)
             {
-				ofstream logFile;
-				logFile.open(logFileName, ios::app | ios::out);
-				logFile << "Azure Quote Provider: libdcap_quoteprov.so [" << log_level_string(level).c_str() << "]: " << message << endl;
-				logFile.close();
-
                 printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
             }
         }
