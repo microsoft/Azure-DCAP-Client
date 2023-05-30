@@ -156,6 +156,7 @@ void log_message(sgx_ql_log_level_t level, const char* message)
             }
         }
     }
+	fflush(stdout);
 
 #ifndef __LINUX__
 	// Emitting Events only in Windows
