@@ -38,7 +38,7 @@ static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
 static const string LEVEL_UNKNOWN = "UNKNOWN";
 
-static const string logFileName = "dcapLog.txt";
+static const string logFileName = "/tmp/dcapLog.txt";
 
 static inline bool convert_string_to_level(const string level, sgx_ql_log_level_t &sqx_ql_level)
 {
