@@ -593,35 +593,11 @@ jobs:
             commandName: "dnfUpgrade"
             script: "sudo dnf upgrade -y"
             
-      - name: Install kernel devel
+      - name: Install kernel devel, automake, glibc,  glibc-devel and libSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
-            commandName: "installKernelDevel"
-            script: "sudo dnf install kernel-devel -y"
-            
-      - name: Install automake
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installAutomake"
-            script: "sudo dnf install automake -y"
-            
-      - name: Install glibc
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installGlibc"
-            script: "sudo dnf install glibc -y"
-            
-      - name: Install glibc-devel
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installGlibc-devel"
-            script: "sudo dnf install glibc-devel -y"
-              
-      - name: Install libSSL
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installLibSSL"
-            script: "sudo dnf install openssl-devel -y"
+            commandName: "installPrerequisites1"
+            script: "sudo dnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
