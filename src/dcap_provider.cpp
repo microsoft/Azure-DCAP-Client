@@ -943,7 +943,7 @@ extern "C" void store_certificate(const std::string& qe_id, const std::string& c
 {
 	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 
-	log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()));
+	log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
 	local_cache_add(cached_file_name.str(), expiry, data_size, data);
 }
 
@@ -1807,7 +1807,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             time_t expiry = 0;
             if (get_cert_cache_expiration_time(cache_control, cached_file_name.str(), expiry))
             {
-				log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()));
+				log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
 				local_cache_add(cached_file_name.str(), expiry, buf_size, *pp_quote_config);
 			}
 			else 
