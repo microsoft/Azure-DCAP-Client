@@ -132,14 +132,17 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
-        FILE *f = fopen(logFileName.c_str(), "a");
-        if(f == NULL){
-                printf("Error opening log file");
-                exit(1);
-        }
-        fprintf(f, "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
-        fflush(f);
-        fclose(f);
+	//&& defined __STORE_LOGS_TO_FILE__
+#if defined __LINUX__ 
+    FILE *f = fopen(logFileName.c_str(), "a");
+    if(f == NULL){
+        printf("Error opening log file");
+        exit(1);
+    }
+    fprintf(f, "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+    fflush(f);
+    fclose(f);
+#endif
 	
     if (logger_callback != nullptr)
     {

@@ -194,6 +194,11 @@ static std::wstring get_file_name(const std::string& id)
     return g_cache_dirname + L"\\" + sha256(id);
 }
 
+std::string get_cached_file_location(const std::string& id){
+	std::wstring fileName = get_file_name(id);
+	return std::string(fileName.begin(), fileName.end());
+}
+
 void local_cache_clear()
 {
     init();

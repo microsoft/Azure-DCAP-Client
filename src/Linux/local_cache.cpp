@@ -268,6 +268,12 @@ static std::string get_file_name(const std::string& id)
     return g_cache_dirname + "/" + sha256(id);
 }
 
+std::wstring get_cached_file_location(const std::string& id){
+	//Temporary duplicate code while I confirm that using get_file_name doesn't cause issues with locks
+	//return get_file_name(id);
+	return g_cache_dirname + "/" + sha256(id);
+}
+
 static int delete_path(
     const char* fpath,
     const struct stat* sb,
