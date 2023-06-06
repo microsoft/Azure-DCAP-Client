@@ -24,6 +24,9 @@ constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 static std::string g_cache_dirname = "";
 static std::mutex cache_directory_lock;
 
+static long int last_cache_read_expiry = -1;
+static long int last_cache_read_time = -1;
+
 static constexpr size_t CACHE_LOCATIONS = 5;
 static const char *cache_locations[CACHE_LOCATIONS];
 
@@ -274,6 +277,14 @@ std::string get_cached_file_location(const std::string& id){
 	return g_cache_dirname + "/" + sha256(id);
 }
 
+std::string get_last_cache_read_expiry(){
+	std::string result("Last cache read expiry is unset. This could be because there's been no cache reads yet, it has been read without checking for cache expiry or an error during cache read before cache expiry is checked.");
+	if(last_cache_read_expiry != -1){
+		result = "Last cache read expiry value is " + std::to_string(last_cache_read_expiry) + " and it was read when time(nullptr) value was " + std::to_string(last_cache_read_time);
+	}
+	return result;
+}
+
 static int delete_path(
     const char* fpath,
     const struct stat* sb,
@@ -354,6 +365,8 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
 
     init();
+	last_cache_read_expiry = -1;
+	last_cache_read_time = -1;
 
     const auto file_name = get_file_name(id);
     file cache_file;
@@ -367,14 +380,18 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 
     CacheEntryHeaderV1 header{};
     cache_file.read(reinterpret_cast<char*>(&header), sizeof(header));
-
-    if (checkExpiration && header.expiry <= time(nullptr))
+	
+    if (checkExpiration)
     {
-        cache_file.close();
-        unlink(file_name.c_str());
-        // Even if unlink fails, we can just return null. Thus, the return
-        // value is intentionally ignored here.
-        return nullptr;
+		last_cache_read_expiry = static_cast<long int> (header.expiry);
+		last_cache_read_time = static_cast<long int> (time(nullptr));
+		if(header.expiry <= time(nullptr)){
+			cache_file.close();
+			unlink(file_name.c_str());
+			// Even if unlink fails, we can just return null. Thus, the return
+			// value is intentionally ignored here.
+			return nullptr;
+		}
     }
 
     const int start_of_data = cache_file.seek(0, SEEK_CUR);

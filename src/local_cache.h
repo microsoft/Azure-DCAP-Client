@@ -40,5 +40,12 @@ extern "C" void local_cache_add(
 //
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     const std::string& id, bool checkExpiration = true);
+	
+
+//
+// Return the expiry time of the last read cache file and the time it was compared with
+//
+std::string get_last_cache_read_expiry();
+
 
 #endif

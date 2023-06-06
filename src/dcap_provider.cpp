@@ -586,7 +586,7 @@ bool get_cert_cache_expiration_time(const string& cache_max_age, const string& u
     max_age_s->tm_sec += cache_time_seconds;
     expiration_time = time(nullptr) + mktime(max_age_s);
     log(SGX_QL_LOG_INFO,
-        "Caching collateral '%s' for '%d' seconds",
+        "Certificate '%s' will remain valid in cache for '%d' seconds",
         url.c_str(),
         cache_time_seconds);
     return true;
@@ -637,7 +637,7 @@ bool get_cache_expiration_time(const string& cache_control, const string& url, t
     max_age_s->tm_sec += cache_time_seconds;
     expiration_time = time(nullptr) + mktime(max_age_s);
     log(SGX_QL_LOG_INFO,
-        "Caching collateral '%s' for '%d' seconds",
+        "Collateral '%s' will remain valid in cache for '%d' seconds",
         url.c_str(),
         cache_time_seconds);
     return true;
@@ -1707,8 +1707,10 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             {
                 log(SGX_QL_LOG_INFO,
                     "Trying to fetch response from local cache in the following direction: %s.", cached_file_name.str().c_str());
+				log(SGX_QL_LOG_INFO, "Attempting to retrieve the following cache file: %s.", get_cached_file_location(cached_file_name.str()).c_str());
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
+				log(SGX_QL_LOG_INFO, "Result of retrieving the last cache read expiry: %s.", get_last_cache_read_expiry().c_str());
                 if (recieved_certificate)
                 {
                     log(SGX_QL_LOG_INFO,
