@@ -939,12 +939,26 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
 	cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 }
 
-extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, time_t expiry, size_t data_size, const void* data)
+extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& expiry_str, size_t data_size, const void* data)
 {
 	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 
-	log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
-	local_cache_add(cached_file_name.str(), expiry, data_size, data);
+	log(SGX_QL_LOG_INFO,
+		"%s : %s",
+		headers::CERT_CACHE_CONTROL,
+		expiry_str.c_str());
+	time_t expiry = 0;
+	if (get_cert_cache_expiration_time(expiry_str, cached_file_name.str(), expiry))
+	{
+		local_cache_add(cached_file_name.str(), expiry, data_size, data);
+		log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
+	}
+	else 
+	{
+		log(SGX_QL_LOG_ERROR, "Unable to retrieve the certificate expiry when writing to local cache.");
+	}
+
+
 }
 
 //
@@ -1707,9 +1721,9 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             {
                 log(SGX_QL_LOG_INFO,
                     "Trying to fetch response from local cache in the following direction: %s.", cached_file_name.str().c_str());
-				log(SGX_QL_LOG_INFO, "Attempting to retrieve the following cache file: %s.", get_cached_file_location(cached_file_name.str()).c_str());
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
+				log(SGX_QL_LOG_INFO, "Attempted to retrieve the following cache file: %s.", get_cached_file_location(cached_file_name.str()).c_str());
 				log(SGX_QL_LOG_INFO, "Result of retrieving the last cache read expiry: %s.", get_last_cache_read_expiry().c_str());
                 if (recieved_certificate)
                 {
@@ -1809,8 +1823,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             time_t expiry = 0;
             if (get_cert_cache_expiration_time(cache_control, cached_file_name.str(), expiry))
             {
-				log(SGX_QL_LOG_INFO, "Storing certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
 				local_cache_add(cached_file_name.str(), expiry, buf_size, *pp_quote_config);
+				log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
 			}
 			else 
 			{
