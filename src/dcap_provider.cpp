@@ -939,28 +939,6 @@ static void build_pck_cert_url(const sgx_ql_pck_cert_id_t& pck_cert_id, certific
 	cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 }
 
-extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& expiry_str, size_t data_size, const void* data)
-{
-	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
-
-	log(SGX_QL_LOG_INFO,
-		"%s : %s",
-		headers::CERT_CACHE_CONTROL,
-		expiry_str.c_str());
-	time_t expiry = 0;
-	if (get_cert_cache_expiration_time(expiry_str, cached_file_name.str(), expiry))
-	{
-		local_cache_add(cached_file_name.str(), expiry, data_size, data);
-		log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name.str()).c_str());
-	}
-	else 
-	{
-		log(SGX_QL_LOG_ERROR, "Unable to retrieve the certificate expiry when writing to local cache.");
-	}
-
-
-}
-
 //
 // Build a complete cert chain from a completed curl object.
 //
@@ -1622,6 +1600,98 @@ bool check_cache(std::string cached_file_name, sgx_ql_config_t** pp_quote_config
     return fetch_from_cache;
 }
 
+quote3_error_t store_certificate(std::string cached_file_name, nlohmann::json json_body, sgx_ql_config_t** pp_quote_config) 
+{
+    quote3_error_t retval = SGX_QL_CERTS_UNAVAILABLE;
+    sgx_ql_config_t temp_config{};
+    std::string cert_data;
+	std::unique_ptr<curl_easy> curl = curl_easy::create(cached_file_name, nullptr, 0x00800000);
+
+    // parse the SVNs into a local data structure so we can handle any
+    // parse errors before allocating the output buffer
+    if (const sgx_plat_error_t err = parse_svn_values(*curl, json_body, &temp_config))
+    {
+        return convert_to_intel_error(err);
+    }
+
+    const sgx_plat_error_t err = build_cert_chain(*curl, json_body, &cert_data);
+    retval = convert_to_intel_error(err);
+    if (retval == SGX_QL_SUCCESS)
+    {
+        log(SGX_QL_LOG_INFO, "Successfully parsed certificate chain: %s.", cert_data.c_str());
+    }
+    else
+    {
+        log(SGX_QL_LOG_ERROR, "Unable to parse certificate chain from the response.");
+        return retval;
+    }
+
+    // copy the null-terminator for convenience (less error-prone)
+    const uint32_t cert_data_size =
+        static_cast<uint32_t>(cert_data.size()) + 1;
+
+    // allocate return value contiguously (makes caching easier)
+    const size_t buf_size = sizeof(sgx_ql_config_t) + cert_data_size;
+    uint8_t* buf = new uint8_t[buf_size];
+    memset(buf, 0, buf_size);
+
+#ifndef NDEBUG
+    const uint8_t* buf_end = buf + buf_size;
+#endif
+
+    *pp_quote_config = reinterpret_cast<sgx_ql_config_t*>(buf);
+    buf += sizeof(sgx_ql_config_t);
+    assert(buf <= buf_end);
+    (*pp_quote_config)->cert_cpu_svn = temp_config.cert_cpu_svn;
+    (*pp_quote_config)->cert_pce_isv_svn = temp_config.cert_pce_isv_svn;
+    (*pp_quote_config)->version = SGX_QL_CONFIG_VERSION_1;
+    (*pp_quote_config)->p_cert_data = buf;
+    (*pp_quote_config)->cert_data_size = cert_data_size;
+    memcpy(
+        (*pp_quote_config)->p_cert_data, cert_data.data(), cert_data_size);
+    buf += cert_data_size;
+    assert(buf == buf_end);
+
+    // Get the cache control header
+    std::string cache_control;
+    auto get_cache_header_operation = extract_from_json(
+        json_body, headers::CERT_CACHE_CONTROL, &cache_control);
+    retval = convert_to_intel_error(get_cache_header_operation);
+    if (retval == SGX_QL_SUCCESS)
+    {
+        log(SGX_QL_LOG_INFO,
+            "%s : %s",
+            headers::CERT_CACHE_CONTROL,
+            cache_control.c_str());
+        time_t expiry = 0;
+        if (get_cert_cache_expiration_time(cache_control, cached_file_name, expiry))
+        {
+			local_cache_add(cached_file_name, expiry, buf_size, *pp_quote_config);
+			log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name).c_str());
+		}
+		else 
+		{
+			log(SGX_QL_LOG_ERROR, "Unable to retrieve the certificate expiry when writing to local cache.");
+		}
+    }
+    else
+    {
+        log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
+    }
+
+	return SGX_QL_SUCCESS;
+}
+
+extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, nlohmann::json json_body)
+{
+	sgx_ql_config_t** pp_quote_config;
+    *pp_quote_config = nullptr;
+
+	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
+
+	store_certificate(cached_file_name.str(), json_body, pp_quote_config);
+}
+
 bool fetch_response(
     std::string base_url,
     std::unique_ptr<curl_easy>& curl,
@@ -1764,6 +1834,12 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 error.what());
         }
 
+		retval = store_certificate(cached_file_name.str(), json_body, pp_quote_config);
+		
+		if(retval != SGX_QL_SUCCESS){
+			return retval;
+		}			
+		/*
         // parse the SVNs into a local data structure so we can handle any
         // parse errors before allocating the output buffer
         if (const sgx_plat_error_t err = parse_svn_values(*curl, json_body, &temp_config))
@@ -1834,7 +1910,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         else
         {
             log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
-        }
+        }*/
     }
     catch (const std::bad_alloc&)
     {
