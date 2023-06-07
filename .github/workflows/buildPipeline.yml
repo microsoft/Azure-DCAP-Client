@@ -42,6 +42,7 @@ jobs:
       vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
       location: ${{ matrix.location }}
+      branchName: ${{ github.head_ref }}
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -142,7 +143,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "cloneAzureDcap"
-            script: "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+            script: "sudo git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
               
       - name: Update DCAP submodule
         uses: ./.github/actions/actionAzVmRunCommand
@@ -253,6 +254,7 @@ jobs:
       vmName: winBuildPersSub
       rgName: dcap-github-actions-agents-rg
       location: uksouth
+      branchName: ${{ github.head_ref }}
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -284,7 +286,7 @@ jobs:
               --vm-name $vmName \
               --location $location \
               --name "cloneDcap" \
-              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch ${{ github.head_ref }}"
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch $branchName"
               
       - name: Get the result of cloning the repository
         shell: bash
@@ -364,6 +366,7 @@ jobs:
       os: linux
       vmName: dcapE2ETestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}
       rgName: dcap-github-actions-agents-rg
+      branchName: ${{ github.head_ref }}
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -464,7 +467,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "cloneAzureDcap"
-            script: "git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+            script: "git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
               
       - name: Update submodule
         uses: ./.github/actions/actionAzVmRunCommand
@@ -556,6 +559,7 @@ jobs:
       os: linux
       vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
       rgName: dcap-github-actions-agents-rg
+      branchName: ${{ github.head_ref }}
 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -681,7 +685,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "cloneAzureDcap"
-            script: "sudo git clone -b ${{ github.head_ref }} https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+            script: "sudo git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
               
       - name: Update DCAP submodule
         uses: ./.github/actions/actionAzVmRunCommand
