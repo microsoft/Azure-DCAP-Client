@@ -1682,15 +1682,20 @@ quote3_error_t store_certificate_internal(std::string cached_file_name, nlohmann
 	return SGX_QL_SUCCESS;
 }
 
-extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& response_body)
+extern "C" bool store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& response_body)
 {
+	bool result = false;
 	sgx_ql_config_t** pp_quote_config;
     *pp_quote_config = nullptr;
 	nlohmann::json json_body = nlohmann::json::parse(response_body);
 
 	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 
-	store_certificate_internal(cached_file_name.str(), json_body, pp_quote_config);
+	if (store_certificate_internal(cached_file_name.str(), json_body, pp_quote_config) == SGX_QL_SUCCESS) {
+		result = true;
+	}
+
+	return result;
 }
 
 bool fetch_response(
