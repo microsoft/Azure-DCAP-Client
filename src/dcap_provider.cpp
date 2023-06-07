@@ -1600,7 +1600,7 @@ bool check_cache(std::string cached_file_name, sgx_ql_config_t** pp_quote_config
     return fetch_from_cache;
 }
 
-quote3_error_t store_certificate(std::string cached_file_name, nlohmann::json json_body, sgx_ql_config_t** pp_quote_config) 
+quote3_error_t store_certificate_internal(std::string cached_file_name, nlohmann::json json_body, sgx_ql_config_t** pp_quote_config) 
 {
     quote3_error_t retval = SGX_QL_CERTS_UNAVAILABLE;
     sgx_ql_config_t temp_config{};
@@ -1682,14 +1682,15 @@ quote3_error_t store_certificate(std::string cached_file_name, nlohmann::json js
 	return SGX_QL_SUCCESS;
 }
 
-extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, nlohmann::json json_body)
+extern "C" void store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& response_body)
 {
 	sgx_ql_config_t** pp_quote_config;
     *pp_quote_config = nullptr;
+	nlohmann::json json_body = nlohmann::json::parse(response_body);
 
 	std::stringstream cached_file_name = build_cache_url(qe_id, cpu_svn, pce_svn, pce_id);
 
-	store_certificate(cached_file_name.str(), json_body, pp_quote_config);
+	store_certificate_internal(cached_file_name.str(), json_body, pp_quote_config);
 }
 
 bool fetch_response(
@@ -1834,7 +1835,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 error.what());
         }
 
-		retval = store_certificate(cached_file_name.str(), json_body, pp_quote_config);
+		retval = store_certificate_internal(cached_file_name.str(), json_body, pp_quote_config);
 		
 		if(retval != SGX_QL_SUCCESS){
 			return retval;
