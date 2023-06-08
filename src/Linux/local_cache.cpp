@@ -11,6 +11,7 @@
 #include <ftw.h>
 #include <locale.h>
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <pwd.h>
 #include <unistd.h>
 #include <sys/file.h>
@@ -240,10 +241,12 @@ static void init()
 static std::string sha256(size_t data_size, const void* data)
 {
     unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, data, data_size);
-    SHA256_Final(hash, &sha256);
+    const EVP_MD *md = EVP_sha256();
+    int rc = EVP_Digest(data, data_size, hash, NULL, md, NULL);
+    if (rc != 1)
+    {
+        throw std::runtime_error("EVP_Digest failed: " + std::to_string(rc));
+    }
 
     std::string retval;
     retval.reserve(2 * sizeof(hash) + 1);

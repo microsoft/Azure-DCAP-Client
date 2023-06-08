@@ -78,7 +78,7 @@ def ACCContainerTest(String label, String version) {
                         ctest --output-on-failure
                        """
                 echo"***************************   ${version.trim()} ****************************"
-                if(version.contains('20.04'))
+                if(version.contains('20.04') || version.contains('22.04'))
                 {
                     dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx/enclave:/dev/sgx/enclave --device /dev/sgx/provision:/dev/sgx/provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
                 }
@@ -129,7 +129,7 @@ def ACCTestOeRelease(String label, String version) {
                             make run
                         done
                        """
-                if(version.contains('20.04'))
+                if(version.contains('20.04') || version.contains('22.04'))
                 {
                     dcap.ContainerRun("${DOCKER_REGISTRY}/dcapdockerciregistry-ubuntu${version}:latest", "clang-10", task, "--cap-add=SYS_PTRACE --device /dev/sgx/enclave:/dev/sgx/enclave --device /dev/sgx/provision:/dev/sgx/provision --volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
                 }
@@ -177,5 +177,9 @@ parallel "ACC1804 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-1
          "ACC2004 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-2004', '20.04', 'clang-10', 'Debug') },
          "ACC2004 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-2004', '20.04', 'clang-10', 'RelWithDebInfo') },
          "ACC2004 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2004','20.04') },
+         "ACC2204 SGX1-FLC Container RelWithDebInfo" : { ACCContainerTest('ACC-2204', '22.04') },
+         "ACC2204 SGX1-FLC clang-10 Debug" :           { ACCTest('ACC-2204', '22.04', 'clang-10', 'Debug') },
+         "ACC2204 SGX1-FLC clang-10 RelWithDebInfo" :  { ACCTest('ACC-2204', '22.04', 'clang-10', 'RelWithDebInfo') },
+         "ACC2204 OpenEnclave Release Test" :          { ACCTestOeRelease('ACC-2204','22.04') },
          "ACCWin 2019 DCAP Debug Test" :               { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Debug') },
          "ACCWin 2019 DCAP Release Test" :             { DCAPBuildTest('SGXFLC-Windows-2019-DCAP', 'Release') }

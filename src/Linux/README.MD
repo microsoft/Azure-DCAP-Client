@@ -6,10 +6,12 @@ This library requires libcurl built with OpenSSL support and package config.
 * `sudo apt-get install libssl-dev`
 * `sudo apt install libcurl4-openssl-dev`
 * `sudo apt-get install pkg-config`
-* `sudo  add-apt-repository ppa:team-xbmc/ppa -y`
-* `sudo  apt-get update`
-* `sudo  apt-get install nlohmann-json3-dev`
+* Not necessary on Ubuntu 22.04: `sudo add-apt-repository ppa:team-xbmc/ppa -y`
+* `sudo apt-get update`
+* `sudo apt-get install nlohmann-json3-dev`
 
+Install build tooling
+`sudo ap install build-essential`
 
 Install Google Test
 ```
@@ -21,19 +23,15 @@ sudo cmake CMakeLists.txt
 sudo make
 
 # copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
-sudo cp *.a /usr/lib
+sudo cp lib/*.a /usr/lib
 ```
-
-Additionally, if you used the standard git clone command to pull down the repo without initializing the submodule, you may have to run the following to initialize the submodule:
-
-* `git submodule update –recursive –init`
-
 
 ## Quick Start
 ```
 ./configure
 make
 sudo make install
+sudo /sbin/ldconfig -v
 ```
 
 ## Run Google Test
