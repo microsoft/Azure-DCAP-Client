@@ -139,13 +139,12 @@ void log_message(sgx_ql_log_level_t level, const char* message)
 {
 
 	time_t now = chrono::system_clock::to_time_t(chrono::system_clock::now());
-
-	struct tm calendarDate;
     char date[100];
 	
 #if defined __LINUX__ 
     strftime(date, sizeof(date), "%c", localtime(&now));
 #else 
+	struct tm calendarDate;
 	localtime_s(&calendarDate, &now);
 	strftime(date, sizeof(date), "%c", &calendarDate);
 #endif
