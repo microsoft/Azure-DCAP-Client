@@ -100,6 +100,7 @@ public:
 
         if (this->fd != -1)
         {
+			RETRY_ON_EINTR(::chmod(name.c_str(), mode));
             const int lock_op = (flags & (O_WRONLY | O_RDWR)) ? LOCK_EX : LOCK_SH;
             RETRY_ON_EINTR(::flock(this->fd, lock_op), "flock");
         }
@@ -174,6 +175,7 @@ static void make_dir(const std::string& dirname, mode_t mode)
     {
         if (S_ISDIR(buf.st_mode))
         {
+			chmod(dirname.c_str(), mode);
             return;
         }
 

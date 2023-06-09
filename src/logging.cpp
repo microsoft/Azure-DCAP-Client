@@ -7,6 +7,7 @@
 #include "private.h"
 
 #include <cassert>
+#include <chrono>
 #include <cstdarg>
 #include <cstddef>
 #include <cstring>
@@ -18,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <time.h>
 #include "environment.h"
 
 using namespace std;
@@ -37,6 +39,9 @@ static const string LEVEL_INFO = "INFO";
 static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
 static const string LEVEL_UNKNOWN = "UNKNOWN";
+
+
+static const string WRITE_TO_LOGS_ACTIVE_VALUE = "TRUE";
 
 static const string logFileName = "/tmp/dcapLog.txt";
 
@@ -132,16 +137,37 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
-	//&& defined __STORE_LOGS_TO_FILE__
+
+	time_t now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+
+	struct tm calendarDate;
+    char date[100];
+	
 #if defined __LINUX__ 
-    FILE *f = fopen(logFileName.c_str(), "a");
-    if(f == NULL){
-        printf("Error opening log file");
-        exit(1);
-    }
-    fprintf(f, "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
-    fflush(f);
-    fclose(f);
+    strftime(date, sizeof(date), "%c", localtime(&now));
+#else 
+	localtime_s(&calendarDate, &now);
+	strftime(date, sizeof(date), "%c", &calendarDate);
+#endif
+
+	string timestamp(date);
+
+	string logMessage = "Azure Quote Provider: libdcap_quoteprov.so [" + log_level_string(level) + "] [" + timestamp + "]: " + message + "/n";
+
+#if defined __LINUX__ 
+	auto envVarShouldWeWriteToLogs = get_env_variable_no_log(ENV_AZDCAP_WRITE_LOGS_TO_FILE);
+
+	if (envVarShouldWeWriteToLogs.first == WRITE_TO_LOGS_ACTIVE_VALUE) {
+
+		FILE *f = fopen(logFileName.c_str(), "a");
+		if (f == NULL) {
+			printf("Error opening log file");
+			exit(1);
+		}
+		fprintf(f, "%s", logMessage.c_str());
+		fflush(f);
+		fclose(f);
+	}
 #endif
 	
     if (logger_callback != nullptr)
@@ -155,7 +181,7 @@ void log_message(sgx_ql_log_level_t level, const char* message)
         {
             if (level <= debug_log_level)
             {
-                printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+                printf("%s", logMessage.c_str());
             }
         }
     }
