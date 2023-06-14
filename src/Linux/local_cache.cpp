@@ -277,7 +277,7 @@ std::string get_cached_file_location(const std::string& id){
 	return get_file_name(id);
 }
 
-std::string get_last_cache_read_expiry(){
+std::string get_last_cache_read_expiry_log(){
 	std::string result("Last cache read expiry is unset. This could be because there's been no cache reads yet, it has been read without checking for cache expiry or an error during cache read before cache expiry is checked.");
 	if(last_cache_read_expiry != -1){
 		result = "Last cache read expiry value is " + std::to_string(last_cache_read_expiry) + " and it was read when time(nullptr) value was " + std::to_string(last_cache_read_time);

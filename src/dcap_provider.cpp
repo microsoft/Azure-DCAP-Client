@@ -1667,7 +1667,7 @@ quote3_error_t store_certificate_internal(std::string cached_file_name, nlohmann
         if (get_cert_cache_expiration_time(cache_control, cached_file_name, expiry))
         {
 			local_cache_add(cached_file_name, expiry, buf_size, *pp_quote_config);
-			log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following direction: %s.", get_cached_file_location(cached_file_name).c_str());
+			log(SGX_QL_LOG_INFO, "Stored certificate in cache in the following location: %s.", get_cached_file_location(cached_file_name).c_str());
 		}
 		else 
 		{
@@ -1679,7 +1679,9 @@ quote3_error_t store_certificate_internal(std::string cached_file_name, nlohmann
         log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
     }
 
-	return SGX_QL_SUCCESS;
+	retval = SGX_QL_SUCCESS;
+
+	return retval;
 }
 
 extern "C" bool store_certificate(const std::string& qe_id, const std::string& cpu_svn, const std::string& pce_svn, const std::string& pce_id, const std::string& response_body)
@@ -1693,6 +1695,8 @@ extern "C" bool store_certificate(const std::string& qe_id, const std::string& c
 	if (store_certificate_internal(cached_file_name.str(), json_body, &pp_quote_config) == SGX_QL_SUCCESS) {
 		result = true;
 	}
+
+	delete[] pp_quote_config;
 
 	return result;
 }
@@ -1797,7 +1801,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             else
             {
                 log(SGX_QL_LOG_INFO,
-                    "Trying to fetch response from local cache in the following direction: %s.", cached_file_name.str().c_str());
+                    "Trying to fetch response from local cache in the following location: %s.", cached_file_name.str().c_str());
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
 				log(SGX_QL_LOG_INFO, "Attempted to retrieve the following cache file: %s.", get_cached_file_location(cached_file_name.str()).c_str());

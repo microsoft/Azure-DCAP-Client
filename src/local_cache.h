@@ -45,7 +45,7 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 //
 // Return the expiry time of the last read cache file and the time it was compared with
 //
-std::string get_last_cache_read_expiry();
+std::string get_last_cache_read_expiry_log();
 
 
 #endif
