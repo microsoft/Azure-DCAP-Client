@@ -1805,7 +1805,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
 				log(SGX_QL_LOG_INFO, "Attempted to retrieve the following cache file: %s.", get_cached_file_location(cached_file_name.str()).c_str());
-				log(SGX_QL_LOG_INFO, "Result of retrieving the last cache read expiry: %s.", get_last_cache_read_expiry().c_str());
+				log(SGX_QL_LOG_INFO, "Result of retrieving the last cache read expiry: %s.", get_last_cache_read_expiry_log().c_str());
                 if (recieved_certificate)
                 {
                     log(SGX_QL_LOG_INFO,

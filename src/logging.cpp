@@ -137,19 +137,31 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
-
-	time_t now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+	
+	auto now = chrono::system_clock::now();
+	time_t nowTimeT = chrono::system_clock::to_time_t(now);
     char date[100];
 	
 #if defined __LINUX__ 
-    strftime(date, sizeof(date), "%c", localtime(&now));
+    strftime(date, sizeof(date), "%F %X", localtime(&nowTimeT));
 #else 
 	struct tm calendarDate;
-	localtime_s(&calendarDate, &now);
-	strftime(date, sizeof(date), "%c", &calendarDate);
+	localtime_s(&calendarDate, &nowTimeT);
+	strftime(date, sizeof(date), "%F %X", &calendarDate);
 #endif
 
 	string timestamp(date);
+
+	auto milliseconds = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()) % 1000;
+
+	string millisecondsString = to_string(milliseconds.count());
+	//If the number of milliseconds is below 100, append 0s in front of the milliseconds string
+	//Otherwise a time like like 21:30:01.007 would print as 21:30:01.7
+	while (millisecondsString.length() < 3) {
+		millisecondsString.insert(0, "0");
+	}
+	
+	timestamp += "." + millisecondsString;
 
 	string logMessage = "Azure Quote Provider: libdcap_quoteprov.so [" + log_level_string(level) + "] [" + timestamp + "]: " + message + "/n";
 
