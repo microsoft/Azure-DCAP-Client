@@ -194,6 +194,18 @@ static std::wstring get_file_name(const std::string& id)
     return g_cache_dirname + L"\\" + sha256(id);
 }
 
+std::string get_cached_file_location(const std::string& id){
+	std::wstring fileName = get_file_name(id);
+	//Turning a wstring into a string in this way truncates the value of the char, 
+	//which can have unexpected results when it involves non-ASCII characters
+	//We don't use non-ASCII characters for the default cache path, so that shouldn't be an issue
+	return std::string(fileName.begin(), fileName.end());
+}
+
+std::string get_last_cache_read_expiry_log(){
+	return "This function is only implemented for Linux";
+}
+
 void local_cache_clear()
 {
     init();
