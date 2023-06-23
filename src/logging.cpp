@@ -163,7 +163,7 @@ void log_message(sgx_ql_log_level_t level, const char* message)
 	
 	timestamp += "." + millisecondsString;
 
-	string logMessage = "Azure Quote Provider: libdcap_quoteprov.so [" + log_level_string(level) + "] [" + timestamp + "]: " + message + "/n";
+	string logMessage = "Azure Quote Provider: libdcap_quoteprov.so [" + log_level_string(level) + "] [" + timestamp + "]: " + message + "\n";
 
 #if defined __LINUX__ 
 	auto envVarShouldWeWriteToLogs = get_env_variable_no_log(ENV_AZDCAP_WRITE_LOGS_TO_FILE);
