@@ -283,7 +283,7 @@ static bool get_region_url_from_service(std::string& url)
 	
 	log(SGX_QL_LOG_INFO, "Retrieving region url from '%s'.", azure_instance_metadata_service_url.c_str());
 
-    const auto curl_operation = curl_easy::create(azure_instance_metadata_service_url, nullptr, 0);
+    const auto curl_operation = curl_easy::create(azure_instance_metadata_service_url, nullptr, 0, true);
 
 	curl_operation->set_headers(headers::localhost_metadata);
 
@@ -1706,12 +1706,14 @@ bool fetch_response(
     std::unique_ptr<curl_easy>& curl,
     std::map<std::string, std::string> header_value,
     quote3_error_t &retval,
-    unsigned long dwFlags = 0x00800000)
+    unsigned long dwFlags = 0x00800000,
+    bool fetchFromLocalAgent = false)
 {
     bool fetch_response = false;
     try
     {
-        curl = curl_easy::create(base_url, nullptr, dwFlags);
+        curl =
+            curl_easy::create(base_url, nullptr, dwFlags, fetchFromLocalAgent);
         log(SGX_QL_LOG_INFO,
             "Fetching certificate from: '%s'.",
             base_url.c_str());
@@ -1789,7 +1791,8 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                     curl,
                     headers::localhost_metadata,
                     retval,
-                    0);
+                    0,
+                    true);
             }
 #endif
             if (recieved_certificate)

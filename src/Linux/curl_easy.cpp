@@ -86,7 +86,11 @@ char const* curl_easy::error::what() const noexcept
 ///////////////////////////////////////////////////////////////////////////////
 // curl_easy implementation
 ///////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::string* const p_body, unsigned long dwflag)
+std::unique_ptr<curl_easy> curl_easy::create(
+    const std::string& url,
+    const std::string* const p_body,
+    unsigned long dwflag,
+    bool fetchFromLocalAgent)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -105,6 +109,14 @@ std::unique_ptr<curl_easy> curl_easy::create(const std::string& url, const std::
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+
+    // If request is routed to THIM agent for SGX certificate fetch, set
+    // response
+    // timeout to 500 ms
+    if (fetchFromLocalAgent)
+    {
+        easy->set_opt_or_throw(CURLOPT_SERVER_RESPONSE_TIMEOUT, 0.5L);
+    }
 
     if (p_body != nullptr && !p_body->empty())
     {
