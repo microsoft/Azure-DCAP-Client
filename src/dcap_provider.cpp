@@ -1707,13 +1707,13 @@ bool fetch_response(
     std::map<std::string, std::string> header_value,
     quote3_error_t &retval,
     unsigned long dwFlags = 0x00800000,
-    bool fetchFromLocalAgent = false)
+    bool fetchingFromLocalAgent = false)
 {
     bool fetch_response = false;
     try
     {
         curl =
-            curl_easy::create(base_url, nullptr, dwFlags, fetchFromLocalAgent);
+            curl_easy::create(base_url, nullptr, dwFlags, fetchingFromLocalAgent);
         log(SGX_QL_LOG_INFO,
             "Fetching certificate from: '%s'.",
             base_url.c_str());

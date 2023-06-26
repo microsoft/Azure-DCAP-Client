@@ -40,7 +40,7 @@ class curl_easy
         const std::string& url,
         const std::string* const p_body,
         unsigned long dwFlags = 0,
-        bool fetchFromLocalAgent = false);
+        bool fetchingFromLocalAgent = false);
 
     ~curl_easy();
 

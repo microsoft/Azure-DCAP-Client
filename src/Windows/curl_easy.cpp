@@ -130,7 +130,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
     const std::string* const p_body,
     unsigned long dwFlags,
-    bool fetchFromLocalAgent)
+    bool fetchingFromLocalAgent)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -218,7 +218,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
             "curl_easy::create/WinHttpSetOption(RedirectPolicy)");
     }
 
-    if (fetchFromLocalAgent)
+    if (fetchingFromLocalAgent)
     {
         // Setting nResolveTimeout = 0. this is default value. Since we directly
         // connect to IP, DNS resolution doesnot make sense.

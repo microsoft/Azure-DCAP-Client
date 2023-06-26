@@ -90,7 +90,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
     const std::string* const p_body,
     unsigned long dwflag,
-    bool fetchFromLocalAgent)
+    bool fetchingFromLocalAgent)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
@@ -113,7 +113,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     // If request is routed to THIM agent for SGX certificate fetch, set
     // response
     // timeout to 500 ms
-    if (fetchFromLocalAgent)
+    if (fetchingFromLocalAgent)
     {
         easy->set_opt_or_throw(CURLOPT_SERVER_RESPONSE_TIMEOUT, 0.5L);
     }
