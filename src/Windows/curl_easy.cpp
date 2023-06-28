@@ -223,10 +223,10 @@ std::unique_ptr<curl_easy> curl_easy::create(
         // Setting nResolveTimeout = 0. this is default value. Since we directly
         // connect to IP, DNS resolution doesnot make sense.
         // Setting nConnectTimeout = 60000 ms. This is the default value.
-        // Setting nSendTimeout = 150 ms.
-        // Setting nReceiveTimeout = 150 ms.
+        // Setting nSendTimeout = 1 s.
+        // Setting nReceiveTimeout = 1 s.
         if (!WinHttpSetTimeouts(
-                curl->sessionHandle.get(), 0, 60000, 150, 150))
+                curl->sessionHandle.get(), 0, 60000, 1000, 1000))
             throw_on_error(GetLastError(), "Error %u in WinHttpSetTimeouts.\n");
     }
 

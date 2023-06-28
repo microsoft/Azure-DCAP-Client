@@ -115,7 +115,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     // timeout to 500 ms
     if (fetchingFromLocalAgent)
     {
-        easy->set_opt_or_throw(CURLOPT_SERVER_RESPONSE_TIMEOUT, 0.5L);
+        easy->set_opt_or_throw(CURLOPT_SERVER_RESPONSE_TIMEOUT, 1L);
     }
 
     if (p_body != nullptr && !p_body->empty())
