@@ -1,3 +1,8 @@
+az-dcap-client (1.12.1) stable; urgency=medium
+  * Removed support for Ubuntu 18.04
+
+ -- Francisco Javier Ortega Palacios<fortegapalac@microsoft.com>  Mon, 10 July 2023 15:40:00 +0000
+
 az-dcap-client (1.12.0) stable; urgency=medium
   * Added support for TDX quote validation through the following API 
   * quote3_error_t tdx_ql_get_quote_verification_collateral(const uint8_t *fmspc, uint16_t fmspc_size, const char *pck_ca, tdx_ql_qve_collateral_t **pp_quote_collateral)

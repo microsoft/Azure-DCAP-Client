@@ -19,13 +19,11 @@ jobs:
       max-parallel: 1
       matrix:
         sizeName: [IceLake, CoffeeLake]
-        imageName: ["Ubuntu20_04", "Ubuntu18_04"]
+        imageName: ["Ubuntu20_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
-          - imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
-            imageName: Ubuntu18_04
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
             location: uksouth
@@ -352,8 +350,6 @@ jobs:
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
-          #- imageUrn: "Canonical:UbuntuServer:18_04-lts-gen2:latest"
-          #  imageName: Ubuntu18_04
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
             location: westus
