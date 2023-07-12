@@ -111,7 +111,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
 
     // If request is routed to THIM agent for SGX certificate fetch, set
-    // response timeout to 1 s
+    // response timeout to 1 s 
     if (fetchingFromLocalAgent)
     {
         easy->set_opt_or_throw(CURLOPT_SERVER_RESPONSE_TIMEOUT, 1L);
