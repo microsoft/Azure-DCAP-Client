@@ -129,7 +129,8 @@ std::wstring UnicodeStringFromUtf8String(_In_ const std::string& ansiString)
 std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
     const std::string* const p_body,
-    unsigned long dwFlags)
+    unsigned long dwFlags,
+    bool fetchingFromLocalAgent)
 {
     struct make_unique_enabler : public curl_easy
     {
@@ -215,6 +216,18 @@ std::unique_ptr<curl_easy> curl_easy::create(
         throw_on_error(
             GetLastError(),
             "curl_easy::create/WinHttpSetOption(RedirectPolicy)");
+    }
+
+    if (fetchingFromLocalAgent)
+    {
+        // Setting nResolveTimeout = 0. this is default value. Since we directly
+        // connect to IP, DNS resolution doesnot make sense.
+        // Setting nConnectTimeout = 60000 ms. This is the default value.
+        // Setting nSendTimeout = 1 s.
+        // Setting nReceiveTimeout = 1 s.
+        if (!WinHttpSetTimeouts(
+                curl->sessionHandle.get(), 0, 60000, 1000, 1000))
+            throw_on_error(GetLastError(), "Error %u in WinHttpSetTimeouts.\n");
     }
 
     // Specify TLS 1.2
