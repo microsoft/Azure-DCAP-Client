@@ -7,15 +7,19 @@
 #include "private.h"
 
 #include <cassert>
+#include <chrono>
 #include <cstdarg>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <new>
 #include <string>
 #include <vector>
 #include <mutex>
+#include <time.h>
 #include "environment.h"
 
 using namespace std;
@@ -35,6 +39,11 @@ static const string LEVEL_INFO = "INFO";
 static const string LEVEL_INFO_ALT = "SGX_QL_LOG_INFO";
 
 static const string LEVEL_UNKNOWN = "UNKNOWN";
+
+
+static const string WRITE_TO_LOGS_ACTIVE_VALUE = "TRUE";
+
+static const string logFileName = "/tmp/dcapLog.txt";
 
 static inline bool convert_string_to_level(const string level, sgx_ql_log_level_t &sqx_ql_level)
 {
@@ -128,6 +137,50 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
+	
+	auto now = chrono::system_clock::now();
+	time_t nowTimeT = chrono::system_clock::to_time_t(now);
+    char date[100];
+	
+#if defined __LINUX__ 
+    strftime(date, sizeof(date), "%F %X", localtime(&nowTimeT));
+#else 
+	struct tm calendarDate;
+	localtime_s(&calendarDate, &nowTimeT);
+	strftime(date, sizeof(date), "%F %X", &calendarDate);
+#endif
+
+	string timestamp(date);
+
+	auto milliseconds = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()) % 1000;
+
+	string millisecondsString = to_string(milliseconds.count());
+	//If the number of milliseconds is below 100, append 0s in front of the milliseconds string
+	//Otherwise a time like like 21:30:01.007 would print as 21:30:01.7
+	while (millisecondsString.length() < 3) {
+		millisecondsString.insert(0, "0");
+	}
+	
+	timestamp += "." + millisecondsString;
+
+	string logMessage = "Azure Quote Provider: libdcap_quoteprov.so [" + log_level_string(level) + "] [" + timestamp + "]: " + message + "\n";
+
+#if defined __LINUX__ 
+	auto envVarShouldWeWriteToLogs = get_env_variable_no_log(ENV_AZDCAP_WRITE_LOGS_TO_FILE);
+
+	if (envVarShouldWeWriteToLogs.first == WRITE_TO_LOGS_ACTIVE_VALUE) {
+
+		FILE *f = fopen(logFileName.c_str(), "a");
+		if (f == NULL) {
+			printf("Error opening log file");
+			exit(1);
+		}
+		fprintf(f, "%s", logMessage.c_str());
+		fflush(f);
+		fclose(f);
+	}
+#endif
+	
     if (logger_callback != nullptr)
     {
         logger_callback(level, message);
@@ -139,10 +192,11 @@ void log_message(sgx_ql_log_level_t level, const char* message)
         {
             if (level <= debug_log_level)
             {
-                printf("Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n", log_level_string(level).c_str(), message);
+                printf("%s", logMessage.c_str());
             }
         }
     }
+	fflush(stdout);
 
 #ifndef __LINUX__
 	// Emitting Events only in Windows

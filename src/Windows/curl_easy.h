@@ -40,7 +40,8 @@ class curl_easy
     static std::unique_ptr<curl_easy> create(
         const std::string& url,
         const std::string* const p_body,
-        unsigned long dwFlags = WINHTTP_FLAG_SECURE);
+        unsigned long dwFlags = WINHTTP_FLAG_SECURE,
+        bool fetchingFromLocalAgent = false);
 
     ~curl_easy();
 

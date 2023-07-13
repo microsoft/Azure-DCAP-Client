@@ -17,6 +17,11 @@
 void local_cache_clear();
 
 //
+// Returns the name and location of the cache'd file for the corresponding id.
+//
+std::string get_cached_file_location(const std::string& id);
+
+//
 // Add some data, with the given identifier, to the local system cache. The
 // cache entry will be expired at the date time indicated by 'expiry'. Upon
 // expiration, the cached item will no longer be returned.
@@ -35,5 +40,12 @@ extern "C" void local_cache_add(
 //
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     const std::string& id, bool checkExpiration = true);
+	
+
+//
+// Return the expiry time of the last read cache file and the time it was compared with
+//
+std::string get_last_cache_read_expiry_log();
+
 
 #endif
