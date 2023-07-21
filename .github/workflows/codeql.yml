@@ -61,13 +61,11 @@ jobs:
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
     - name: Update apt-get
-      uses: ./.github/actions/actionAzVmRunCommand
       with:
           commandName: "updateAptGet"
           script: "sudo apt-get update -y"
               
     - name: Install libSSL
-      uses: ./.github/actions/actionAzVmRunCommand
       with:
           commandName: "installLibSSL"
           script: "sudo apt-get install libssl-dev -y"
