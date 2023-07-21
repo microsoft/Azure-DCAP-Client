@@ -28,7 +28,7 @@ jobs:
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners
     # Consider using larger runners for possible analysis time improvements.
-    runs-on: [windows-latest]
+    runs-on: [ubuntu-latest]
     # runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     # timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
@@ -60,6 +60,10 @@ jobs:
 
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
+    - name: Update apt-get
+      with:
+          commandName: "updateAptGet"
+          script: "sudo apt-get update -y"
 
 
     # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
@@ -72,10 +76,10 @@ jobs:
 
     #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-    - name: Build
-      run: |
-        echo "Run, Build Application using script"
-        ./.github/windowsScripts/DCAPBuildMain.ps1
+    # - name: Build
+    #   run: |
+    #    echo "Run, Build Application using script"
+    #    ./.github/windowsScripts/DCAPBuildMain.ps1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
