@@ -15,7 +15,7 @@ apt-get install nlohmann-json3-dev
 
 apt install build-essential -y
 
-apt-get install -y debhelper dh-virtualenv
+#apt-get install -y debhelper dh-virtualenv
 
 # install GoogleTest
 apt-get update -y
@@ -36,7 +36,7 @@ make
 
 make install
 
-dpkg-buildpackage -us -uc
+#dpkg-buildpackage -us -uc
 
 
 
