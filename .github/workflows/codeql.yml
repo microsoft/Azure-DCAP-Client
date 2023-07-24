@@ -17,6 +17,9 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "master" ]
+    paths-ignore:
+    - '**/*.md'
+    - '**/*.txt'
   schedule:
     - cron: '43 10 * * 2'
 
@@ -28,8 +31,9 @@ jobs:
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners
     # Consider using larger runners for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: [ubuntu-20.04]
+    # runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    # timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
       contents: read
@@ -53,15 +57,16 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
+        db-location: '${{ github.workspace }}/codeql_dbs'
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
 
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
+    
 
-
-    # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
+# Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
     # If this step fails, then you should remove it and run the build manually (see below)
     # - name: Autobuild
     #   uses: github/codeql-action/autobuild@v2
@@ -71,10 +76,13 @@ jobs:
 
     #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-
-     - run: |
-         echo "Run, Build Application using script"
-         ../.github/windowsScripts/DCAPBuildMain.ps1
+    - name: Update permissions
+      run: chmod +x ./build/Phase2/install_prereqs.cmd
+      shell: bash
+      
+    - name: Run, Build Application using script
+      run: sudo ./build/Phase2/install_prereqs.cmd
+      shell: bash
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
