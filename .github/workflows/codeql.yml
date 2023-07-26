@@ -49,7 +49,7 @@ jobs:
     #  shell: bash
 
     - name: Build CodeQL Database
-      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database create cpp-database --language=cpp --command='/home/dcapadmin/Azure-DCAP-Client/build/Phase2/install_prereqs.cmd' --overwrite
+      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database create cpp-database --language=cpp --command='./build/Phase2/install_prereqs.cmd' --overwrite
       shell: bash
       
     - name: analyze CodeQL Database
