@@ -30,30 +30,27 @@ jobs:
         language: [ 'cpp' ]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
+    
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        #db-location: '${{ github.workspace }}/codeql_dbs'
-        
+    
+    - name: Elevated privileges
+      run: sudo su
+      shell: bash
+      
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
     - name: Update permissions
       run: chmod +x ./build/Phase2/install_prereqs.cmd
       shell: bash
       
-    #- name: Run, Build Application using script
-    #  run: sudo ./build/Phase2/install_prereqs.cmd
-    #  shell: bash
+    - name: Run, Build Application using script
+      run: ./build/Phase2/install_prereqs.cmd
+      shell: bash
 
-    - name: Build CodeQL Database
-      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database create cpp-database --language=cpp --command='./build/Phase2/install_prereqs.cmd' --overwrite
-      shell: bash
-      
-    - name: analyze CodeQL Database
-      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database analyze ./cpp-database --format=sarif-latest --output=test.sarif
-      shell: bash
-      
-      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
