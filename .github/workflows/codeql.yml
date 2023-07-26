@@ -44,9 +44,16 @@ jobs:
       run: chmod +x ./build/Phase2/install_prereqs.cmd
       shell: bash
       
-    - name: Run, Build Application using script
-      run: sudo ./build/Phase2/install_prereqs.cmd
-      shell: bash
+    #- name: Run, Build Application using script
+    #  run: sudo ./build/Phase2/install_prereqs.cmd
+    #  shell: bash
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+    - name: Build CodeQL Database
+      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database create cpp-database --language=cpp --command='/home/dcapadmin/Azure-DCAP-Client/build/Phase2/install_prereqs.cmd' --overwrite
+      shell: bash
+      
+    - name: analyze CodeQL Database
+      run: /opt/hostedtoolcache/CodeQL/2.14.0/x64/codeql/codeql database analyze ./cpp-database --format=sarif-latest --output=test.sarif
+      shell: bash
+      
+      
