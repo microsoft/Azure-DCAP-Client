@@ -30,10 +30,9 @@ cp *.a /usr/lib
 
 cd $DIR/../../src/Linux/
 
+make clean
 ./configure
-
 make
-
 make install
 
 #dpkg-buildpackage -us -uc
