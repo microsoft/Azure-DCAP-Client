@@ -42,19 +42,19 @@ jobs:
 
       
     - name: Update permissions
-      run: sudo chmod +x ./workflows/scripts/install_prereqs.cmd
+      run: sudo chmod +x ./.github/workflows/scripts/install_prereqs.cmd
       shell: bash
       
     - name: Run dependencies
-      run: sudo ./workflows/scripts/install_prereqs.cmd
+      run: sudo ./.github/workflows/scripts/install_prereqs.cmd
       shell: bash
       
     - name: Update permissions
-      run: sudo chmod +x ./workflows/scripts/buildcode.cmd
+      run: sudo chmod +x ./.github.workflows/scripts/buildcode.cmd
       shell: bash
       
     - name: Run dependencies
-      run: ./workflows/scripts/buildcode.cmd
+      run: ./.github/workflows/scripts/buildcode.cmd
       shell: bash
 
     - name: Perform CodeQL Analysis
