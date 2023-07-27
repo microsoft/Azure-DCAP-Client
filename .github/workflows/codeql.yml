@@ -36,17 +36,26 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-      
+        
     - name: Checkout repository
       uses: actions/checkout@v3
+
       
     - name: Update permissions
-      run: sudo chmod +x ./build/Phase2/install_prereqs.cmd
+      run: sudo chmod +x ./workflows/scripts/install_prereqs.cmd
       shell: bash
       
-    - name: Run, Build Application using script
-      run: sudo ./build/Phase2/install_prereqs.cmd
+    - name: Run dependencies
+      run: sudo ./workflows/scripts/install_prereqs.cmd
+      shell: bash
+      
+    - name: Update permissions
+      run: sudo chmod +x ./workflows/scripts/buildcode.cmd
+      shell: bash
+      
+    - name: Run dependencies
+      run: ./workflows/scripts/buildcode.cmd
       shell: bash
 
     - name: Perform CodeQL Analysis
-      uses: sudo github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v2
