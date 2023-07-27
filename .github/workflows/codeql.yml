@@ -50,7 +50,7 @@ jobs:
       shell: bash
       
     - name: Update permissions
-      run: sudo chmod +x ./.github.workflows/scripts/buildcode.cmd
+      run: sudo chmod +x ./.github/workflows/scripts/buildcode.cmd
       shell: bash
       
     - name: Run dependencies
