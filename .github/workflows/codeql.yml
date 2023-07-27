@@ -53,7 +53,7 @@ jobs:
       run: sudo chmod +x ./.github/workflows/scripts/buildcode.cmd
       shell: bash
       
-    - name: Run dependencies
+    - name: Build code
       run: ./.github/workflows/scripts/buildcode.cmd
       shell: bash
 
