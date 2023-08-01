@@ -1,0 +1,61 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    paths-ignore:
+    - '**/*.md'
+    - '**/*.txt'
+  schedule:
+    - cron: '43 10 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze
+
+    runs-on: [ubuntu-20.04]
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+      
+    - name: Update permissions
+      run: sudo chmod +x ./.github/workflows/scripts/install_prereqs.cmd
+      shell: bash
+      
+    - name: Run dependencies
+      run: sudo ./.github/workflows/scripts/install_prereqs.cmd
+      shell: bash
+      
+    - name: Update permissions
+      run: sudo chmod +x ./.github/workflows/scripts/buildcode.cmd
+      shell: bash
+      
+    - name: Build code
+      run: ./.github/workflows/scripts/buildcode.cmd
+      shell: bash
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
