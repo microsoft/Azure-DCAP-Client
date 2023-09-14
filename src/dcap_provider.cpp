@@ -7,9 +7,11 @@
 #include "private.h"
 
 #include <cassert>
+#include <chrono>
 #include <cstdarg>
 #include <cstddef>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <memory>
 #include <new>
@@ -115,6 +117,10 @@ static char REGION_CACHE_NAME[] = "region";
 static std::string region_cache_name = REGION_CACHE_NAME;
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
+
+static const int timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds = 30;
+//Defaults to the unix epoch if it hasn't been set.
+static std::chrono::time_point<std::chrono::system_clock> timeOfLastPrimaryFailure;
 
 enum class CollateralTypes
 {
@@ -1755,6 +1761,39 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config)
 {
+
+	
+
+	
+	log(SGX_QL_LOG_INFO, "Making request to https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform.");
+
+    const auto curl_operation = curl_easy::create("https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform", nullptr);
+
+    curl_operation->perform();
+	std::string issuer_chain;
+    auto get_issuer_chain_operation =
+        get_unescape_header(*curl_operation, headers::CRL_ISSUER_CHAIN, &issuer_chain);
+    quote3_error_t retval = convert_to_intel_error(get_issuer_chain_operation);
+    if (retval == SGX_QL_SUCCESS)
+    {
+        log(SGX_QL_LOG_INFO,
+            "CRL Issuer Header is good.");
+        std::string cache_control;
+        auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
+        retval = convert_to_intel_error(get_cache_header_operation);
+        if (retval == SGX_QL_SUCCESS)
+        {
+			log(SGX_QL_LOG_INFO,
+				"Cache control header is good.");
+        }
+    }
+	
+
+	log(SGX_QL_LOG_INFO, "Curl operation to https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform performed successfully.");
+
+	return SGX_QL_ERROR_UNEXPECTED;
+	
+
     *pp_quote_config = nullptr;
 
     try
@@ -1782,19 +1821,47 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         {
 #if !defined __SERVICE_VM__
             if (bypass_base.compare("false") == 0)
-            {
-                log(SGX_QL_LOG_INFO,
-                    "Trying to fetch response from primary URL: '%s'.",
-                    primary_base_url.c_str());
-                recieved_certificate = fetch_response(
-                    primary_base_url,
-                    curl,
-                    headers::localhost_metadata,
-                    retval,
-                    0,
-                    true);
+			{
+				log(SGX_QL_LOG_INFO,
+					"Checking if primary fetch failed within the last %i seconds.",
+					timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+
+				auto timeSinceLastPrimaryFailure = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - timeOfLastPrimaryFailure);
+
+				if (timeSinceLastPrimaryFailure.count() > timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds)
+				{
+					log(SGX_QL_LOG_INFO,
+						"Recent primary failure check passed. No Primary failure happened within the time threshold");
+
+					log(SGX_QL_LOG_INFO,
+						"Trying to fetch response from primary URL: '%s'.",
+						primary_base_url.c_str());
+					recieved_certificate = fetch_response(
+						primary_base_url,
+						curl,
+						headers::localhost_metadata,
+						retval,
+						0,
+						true);
+
+					if (!recieved_certificate)
+					{
+						timeOfLastPrimaryFailure = std::chrono::system_clock::now();
+
+						log(SGX_QL_LOG_ERROR,
+							"Failed to fetch certificate from primary URL: '%s'.",
+							primary_base_url.c_str());
+					}
+				}
+				else
+				{
+					log(SGX_QL_LOG_WARNING,
+						"Primary fetch skipped since it failed within the last %i seconds.",
+						timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+				}
             }
 #endif
+	return SGX_QL_ERROR_UNEXPECTED;
             if (recieved_certificate)
             {
                 log(SGX_QL_LOG_INFO,
@@ -1803,7 +1870,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             }
             else
             {
-                log(SGX_QL_LOG_INFO,
+                log(SGX_QL_LOG_WARNING,
                     "Trying to fetch response from local cache in the following location: %s.", cached_file_name.str().c_str());
                 recieved_certificate =
                     check_cache(cached_file_name.str(), pp_quote_config);
@@ -1817,7 +1884,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 }
                 else
                 {
-                    log(SGX_QL_LOG_INFO,
+                    log(SGX_QL_LOG_WARNING,
                         "Certificate not found in local cache. Trying to fetch response from secondary URL: '%s'.",
                         secondary_base_url.c_str());
                     recieved_certificate = fetch_response(
