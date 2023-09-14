@@ -1788,44 +1788,44 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
         {
 #if !defined __SERVICE_VM__
             if (bypass_base.compare("false") == 0)
-			{
-				log(SGX_QL_LOG_INFO,
-					"Checking if primary fetch failed within the last %i seconds.",
-					timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Checking if primary fetch failed within the last %i seconds.",
+                    timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
 
-				auto timeSinceLastPrimaryFailure = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - timeOfLastPrimaryFailure);
+                auto timeSinceLastPrimaryFailure = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - timeOfLastPrimaryFailure);
 
-				if (timeSinceLastPrimaryFailure.count() > timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds)
-				{
-					log(SGX_QL_LOG_INFO,
-						"No primary fetch failure happened within the time threshold");
+                if (timeSinceLastPrimaryFailure.count() > timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds)
+                {
+                    log(SGX_QL_LOG_INFO,
+                        "No primary fetch failure happened within the time threshold");
 
-					log(SGX_QL_LOG_INFO,
-						"Trying to fetch response from primary URL: '%s'.",
-						primary_base_url.c_str());
-					recieved_certificate = fetch_response(
-						primary_base_url,
-						curl,
-						headers::localhost_metadata,
-						retval,
-						0,
-						true);
+                    log(SGX_QL_LOG_INFO,
+                        "Trying to fetch response from primary URL: '%s'.",
+                        primary_base_url.c_str());
+                    recieved_certificate = fetch_response(
+                        primary_base_url,
+                        curl,
+                        headers::localhost_metadata,
+                        retval,
+                        0,
+                        true);
 
-					if (!recieved_certificate)
-					{
-						timeOfLastPrimaryFailure = std::chrono::system_clock::now();
+                    if (!recieved_certificate)
+                    {
+                        timeOfLastPrimaryFailure = std::chrono::system_clock::now();
 
-						log(SGX_QL_LOG_ERROR,
-							"Failed to fetch certificate from primary URL: '%s'.",
-							primary_base_url.c_str());
-					}
-				}
-				else
-				{
-					log(SGX_QL_LOG_WARNING,
-						"Primary fetch skipped since it failed within the last %i seconds.",
-						timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
-				}
+                        log(SGX_QL_LOG_ERROR,
+                            "Failed to fetch certificate from primary URL: '%s'.",
+                            primary_base_url.c_str());
+                    }
+                }
+                else
+                {
+                    log(SGX_QL_LOG_WARNING,
+                        "Primary fetch skipped since it failed within the last %i seconds.",
+                        timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+                }
             }
 #endif
 
