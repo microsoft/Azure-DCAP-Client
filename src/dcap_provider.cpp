@@ -1761,39 +1761,6 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config)
 {
-
-	
-
-	
-	log(SGX_QL_LOG_INFO, "Making request to https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform.");
-
-    const auto curl_operation = curl_easy::create("https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform", nullptr);
-
-    curl_operation->perform();
-	std::string issuer_chain;
-    auto get_issuer_chain_operation =
-        get_unescape_header(*curl_operation, headers::CRL_ISSUER_CHAIN, &issuer_chain);
-    quote3_error_t retval = convert_to_intel_error(get_issuer_chain_operation);
-    if (retval == SGX_QL_SUCCESS)
-    {
-        log(SGX_QL_LOG_INFO,
-            "CRL Issuer Header is good.");
-        std::string cache_control;
-        auto get_cache_header_operation = get_unescape_header(*curl_operation, headers::CACHE_CONTROL, &cache_control);
-        retval = convert_to_intel_error(get_cache_header_operation);
-        if (retval == SGX_QL_SUCCESS)
-        {
-			log(SGX_QL_LOG_INFO,
-				"Cache control header is good.");
-        }
-    }
-	
-
-	log(SGX_QL_LOG_INFO, "Curl operation to https://thimt3-dev-cbn01p.thim.azure-test.net/sgx/certification/v4/pckcrl?ca=platform performed successfully.");
-
-	return SGX_QL_ERROR_UNEXPECTED;
-	
-
     *pp_quote_config = nullptr;
 
     try
@@ -1831,7 +1798,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 				if (timeSinceLastPrimaryFailure.count() > timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds)
 				{
 					log(SGX_QL_LOG_INFO,
-						"Recent primary failure check passed. No Primary failure happened within the time threshold");
+						"No primary fetch failure happened within the time threshold");
 
 					log(SGX_QL_LOG_INFO,
 						"Trying to fetch response from primary URL: '%s'.",
@@ -1861,7 +1828,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
 				}
             }
 #endif
-	return SGX_QL_ERROR_UNEXPECTED;
+
             if (recieved_certificate)
             {
                 log(SGX_QL_LOG_INFO,
