@@ -229,6 +229,19 @@ std::unique_ptr<curl_easy> curl_easy::create(
                 curl->sessionHandle.get(), 0, 60000, 1000, 1000))
             throw_on_error(GetLastError(), "Error %u in WinHttpSetTimeouts.\n");
     }
+	
+	//WINHTTP_NO_CLIENT_CERT_CONTEXT value is null
+	//Setting a DWORD variable to it like in other WinHttpSetOption will break things 
+    if (!WinHttpSetOption(
+	        curl->request.get(), 
+	        WINHTTP_OPTION_CLIENT_CERT_CONTEXT, 
+	        WINHTTP_NO_CLIENT_CERT_CONTEXT, 
+	        0)) 
+    {
+        throw_on_error(
+            GetLastError(),
+            "curl_easy::create/WinHttpSetOption(ClientCertContext)");
+    }
 
     // Specify TLS 1.2
     DWORD protocolOptions =
