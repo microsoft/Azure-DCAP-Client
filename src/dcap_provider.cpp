@@ -118,7 +118,7 @@ static std::string region_cache_name = REGION_CACHE_NAME;
 
 static const string CACHE_CONTROL_MAX_AGE = "max-age=";
 
-static const int timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds = 30;
+static const int SKIP_PRIMARY_AFTER_PRIMARY_FAILURE_THRESHOLD_IN_SECONDS = 30;
 //Defaults to the unix epoch if it hasn't been set.
 static std::chrono::time_point<std::chrono::system_clock> timeOfLastPrimaryFailure;
 
@@ -1791,14 +1791,15 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
             {
                 log(SGX_QL_LOG_INFO,
                     "Checking if primary fetch failed within the last %i seconds.",
-                    timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+                    SKIP_PRIMARY_AFTER_PRIMARY_FAILURE_THRESHOLD_IN_SECONDS);
 
                 auto timeSinceLastPrimaryFailure = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - timeOfLastPrimaryFailure);
 
-                if (timeSinceLastPrimaryFailure.count() > timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds)
+                if (timeSinceLastPrimaryFailure.count() > SKIP_PRIMARY_AFTER_PRIMARY_FAILURE_THRESHOLD_IN_SECONDS)
                 {
                     log(SGX_QL_LOG_INFO,
-                        "No primary fetch failure happened within the time threshold");
+                        "No primary fetch failure happened within the %i seconds time threshold",
+						SKIP_PRIMARY_AFTER_PRIMARY_FAILURE_THRESHOLD_IN_SECONDS);
 
                     log(SGX_QL_LOG_INFO,
                         "Trying to fetch response from primary URL: '%s'.",
@@ -1824,7 +1825,7 @@ extern "C" quote3_error_t sgx_ql_get_quote_config(
                 {
                     log(SGX_QL_LOG_WARNING,
                         "Primary fetch skipped since it failed within the last %i seconds.",
-                        timeThresholdToSkipPrimaryIfItFailedRecentlyInSeconds);
+                        SKIP_PRIMARY_AFTER_PRIMARY_FAILURE_THRESHOLD_IN_SECONDS);
                 }
             }
 #endif
