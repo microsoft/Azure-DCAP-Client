@@ -131,7 +131,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     const std::string* const p_body,
     unsigned long dwFlags,
     bool fetchingFromLocalAgent,
-    bool fetchingFromIMDS))
+    bool fetchingFromIMDS)
 {
     struct make_unique_enabler : public curl_easy
     {
