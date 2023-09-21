@@ -90,7 +90,8 @@ std::unique_ptr<curl_easy> curl_easy::create(
     const std::string& url,
     const std::string* const p_body,
     unsigned long dwflag,
-    bool fetchingFromLocalAgent)
+    bool fetchingFromLocalAgent,
+    bool fetchingFromIMDS)
 {
     std::unique_ptr<curl_easy> easy(new curl_easy);
 
