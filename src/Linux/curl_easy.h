@@ -41,7 +41,7 @@ class curl_easy
         const std::string* const p_body,
         unsigned long dwFlags = 0,
         bool fetchingFromLocalAgent = false,
-        bool fetchingFromIMDS = false)
+        bool fetchingFromIMDS = false);
 
     ~curl_easy();
 
