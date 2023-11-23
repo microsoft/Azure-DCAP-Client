@@ -232,7 +232,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
 
     // Specify TLS 1.2
     DWORD protocolOptions =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
+        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
     if (!WinHttpSetOption(
             curl->sessionHandle.get(),
             WINHTTP_OPTION_SECURE_PROTOCOLS,
