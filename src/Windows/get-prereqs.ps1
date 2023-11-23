@@ -15,7 +15,7 @@ function fetch_from_intel_github
 
 mkdir -Force ext/intel | Out-Null
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls13
 
 #fetch_from_intel_github -path SGXDataCenterAttestationPrimitives/0436284f12f1bd5da7e7a06f6274d36b4c8d39f9/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h
 fetch_from_intel_github -path linux-sgx/1ccf25b64abd1c2eff05ead9d14b410b3c9ae7be/common/inc/sgx_report.h
