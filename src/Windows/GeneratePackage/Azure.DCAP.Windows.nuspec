@@ -2,13 +2,13 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.12.2</version>
+        <version>1.12.3</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes>
-		Added bypass of primary fetch source if it has failed recently
+		Updating the TLS version to 1.3 to be Azure compliant 
 	  </releaseNotes>
         <description>
             This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
