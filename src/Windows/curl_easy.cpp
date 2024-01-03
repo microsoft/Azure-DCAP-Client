@@ -230,20 +230,6 @@ std::unique_ptr<curl_easy> curl_easy::create(
             throw_on_error(GetLastError(), "Error %u in WinHttpSetTimeouts.\n");
     }
 
-    // Specify TLS 1.2
-    DWORD protocolOptions =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_SSL3;
-    if (!WinHttpSetOption(
-            curl->sessionHandle.get(),
-            WINHTTP_OPTION_SECURE_PROTOCOLS,
-            &protocolOptions,
-            sizeof(protocolOptions)))
-    {
-        throw_on_error(
-            GetLastError(),
-            "curl_easy::create/WinHttpSetOption(SecureProtocols)");
-    }
-
     if (p_body != nullptr)
     {
         curl->request_body_data = *p_body;
