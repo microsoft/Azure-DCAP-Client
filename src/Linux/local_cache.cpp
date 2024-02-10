@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include <mutex>
+#include <stdexcept>
 
 #include <fcntl.h>
 #include <ftw.h>
