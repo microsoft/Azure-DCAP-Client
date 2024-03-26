@@ -17,11 +17,9 @@ on Azure infrastructure.
 # Building
 
 ## Linux
-
 See [src/Linux/README.MD](src/Linux/README.MD).
 
 ## Windows
-
 See [src/Windows/README.MD](src/Windows/README.MD).
 
 # Implementation
