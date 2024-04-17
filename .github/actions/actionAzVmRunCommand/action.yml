@@ -6,6 +6,9 @@ description: "This action uses az vm run-command in order to execute a command i
   # make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. 
   # Some options to do this include using [set -euo pipeline] or equivalents, or using the && operator to connect console commands
   # WARNING: This action hasn't been tested with script files. 
+permissions:
+  id-token: write
+  contents: read
 inputs:
   commandName:
     description: "Name of the command to execute"
