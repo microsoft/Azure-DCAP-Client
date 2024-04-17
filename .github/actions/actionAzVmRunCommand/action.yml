@@ -5,10 +5,7 @@ description: "This action uses az vm run-command in order to execute a command i
   # WARNING: This action ONLY checks the exit code of the last command. If your script input is made of multiple commands, 
   # make sure that a failure early results in the last command failing or not executing, otherwise it could mask errors. 
   # Some options to do this include using [set -euo pipeline] or equivalents, or using the && operator to connect console commands
-  # WARNING: This action hasn't been tested with script files. 
-permissions:
-  id-token: write
-  contents: read
+  # WARNING: This action hasn't been tested with script files.
 inputs:
   commandName:
     description: "Name of the command to execute"
@@ -18,14 +15,7 @@ inputs:
     required: true
 runs:
   using: "composite"
-  steps:      
-    - name: Refresh auth token
-      uses: azure/login@v2
-          with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            
+  steps:
     - name: Execute the command in Linux
       if: ${{ env.os == 'linux' }}
       uses: azure/CLI@v2
