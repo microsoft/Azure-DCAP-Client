@@ -18,7 +18,7 @@ runs:
   steps:      
     - name: Execute the command in Linux
       if: ${{ env.os == 'linux' }}
-      uses: azure/CLI@v1
+      uses: azure/CLI@v2
       with:
         inlineScript: |
           az vm run-command create \
