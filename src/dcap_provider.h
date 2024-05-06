@@ -122,8 +122,7 @@ typedef void (
     *sgx_ql_logging_callback_t)(sgx_ql_log_level_t level, const char* message);
 
 /// Set the callback used for recording log information.
-typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(
-    sgx_ql_logging_function_t logger);
+typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(sgx_ql_logging_function_t logger);
 
 const std::string customParam = "customParameter";
 

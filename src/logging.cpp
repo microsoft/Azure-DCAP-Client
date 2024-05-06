@@ -23,7 +23,7 @@
 #include "environment.h"
 
 using namespace std;
-sgx_ql_logging_function_t logger_callback = nullptr;
+sgx_ql_logging_callback_t logger_callback = nullptr;
 sgx_ql_logging_function_t logger_function = nullptr;
 static sgx_ql_log_level_t debug_log_level = SGX_QL_LOG_NONE;
 static bool debug_log_initialized = false;
@@ -103,11 +103,11 @@ static inline void enable_debug_logging(string level)
                 log_level_string(SGX_QL_LOG_INFO).c_str(),
                 logging_enabled_message);
         }
-        else if (logger_callback != nullptr)
+        if (logger_callback != nullptr)
         {
             logger_callback(SGX_QL_LOG_INFO, logging_enabled_message);
         }
-        else
+        if (logger_function != nullptr)
         {
             logger_function(SGX_QL_LOG_INFO, logging_enabled_message);
         }
@@ -199,11 +199,11 @@ void log_message(sgx_ql_log_level_t level, const char* message)
             }
         }
     }
-    else if (logger_callback != nullptr)
+    if (logger_callback != nullptr)
     {
         logger_callback(level, message);
     }
-    else
+    if (logger_function != nullptr)
     {
         logger_function(level, message);
     }
