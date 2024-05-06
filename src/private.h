@@ -8,6 +8,7 @@
 #include "dcap_provider.h"
 #include <string>
 
+extern sgx_ql_logging_function_t logger_function;
 extern sgx_ql_logging_function_t logger_callback;
 
 ///////////////////////////////////////////////////////////////////////////////

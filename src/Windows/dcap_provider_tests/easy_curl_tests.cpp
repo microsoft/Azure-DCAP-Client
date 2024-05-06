@@ -23,7 +23,7 @@ static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
 
 TEST_MODULE_INITIALIZE(InitializeModule)
 {
-    logger_callback = DefaultLogCallback;
+    logger_function = DefaultLogCallback;
 }
 
 namespace dcap_provider_tests

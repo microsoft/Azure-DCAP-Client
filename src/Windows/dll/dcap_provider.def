@@ -5,7 +5,6 @@ EXPORTS
     sgx_ql_get_revocation_info
     sgx_ql_free_revocation_info
     sgx_ql_set_logging_function
-    sgx_ql_set_logging_callback
     sgx_ql_free_quote_verification_collateral;
     tdx_ql_free_quote_verification_collateral;
     sgx_ql_free_qve_identity;
@@ -17,4 +16,4 @@ EXPORTS
     sgx_ql_get_root_ca_crl;
     sgx_get_qe_identity_info
     sgx_free_qe_identity_info
-
+    sgx_ql_set_logging_callback

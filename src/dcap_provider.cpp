@@ -20,7 +20,6 @@
 #include <vector>
 #include <unordered_map>
 
-#include "sgx_ql_lib_common.h"
 #include "environment.h"
 
 #ifdef __LINUX__
@@ -2304,7 +2303,7 @@ extern "C" void sgx_ql_free_revocation_info(
 extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
     sgx_ql_logging_function_t logger)
 {
-    logger_callback = logger;
+    logger_function = logger;
     return SGX_PLAT_ERROR_OK;
 }
 

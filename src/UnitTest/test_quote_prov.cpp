@@ -5,7 +5,6 @@
 
 #include "../local_cache.h"
 #include "dcap_provider.h"
-#include "sgx_ql_lib_common.h"
 
 #include <sys/stat.h>
 #include <chrono>
@@ -49,9 +48,6 @@ typedef void (*measured_function_t)(void);
 typedef quote3_error_t (*sgx_ql_get_quote_config_t)(
     const sgx_ql_pck_cert_id_t* p_pck_cert_id,
     sgx_ql_config_t** pp_quote_config);
-
-typedef quote3_error_t (*sgx_ql_set_logging_callback_t)(
-    sgx_ql_logging_function_t logger);
 
 typedef quote3_error_t (*sgx_ql_free_quote_config_t)(
     sgx_ql_config_t* p_quote_config);
@@ -108,7 +104,7 @@ static sgx_ql_free_quote_config_t sgx_ql_free_quote_config;
 static sgx_ql_get_quote_config_t sgx_ql_get_quote_config;
 static sgx_ql_set_logging_function_t sgx_ql_set_logging_function;
 static sgx_ql_set_logging_callback_t sgx_ql_set_logging_callback;
-static sgx_ql_free_quote_verification_collateral_t
+static sgx_ql_free_quote_verification_collateral_t 
     sgx_ql_free_quote_verification_collateral;
 static tdx_ql_free_quote_verification_collateral_t
     tdx_ql_free_quote_verification_collateral;
@@ -137,43 +133,41 @@ const uint16_t incorrect_custom_param_length = 24;
 const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
 
 // Test input (choose an arbitrary Azure server)
-static uint8_t qe_id[16] = {
-    0x00,
-    0xfb,
-    0xe6,
-    0x73,
-    0x33,
-    0x36,
-    0xea,
-    0xf7,
-    0xa4,
-    0xe3,
-    0xd8,
-    0xb9,
-    0x66,
-    0xa8,
-    0x2e,
-    0x64};
+static uint8_t qe_id[16] = {0x00,
+                            0xfb,
+                            0xe6,
+                            0x73,
+                            0x33,
+                            0x36,
+                            0xea,
+                            0xf7,
+                            0xa4,
+                            0xe3,
+                            0xd8,
+                            0xb9,
+                            0x66,
+                            0xa8,
+                            0x2e,
+                            0x64};
 
-static sgx_cpu_svn_t cpusvn = {
-    0x04,
-    0x04,
-    0x02,
-    0x04,
-    0xff,
-    0x80,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static sgx_cpu_svn_t cpusvn = {0x04,
+                               0x04,
+                               0x02,
+                               0x04,
+                               0xff,
+                               0x80,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00};
 
-static sgx_isv_svn_t pcesvn = 6;
+static sgx_isv_svn_t pcesvn = 11;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
@@ -254,8 +248,7 @@ static void* LoadFunctions()
         abort();
     }
 
-    sgx_ql_free_revocation_info =
-        reinterpret_cast<sgx_ql_free_revocation_info_t>(
+    sgx_ql_free_revocation_info = reinterpret_cast<sgx_ql_free_revocation_info_t>(
             dlsym(library, "sgx_ql_free_revocation_info"));
     EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
@@ -271,13 +264,15 @@ static void* LoadFunctions()
         dlsym(library, "sgx_ql_get_quote_config"));
     EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
-    sgx_ql_set_logging_function =
-        reinterpret_cast<sgx_ql_set_logging_function_t>(
+    sgx_ql_set_logging_function = reinterpret_cast<sgx_ql_set_logging_function_t>(
             dlsym(library, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_free_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_callback_function_t>(
+            dlsym(library, "sgx_ql_set_logging_callback"));
+    EXPECT_NE(sgx_ql_set_callback_function, nullptr);
+
+    sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
@@ -301,6 +296,7 @@ static void* LoadFunctions()
 
     sgx_ql_get_quote_verification_collateral =
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
+
             dlsym(library, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
@@ -316,10 +312,6 @@ static void* LoadFunctions()
     sgx_ql_get_root_ca_crl = reinterpret_cast<sgx_ql_get_root_ca_crl_t>(
         dlsym(library, "sgx_ql_get_root_ca_crl"));
     EXPECT_NE(sgx_ql_get_root_ca_crl, nullptr);
-
-    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
-            dlsym(library, "sgx_ql_set_logging_callback"));
-    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
     return library;
 }
 #else
@@ -334,8 +326,7 @@ static HINSTANCE LoadFunctions()
         abort();
     }
 
-    sgx_ql_free_revocation_info =
-        reinterpret_cast<sgx_ql_free_revocation_info_t>(
+    sgx_ql_free_revocation_info = reinterpret_cast<sgx_ql_free_revocation_info_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_free_revocation_info"));
     EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
@@ -351,20 +342,16 @@ static HINSTANCE LoadFunctions()
         GetProcAddress(hLibCapdll, "sgx_ql_get_quote_config"));
     EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
-    sgx_ql_set_logging_function =
-        reinterpret_cast<sgx_ql_set_logging_function_t>(
+    sgx_ql_set_logging_function = reinterpret_cast<sgx_ql_set_logging_function_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_set_logging_callback =
-        reinterpret_cast<sgx_ql_set_logging_callback_t>(
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_set_logging_callback"));
     EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
 
-    sgx_ql_free_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
-            GetProcAddress(
-                hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
+    sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
+            GetProcAddress(hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
     tdx_ql_free_quote_verification_collateral =
@@ -381,10 +368,8 @@ static HINSTANCE LoadFunctions()
         GetProcAddress(hLibCapdll, "sgx_ql_free_root_ca_crl"));
     EXPECT_NE(sgx_ql_free_root_ca_crl, nullptr);
 
-    sgx_ql_get_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
-            GetProcAddress(
-                hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
+    sgx_ql_get_quote_verification_collateral = reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
+            GetProcAddress(hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_quote_verification_collateral_with_params = reinterpret_cast<
