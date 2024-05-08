@@ -2314,7 +2314,7 @@ extern "C" quote3_error_t sgx_ql_set_logging_callback(
     return SGX_QL_SUCCESS;
 }
 
-extern "C" quote3_error_t sgx_ql_free_quote_verification_collateral(
+quote3_error_t ql_free_quote_verification_collateral(
     sgx_ql_qve_collateral_t* p_quote_collateral)
 {
     delete[] p_quote_collateral->pck_crl;

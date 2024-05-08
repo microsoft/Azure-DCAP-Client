@@ -4,7 +4,7 @@
 #ifdef __LINUX__
 #include "sgx_ql_lib_common.h"
 #else
-#include "Windows\ext\intel\sgx_ql_lib_common.h"
+#include "sgx_ql_lib_common.h"
 #endif
 
 #pragma once
