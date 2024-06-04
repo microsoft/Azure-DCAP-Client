@@ -2308,9 +2308,11 @@ extern "C" sgx_plat_error_t sgx_ql_set_logging_function(
 }
 
 extern "C" quote3_error_t sgx_ql_set_logging_callback(
-    sgx_ql_logging_callback_t logger)
+    sgx_ql_logging_callback_t logger,
+    sgx_ql_log_level_t loglevel)
 {
     logger_callback = logger;
+    g_loglevel = loglevel;
     return SGX_QL_SUCCESS;
 }
 

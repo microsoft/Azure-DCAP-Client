@@ -128,6 +128,7 @@ const std::string customParam = "customParameter";
 
 /// Set the callback used for recording log information.
 typedef quote3_error_t (*sgx_ql_set_logging_callback_t)(
-    sgx_ql_logging_callback_t logger);
+    sgx_ql_logging_callback_t logger,
+    sgx_ql_log_level_t loglevel);
 
 #endif // #ifndef PLATFORM_QUOTE_PROVIDER_H

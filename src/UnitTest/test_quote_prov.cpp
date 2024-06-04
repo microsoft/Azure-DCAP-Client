@@ -128,6 +128,7 @@ static constexpr uint8_t TDX_TEST_FMSPC[] =
 const uint16_t custom_param_length = 45;
 const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
 std::string tcbEvaluationDataNumber = "11";
+static const sgx_ql_log_level_t LEVEL_ERROR = SGX_QL_LOG_ERROR;
 
 const uint16_t incorrect_custom_param_length = 24;
 const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
@@ -956,8 +957,11 @@ void ReloadLibrary(libary_type_t* library, bool set_logging_callback = true)
 #endif
     if (set_logging_callback)
     {
-        ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-        ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
+        ASSERT_TRUE(
+            SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+        ASSERT_TRUE(
+            SGX_QL_SUCCESS ==
+            sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
     }
 }
 
@@ -1305,7 +1309,8 @@ TEST(testQuoteProv, quoteProviderTestsData)
 TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
 {
     libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
+    ASSERT_TRUE(
+        SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
 
     //
     // Get the data from the service
@@ -1345,7 +1350,8 @@ TEST(testQuoteProv, quoteProviderTestsV2Data)
 TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
 {
     libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
+    ASSERT_TRUE(
+        SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
 
     //
     // Get the data from the service
