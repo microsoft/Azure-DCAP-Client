@@ -44,7 +44,6 @@ jobs:
       rgName: dcap-github-actions-agents-rg
       location: ${{ matrix.location }}
       branchName: ${{ github.head_ref }}
-
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
