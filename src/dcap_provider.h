@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#ifdef __LINUX__
+#include "sgx_ql_lib_common.h"
+#else
+#include "sgx_ql_lib_common.h"
+#endif
+
 #pragma once
 #ifndef PLATFORM_QUOTE_PROVIDER_H
 #define PLATFORM_QUOTE_PROVIDER_H
@@ -112,10 +118,17 @@ typedef enum _sgx_ql_log_level_t {
 typedef void (
     *sgx_ql_logging_function_t)(sgx_ql_log_level_t level, const char* message);
 
+typedef void (
+    *sgx_ql_logging_callback_t)(sgx_ql_log_level_t level, const char* message);
+
 /// Set the callback used for recording log information.
-typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(
-    sgx_ql_logging_function_t logger);
+typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(sgx_ql_logging_function_t logger);
 
 const std::string customParam = "customParameter";
+
+/// Set the callback used for recording log information.
+typedef quote3_error_t (*sgx_ql_set_logging_callback_t)(
+    sgx_ql_logging_callback_t logger,
+    sgx_ql_log_level_t loglevel);
 
 #endif // #ifndef PLATFORM_QUOTE_PROVIDER_H

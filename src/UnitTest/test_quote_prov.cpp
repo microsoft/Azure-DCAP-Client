@@ -5,7 +5,6 @@
 
 #include "../local_cache.h"
 #include "dcap_provider.h"
-#include "sgx_ql_lib_common.h"
 
 #include <sys/stat.h>
 #include <chrono>
@@ -104,7 +103,8 @@ static sgx_ql_get_revocation_info_t sgx_ql_get_revocation_info;
 static sgx_ql_free_quote_config_t sgx_ql_free_quote_config;
 static sgx_ql_get_quote_config_t sgx_ql_get_quote_config;
 static sgx_ql_set_logging_function_t sgx_ql_set_logging_function;
-static sgx_ql_free_quote_verification_collateral_t
+static sgx_ql_set_logging_callback_t sgx_ql_set_logging_callback;
+static sgx_ql_free_quote_verification_collateral_t 
     sgx_ql_free_quote_verification_collateral;
 static tdx_ql_free_quote_verification_collateral_t
     tdx_ql_free_quote_verification_collateral;
@@ -128,46 +128,45 @@ static constexpr uint8_t TDX_TEST_FMSPC[] =
 const uint16_t custom_param_length = 45;
 const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
 std::string tcbEvaluationDataNumber = "11";
+static const sgx_ql_log_level_t LEVEL_ERROR = SGX_QL_LOG_ERROR;
 
 const uint16_t incorrect_custom_param_length = 24;
 const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
 
 // Test input (choose an arbitrary Azure server)
-static uint8_t qe_id[16] = {
-    0x00,
-    0xfb,
-    0xe6,
-    0x73,
-    0x33,
-    0x36,
-    0xea,
-    0xf7,
-    0xa4,
-    0xe3,
-    0xd8,
-    0xb9,
-    0x66,
-    0xa8,
-    0x2e,
-    0x64};
+static uint8_t qe_id[16] = {0x00,
+                            0xfb,
+                            0xe6,
+                            0x73,
+                            0x33,
+                            0x36,
+                            0xea,
+                            0xf7,
+                            0xa4,
+                            0xe3,
+                            0xd8,
+                            0xb9,
+                            0x66,
+                            0xa8,
+                            0x2e,
+                            0x64};
 
-static sgx_cpu_svn_t cpusvn = {
-    0x04,
-    0x04,
-    0x02,
-    0x04,
-    0xff,
-    0x80,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00};
+static sgx_cpu_svn_t cpusvn = {0x04,
+                               0x04,
+                               0x02,
+                               0x04,
+                               0xff,
+                               0x80,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00,
+                               0x00};
 
 static sgx_isv_svn_t pcesvn = 6;
 
@@ -250,8 +249,7 @@ static void* LoadFunctions()
         abort();
     }
 
-    sgx_ql_free_revocation_info =
-        reinterpret_cast<sgx_ql_free_revocation_info_t>(
+    sgx_ql_free_revocation_info = reinterpret_cast<sgx_ql_free_revocation_info_t>(
             dlsym(library, "sgx_ql_free_revocation_info"));
     EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
@@ -267,13 +265,15 @@ static void* LoadFunctions()
         dlsym(library, "sgx_ql_get_quote_config"));
     EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
-    sgx_ql_set_logging_function =
-        reinterpret_cast<sgx_ql_set_logging_function_t>(
+    sgx_ql_set_logging_function = reinterpret_cast<sgx_ql_set_logging_function_t>(
             dlsym(library, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_free_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
+            dlsym(library, "sgx_ql_set_logging_callback"));
+    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
+
+    sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
@@ -297,6 +297,7 @@ static void* LoadFunctions()
 
     sgx_ql_get_quote_verification_collateral =
         reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
+
             dlsym(library, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
@@ -326,8 +327,7 @@ static HINSTANCE LoadFunctions()
         abort();
     }
 
-    sgx_ql_free_revocation_info =
-        reinterpret_cast<sgx_ql_free_revocation_info_t>(
+    sgx_ql_free_revocation_info = reinterpret_cast<sgx_ql_free_revocation_info_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_free_revocation_info"));
     EXPECT_NE(sgx_ql_free_revocation_info, nullptr);
 
@@ -343,15 +343,16 @@ static HINSTANCE LoadFunctions()
         GetProcAddress(hLibCapdll, "sgx_ql_get_quote_config"));
     EXPECT_NE(sgx_ql_get_quote_config, nullptr);
 
-    sgx_ql_set_logging_function =
-        reinterpret_cast<sgx_ql_set_logging_function_t>(
+    sgx_ql_set_logging_function = reinterpret_cast<sgx_ql_set_logging_function_t>(
             GetProcAddress(hLibCapdll, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_free_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
-            GetProcAddress(
-                hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
+            GetProcAddress(hLibCapdll, "sgx_ql_set_logging_callback"));
+    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
+
+    sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
+            GetProcAddress(hLibCapdll, "sgx_ql_free_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_free_quote_verification_collateral, nullptr);
 
     tdx_ql_free_quote_verification_collateral =
@@ -368,10 +369,8 @@ static HINSTANCE LoadFunctions()
         GetProcAddress(hLibCapdll, "sgx_ql_free_root_ca_crl"));
     EXPECT_NE(sgx_ql_free_root_ca_crl, nullptr);
 
-    sgx_ql_get_quote_verification_collateral =
-        reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
-            GetProcAddress(
-                hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
+    sgx_ql_get_quote_verification_collateral = reinterpret_cast<sgx_ql_get_quote_verification_collateral_t>(
+            GetProcAddress(hLibCapdll, "sgx_ql_get_quote_verification_collateral"));
     EXPECT_NE(sgx_ql_get_quote_verification_collateral, nullptr);
 
     sgx_ql_get_quote_verification_collateral_with_params = reinterpret_cast<
@@ -958,7 +957,11 @@ void ReloadLibrary(libary_type_t* library, bool set_logging_callback = true)
 #endif
     if (set_logging_callback)
     {
-        ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+        ASSERT_TRUE(
+            SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+        ASSERT_TRUE(
+            SGX_QL_SUCCESS ==
+            sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
     }
 }
 
@@ -1290,7 +1293,6 @@ TEST(testQuoteProv, quoteProviderTestsData)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
     //
     // Get the data from the service
     //
@@ -1307,7 +1309,8 @@ TEST(testQuoteProv, quoteProviderTestsData)
 TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
 {
     libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    ASSERT_TRUE(
+        SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
 
     //
     // Get the data from the service
@@ -1329,7 +1332,6 @@ TEST(testQuoteProv, quoteProviderTestsV2Data)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
     //
     // Get the data from the service
     //
@@ -1348,7 +1350,8 @@ TEST(testQuoteProv, quoteProviderTestsV2Data)
 TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
 {
     libary_type_t library = LoadFunctions();
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    ASSERT_TRUE(
+        SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log, SGX_QL_LOG_INFO));
 
     //
     // Get the data from the service
@@ -1371,7 +1374,6 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
     //
     // Get the data from the service
     //
@@ -1429,7 +1431,6 @@ TEST(testQuoteProv, testWithoutLogging)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
     //
     // Get the data from the service
     //
@@ -1449,7 +1450,6 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-
     //
     // Get the data from the service
     //

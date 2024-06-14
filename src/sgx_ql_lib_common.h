@@ -39,7 +39,7 @@
 #ifndef _SGX_QL_LIB_COMMON_H_
 #define _SGX_QL_LIB_COMMON_H_
 
-#include "sgx_key.h"
+#include ".\Windows\ext\intel\sgx_key.h"
 
 #define SGX_QL_MK_ERROR(x)              (0x0000E000|(x))
 
