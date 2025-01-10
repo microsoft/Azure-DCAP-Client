@@ -243,7 +243,7 @@ static void init()
 
 static std::string sha256(size_t data_size, const void* data)
 {
-    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned char hash[SHA256_DIGEST_LENGTH];
     const EVP_MD *digestType = EVP_sha256();
     int rc = EVP_Digest(data, data_size, hash, NULL, digestType, NULL);
     if (rc != 1)
