@@ -25,8 +25,6 @@ jobs:
         imageName: ["Ubuntu20_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
-          - imageUrn: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
-            imageName: Ubuntu22_04
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
             imageName: Ubuntu20_04
           - sizeName: CoffeeLake
