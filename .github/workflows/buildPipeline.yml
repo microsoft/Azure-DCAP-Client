@@ -22,7 +22,7 @@ jobs:
       max-parallel: 1
       matrix:
         sizeName: [IceLake, CoffeeLake]
-        imageName: ["Ubuntu20_04", "Ubuntu22_04"]
+        imageName: ["Ubuntu20_04"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
@@ -142,18 +142,6 @@ jobs:
         with:
             commandName: "installCMake"
             script: "sudo apt-get install cmake -y"
-              
-      - name: Downgrade to libssl 1.1.1f for OE requirements
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installCMake"
-            script: "sudo wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb && sudo dpkg -i ./libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb"
-              
-      - name: Downgrade to libssl-dev 1.1.1f for OE requirements
-        uses: ./.github/actions/actionAzVmRunCommand
-        with:
-            commandName: "installCMake"
-            script: "sudo wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.1.1f-1ubuntu2.23_amd64.deb && dpkg -i ./libssl-dev_1.1.1f-1ubuntu2.23_amd64.deb"
               
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
