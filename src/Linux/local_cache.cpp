@@ -14,6 +14,7 @@
 #include <openssl/evp.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <stdexcept>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
