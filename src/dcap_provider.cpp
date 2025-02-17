@@ -16,6 +16,7 @@
 #include <memory>
 #include <new>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <unordered_map>
