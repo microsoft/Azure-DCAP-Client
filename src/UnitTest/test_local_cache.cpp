@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <thread>
+#include <stdexcept>
 #if defined(__LINUX__)
 #include <unistd.h>
 #else
