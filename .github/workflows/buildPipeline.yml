@@ -542,17 +542,19 @@ jobs:
 
   # This job runs DCAP end to end tests 
   # Mariner is based on Fedora and requires different commands from Ubuntu 
-  MarinerBuild:    
+  AzureLinuxBuild:    
     strategy:
       # Launch a VM and build once per each combination of linux image, VM size and buildType
       max-parallel: 1
       matrix:
         sizeName: [CoffeeLake]
-        imageName: ["Mariner"]
+        imageName: ["Mariner2", "AzureLinux3"]
         buildType: [RelWithDebInfo, Debug]
         include:
           - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
-            imageName: Mariner
+            imageName: Mariner2
+          - imageUrn: "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-gen2:latest"
+            imageName: AzureLinux3
           - sizeName: CoffeeLake
             size: Standard_DC4s_v2
             location: uksouth
@@ -603,67 +605,67 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "dnfUpgrade"
-            script: "sudo dnf upgrade -y"
+            script: "sudo tdnf upgrade -y"
             
       - name: Install kernel devel, automake, glibc,  glibc-devel and libSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPrerequisites1"
-            script: "sudo dnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
+            script: "sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: "sudo dnf install libcurl-devel -y"
+            script: "sudo tdnf install libcurl-devel -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "sudo dnf install pkg-config -y"
+            script: "sudo tdnf install pkg-config -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo dnf install nlohmann-json-devel -y"
+            script: "sudo tdnf install nlohmann-json-devel -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "sudo dnf install sqlite -y"
+            script: "sudo tdnf install sqlite -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo dnf install sqlite-devel -y"
+            script: "sudo tdnf install sqlite-devel -y"
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGit"
-            script: "sudo dnf install git -y"
+            script: "sudo tdnf install git -y"
 
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
-            script: "sudo dnf install cmake -y"
+            script: "sudo tdnf install cmake -y"
             
       - name: Install kernel-headers
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installKernelHeaders"
-            script: 'sudo dnf install kernel-headers -y'
+            script: 'sudo tdnf install kernel-headers -y'
             
       - name: Install binutils 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBinutils"
-            script: 'sudo dnf install binutils -y'
+            script: 'sudo tdnf install binutils -y'
             
       - name: Clone GoogleTest 
         uses: ./.github/actions/actionAzVmRunCommand
