@@ -667,6 +667,18 @@ jobs:
             commandName: "installBinutils"
             script: 'sudo tdnf install binutils -y'
             
+      - name: Install gcc 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGcc"
+            script: 'sudo tdnf install gcc -y'
+            
+      - name: Install g++ 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGplusplus"
+            script: 'sudo tdnf install g++ -y'
+            
       - name: Clone GoogleTest 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
