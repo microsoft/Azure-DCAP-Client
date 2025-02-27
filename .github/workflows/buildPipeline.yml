@@ -352,8 +352,10 @@ jobs:
       max-parallel: 1
       matrix:
         sizeName: [CoffeeLake]
-        imageName: ["Ubuntu20_04", "Ubuntu22_04"]
+        imageName: ["Ubuntu20_04", "Ubuntu22_04", "Ubuntu24_04"]
         include:
+          - imageUrn: "Canonical:ubuntu-24_04-lts:server:latest"
+          - imageName: Ubuntu24_04
           - imageUrn: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
             imageName: Ubuntu22_04
           - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
