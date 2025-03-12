@@ -23,6 +23,7 @@ static void DefaultLogCallback(sgx_ql_log_level_t level, const char* message)
 
 TEST_MODULE_INITIALIZE(InitializeModule)
 {
+    logger_function = DefaultLogCallback;
     logger_callback = DefaultLogCallback;
 }
 

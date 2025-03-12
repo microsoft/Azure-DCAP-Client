@@ -23,8 +23,8 @@
 #include "environment.h"
 
 using namespace std;
-
-sgx_ql_logging_function_t logger_callback = nullptr;
+sgx_ql_logging_callback_t logger_callback = nullptr;
+sgx_ql_logging_function_t logger_function = nullptr;
 static sgx_ql_log_level_t debug_log_level = SGX_QL_LOG_NONE;
 static bool debug_log_initialized = false;
 static mutex log_init_mutex;
@@ -96,16 +96,20 @@ static inline void enable_debug_logging(string level)
         debug_log_level = sgx_level;
 
         auto logging_enabled_message = "Debug Logging Enabled";
-        if (logger_callback != nullptr)
-        {
-            logger_callback(SGX_QL_LOG_INFO, logging_enabled_message);
-        }
-        else 
+        if ((logger_callback == nullptr) && (logger_function == nullptr))
         {
             printf(
                 "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
                 log_level_string(SGX_QL_LOG_INFO).c_str(),
                 logging_enabled_message);
+        }
+        if (logger_callback != nullptr)
+        {
+            logger_callback(SGX_QL_LOG_INFO, logging_enabled_message);
+        }
+        if (logger_function != nullptr)
+        {
+            logger_function(SGX_QL_LOG_INFO, logging_enabled_message);
         }
     }
 }
@@ -137,7 +141,6 @@ void init_debug_log()
 //
 void log_message(sgx_ql_log_level_t level, const char* message)
 {
-	
 	auto now = chrono::system_clock::now();
 	time_t nowTimeT = chrono::system_clock::to_time_t(now);
     char date[100];
@@ -181,22 +184,30 @@ void log_message(sgx_ql_log_level_t level, const char* message)
 	}
 #endif
 	
-    if (logger_callback != nullptr)
-    {
-        logger_callback(level, message);
-    }
-    else 
+
+    if ((logger_function == nullptr) && (logger_callback == nullptr))
     {
         init_debug_log();
         if (debug_log_level != SGX_QL_LOG_NONE)
         {
             if (level <= debug_log_level)
             {
-                printf("%s", logMessage.c_str());
+                printf(
+                    "Azure Quote Provider: libdcap_quoteprov.so [%s]: %s\n",
+                    log_level_string(level).c_str(),
+                    message);
             }
         }
     }
-	fflush(stdout);
+    if (logger_callback != nullptr)
+    {
+        logger_callback(level, message);
+    }
+    if (logger_function != nullptr)
+    {
+        logger_function(level, message);
+    }
+    fflush(stdout);
 
 #ifndef __LINUX__
 	// Emitting Events only in Windows
@@ -234,7 +245,8 @@ void log(sgx_ql_log_level_t level, const char* fmt, ...)
     va_list args;
     va_start(args, fmt);
 #pragma warning(suppress : 25141) // all fmt buffers come from static strings
-    vsnprintf(message, sizeof(message), fmt, args);
+    vsnprintf(message, sizeof(message),
+        fmt, args);
     va_end(args);
 
     // ensure buf is always null-terminated
