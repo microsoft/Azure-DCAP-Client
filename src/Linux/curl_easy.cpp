@@ -109,6 +109,7 @@ std::unique_ptr<curl_easy> curl_easy::create(
     easy->set_opt_or_throw(CURLOPT_HEADERDATA, easy.get());
     easy->set_opt_or_throw(CURLOPT_FAILONERROR, 1L);
     easy->set_opt_or_throw(CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+    easy->set_opt_or_throw(CURLOPT_FORBID_REUSE, 1L);
 
     // If request is routed to THIM agent for SGX certificate fetch, set
     // response timeout to 1 s 
@@ -162,7 +163,7 @@ void curl_easy::perform() const
 	for(int i = 0; i < MAXIMUM_RETRIES && !finished; i++){
 		result = curl_easy_perform(handle);
 		
-		if(result == CURLE_OPERATION_TIMEDOUT){
+		if(result == CURLE_OPERATION_TIMEDOUT || result == CURLE_COULDNT_CONNECT || result == CURLE_RECV_ERROR){
 			std::this_thread::sleep_for(std::chrono::milliseconds(retry_delay));
 			retry_delay *= 2;
 		}else{
@@ -364,3 +365,4 @@ void curl_easy::throw_on_error(CURLcode code, const char* function)
         throw curl_easy::error(code, function);
     }
 }
+
