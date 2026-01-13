@@ -145,6 +145,26 @@ static std::string get_env_variable(std::string env_variable)
     return retval.first;
 }
 
+
+static std::string format_time_utc(time_t t)
+{
+    char buf[32]{};
+    std::tm tm_utc{};
+
+#ifdef _WIN32
+    if (gmtime_s(&tm_utc, &t) != 0)
+        return "gmtime_s_failed";
+#else
+    // POSIX thread-safe version
+    if (gmtime_r(&t, &tm_utc) == nullptr)
+        return "gmtime_r_failed";
+#endif
+
+    std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &tm_utc);
+    return std::string(buf);
+}
+
+
 static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
     const std::string& cert_url,
     bool checkExpiration = true)
@@ -347,20 +367,46 @@ static int check_cache_expiry_env_variable()
 {
     std::string cache_expiry =
         get_env_variable(ENV_AZDCAP_CACHE_EXPIRY_IN_SECONDS);
+    int cache_expiry_int = DEFAULT_CACHE_EXPIRY;
 
     if (cache_expiry.empty())
     {
         log(SGX_QL_LOG_INFO, "Using cache expiry time of the colleral.");
-        return DEFAULT_CACHE_EXPIRY;
+        return cache_expiry_int;
     }
-    else
+
+    try
     {
-        log(SGX_QL_LOG_WARNING,
+        cache_expiry_int = std::stoi(cache_expiry);
+
+        if (cache_expiry_int < 0)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Invalid negative value for %s: '%s'. "
+                "Using collateral-provided cache expiry instead.",
+                ENV_AZDCAP_CACHE_EXPIRY_IN_SECONDS,
+                cache_expiry.c_str());
+            return DEFAULT_CACHE_EXPIRY;
+        }
+
+        log(SGX_QL_LOG_INFO,
             "Using %s envvar for cache expiry time, set to %d seconds.",
             ENV_AZDCAP_CACHE_EXPIRY_IN_SECONDS,
-            cache_expiry);
-        return std::stoi(cache_expiry);
+            cache_expiry_int);
     }
+
+    catch (const std::exception& e)
+    {
+        log(SGX_QL_LOG_ERROR,
+            "Invalid value for %s: '%s'. Error: '%s'. "
+            "Using collateral-provided cache expiry instead.",
+            ENV_AZDCAP_CACHE_EXPIRY_IN_SECONDS,
+            cache_expiry.c_str(),
+            e.what());
+        return DEFAULT_CACHE_EXPIRY;
+    }
+
+    return cache_expiry_int;
 }
 
 static std::string get_region_url()
@@ -578,25 +624,96 @@ static inline quote3_error_t fill_qpl_string_buffer(
     return SGX_QL_SUCCESS;
 }
 
+bool get_cache_expiry_value_from_service(
+    const string& cache_control,
+    const string& cache_max_age,
+    time_t& cache_time_seconds)
+{
+    constexpr int MAX_CACHE_TIME_SECONDS = 86400;
+    if (cache_control.empty() && cache_max_age.empty())
+    {
+        cache_time_seconds = MAX_CACHE_TIME_SECONDS;
+        return true;
+    }
+    else if (!cache_max_age.empty())
+    {
+        try
+        {
+            cache_time_seconds = stoi(cache_max_age);
+        }
+        catch (const std::invalid_argument& e)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Invalid argument thrown when parsing cache-max-age. Header "
+                "text: '%s' Error: '%s'. Collateral will not be cached",
+                cache_max_age.c_str(),
+                e.what());
+            return false;
+        }
+        catch (const std::out_of_range& e)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Invalid argument thrown when parsing cache-max-age. Header "
+                "text: '%s' Error: '%s'. Collateral will not be cached",
+                cache_max_age.c_str(),
+                e.what());
+            return false;
+        }
+    }
+    else if (!cache_control.empty())
+    {
+        size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
+        if (index == std::string::npos)
+        {
+            cache_time_seconds = MAX_CACHE_TIME_SECONDS;
+        }
+        else
+        {
+            cache_time_seconds = stoi(
+                cache_control.substr(index + CACHE_CONTROL_MAX_AGE.length()));
+        }
+    }
+    return true;
+
+}
+
 //
-// Determine the time cache should invalidate for given certificate.
-// The return object from the service is a string value that
-// defines certificate expiration time in seconds. In this function
-// we convert the returned value to ingeter and uses that to define
-// the expiration time of the certificate cached locally.
+// Determine time cache should invalidate for given collateral
 //
-bool get_cert_cache_expiration_time(
+bool get_cache_expiration_time(
+    const string& cache_control,
     const string& cache_max_age,
     const string& url,
     time_t& expiration_time)
 {
-    time_t max_age = 0;
-    tm* max_age_s = localtime(&max_age);
-    int cache_time_seconds = 0;
     constexpr int MAX_CACHE_TIME_SECONDS = 86400;
+    time_t cache_time_seconds = 0;
+
     try
     {
-        cache_time_seconds = stoi(cache_max_age);
+        int cache_expiry_env_variable = check_cache_expiry_env_variable();
+
+        if (cache_expiry_env_variable == DEFAULT_CACHE_EXPIRY)
+        {
+            get_cache_expiry_value_from_service(
+                cache_control, cache_max_age, cache_time_seconds);
+        }
+        else
+        {
+            cache_time_seconds = cache_expiry_env_variable;
+        }
+
+        
+        if (cache_time_seconds < 0)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Negative cache max-age '%d' for '%s'. Collateral will not be "
+                "cached.",
+                cache_time_seconds,
+                url.c_str());
+            return false;
+        }
+
         if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
         {
             log(SGX_QL_LOG_ERROR,
@@ -610,9 +727,9 @@ bool get_cert_cache_expiration_time(
     catch (const std::invalid_argument& e)
     {
         log(SGX_QL_LOG_ERROR,
-            "Invalid argument thrown when parsing cache-control. Header text: "
-            "'%s' Error: '%s'. Collateral will not be cached",
-            cache_max_age.c_str(),
+            "Invalid argument thrown when parsing cache-control. Header "
+            "text: '%s' Error: '%s'. Collateral will not be cached",
+            cache_control.c_str(),
             e.what());
         return false;
     }
@@ -621,83 +738,23 @@ bool get_cert_cache_expiration_time(
         log(SGX_QL_LOG_ERROR,
             "Invalid argument thrown when parsing cache-control. Header "
             "text: '%s' Error: '%s'. Collateral will not be cached",
-            cache_max_age.c_str(),
+            cache_control.c_str(),
             e.what());
         return false;
     }
 
-    max_age_s->tm_sec += cache_time_seconds;
-    expiration_time = time(nullptr) + mktime(max_age_s);
-    log(SGX_QL_LOG_INFO,
-        "Certificate '%s' will remain valid in cache for '%d' seconds",
-        url.c_str(),
-        cache_time_seconds);
-    return true;
-}
+    expiration_time = time(nullptr) + cache_time_seconds;
+    const std::string exp_str = format_time_utc(expiration_time);
 
-//
-// Determine time cache should invalidate for given collateral
-//
-bool get_cache_expiration_time(
-    const string& cache_control,
-    const string& url,
-    time_t& expiration_time)
-{
-    time_t max_age = 0;
-    tm* max_age_s = localtime(&max_age);
-    size_t index = cache_control.find(CACHE_CONTROL_MAX_AGE);
-    int cache_time_seconds = 0;
-    constexpr int MAX_CACHE_TIME_SECONDS = 86400;
-    if (index != string::npos)
-    {
-        try
-        {
-            int cache_expiry_env_variable = check_cache_expiry_env_variable();
-            if (cache_expiry_env_variable == DEFAULT_CACHE_EXPIRY)
-            {
-                cache_time_seconds = stoi(cache_control.substr(
-                    index + CACHE_CONTROL_MAX_AGE.length()));
-            }
-            else
-            {
-                cache_time_seconds = cache_expiry_env_variable;
-            }
-            if (cache_time_seconds > MAX_CACHE_TIME_SECONDS)
-            {
-                log(SGX_QL_LOG_ERROR,
-                    "Caching control '%d' larger than maximum '%d' seconds. "
-                    "Collateral will not be cached",
-                    cache_time_seconds,
-                    MAX_CACHE_TIME_SECONDS);
-                return false;
-            }
-        }
-        catch (const std::invalid_argument& e)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
-                cache_control.c_str(),
-                e.what());
-            return false;
-        }
-        catch (const std::out_of_range& e)
-        {
-            log(SGX_QL_LOG_ERROR,
-                "Invalid argument thrown when parsing cache-control. Header "
-                "text: '%s' Error: '%s'. Collateral will not be cached",
-                cache_control.c_str(),
-                e.what());
-            return false;
-        }
-    }
-
-    max_age_s->tm_sec += cache_time_seconds;
-    expiration_time = time(nullptr) + mktime(max_age_s);
-    log(SGX_QL_LOG_INFO,
-        "Collateral '%s' will remain valid in cache for '%d' seconds",
+    log(
+        SGX_QL_LOG_INFO,
+        "Collateral '%s' will remain valid in cache for '%d' seconds. "
+        "Expiration=%s (epoch=%lld)",
         url.c_str(),
-        cache_time_seconds);
+        cache_time_seconds,
+        exp_str.c_str(),
+        static_cast<long long>(expiration_time));
+
     return true;
 }
 
@@ -1643,7 +1700,7 @@ static quote3_error_t get_collateral(
             {
                 // Update the cache
                 time_t expiry = 0;
-                if (get_cache_expiration_time(cache_control, url, expiry))
+                if (get_cache_expiration_time(cache_control, "" ,url, expiry))
                 {
                     local_cache_add(
                         url,
@@ -1716,7 +1773,6 @@ quote3_error_t store_certificate_internal(
     sgx_ql_config_t** pp_quote_config)
 {
     quote3_error_t retval = SGX_QL_CERTS_UNAVAILABLE;
-    sgx_plat_error_t get_cache_header_operation;
     sgx_ql_config_t temp_config{};
     std::string cert_data;
     std::unique_ptr<curl_easy> curl =
@@ -1769,37 +1825,19 @@ quote3_error_t store_certificate_internal(
     buf += cert_data_size;
     assert(buf == buf_end);
 
-    // Check if the cache time is set by an environment variable. If not,
-    // extract the collateral exoiry time from the response header.
     std::string cache_control;
-    int cache_expiry_env_variable = check_cache_expiry_env_variable();
-    if (cache_expiry_env_variable == DEFAULT_CACHE_EXPIRY)
-    {
-        get_cache_header_operation = extract_from_json(
-            json_body, headers::CERT_CACHE_CONTROL, &cache_control);
-    }
-    else
-    {
-        cache_control = cache_expiry_env_variable;
-        get_cache_header_operation = SGX_PLAT_ERROR_OK;
-    }
-
-    log(SGX_QL_LOG_INFO,
-        "Setting cache expiry time to %d seconds.",
-        cache_control);
+    auto get_cache_header_operation = extract_from_json(
+        json_body, headers::CERT_CACHE_CONTROL, &cache_control);
     retval = convert_to_intel_error(get_cache_header_operation);
-    if (retval == SGX_QL_SUCCESS)
+    time_t expiration_time = 0;
+
+    try
     {
-        log(SGX_QL_LOG_INFO,
-            "%s : %s",
-            headers::CERT_CACHE_CONTROL,
-            cache_control.c_str());
-        time_t expiry = 0;
-        if (get_cert_cache_expiration_time(
-                cache_control, cached_file_name, expiry))
+        if (get_cache_expiration_time(
+                "", cache_control, cached_file_name, expiration_time))
         {
             local_cache_add(
-                cached_file_name, expiry, buf_size, *pp_quote_config);
+                cached_file_name, expiration_time, buf_size, *pp_quote_config);
             log(SGX_QL_LOG_INFO,
                 "Stored certificate in cache in the following location: %s.",
                 get_cached_file_location(cached_file_name).c_str());
@@ -1811,7 +1849,7 @@ quote3_error_t store_certificate_internal(
                 "local cache.");
         }
     }
-    else
+    catch (const std::exception& ex)
     {
         log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
     }
