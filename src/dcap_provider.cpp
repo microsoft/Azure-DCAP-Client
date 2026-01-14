@@ -388,6 +388,16 @@ static int check_cache_expiry_env_variable()
                 cache_expiry.c_str());
             return DEFAULT_CACHE_EXPIRY;
         }
+        else if (cache_expiry_int > MAX_CACHE_TIME_SECONDS)
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Cache expiry environment variable %s: '%s, set to more than permitted value for %d'. "
+                "Using collateral-provided cache expiry instead.",
+                ENV_AZDCAP_CACHE_EXPIRY_IN_SECONDS,
+                cache_expiry.c_str(),
+                MAX_CACHE_TIME_SECONDS);
+            return DEFAULT_CACHE_EXPIRY;
+        }
 
         log(SGX_QL_LOG_INFO,
             "Using %s envvar for cache expiry time, set to %d seconds.",
