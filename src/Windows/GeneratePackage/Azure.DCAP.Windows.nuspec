@@ -2,16 +2,20 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.12.4</version>
+        <version>1.13.0</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes>
-		Checking release pipelines
+		Updating default api version to v4
+		Adding env variable to set cache expiry time by the user
 	  </releaseNotes>
         <description>
-            Checking if release pipelines work for Azure DCAP package
+		Intel is deprecating api verison v2/v3. To stay compliant Azure DCAP
+		default api-version is updated to v4.
+		Adding env variable to set cache expiry time by the user. The value can
+		be set between 0 to 86400 seconds(24 hours).
         </description>
         <projectUrl>https://github.com/Microsoft/Azure-DCAP-Client/</projectUrl>
         <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>

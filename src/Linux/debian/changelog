@@ -1,7 +1,8 @@
-az-dcap-client (1.12.4) stable; urgency=medium
-  * Check Azure GitHub release pipeline
+az-dcap-client (1.13.0) stable; urgency=medium
+  * Updating default api version to v4.
+  * Adding env variable to set cache expiry time by the user
   
--- Gunjan Munjal<gumunjal@microsoft.com>  Fri, 26 November 2023 21:07:00 +0000
+-- Gunjan Munjal<gumunjal@microsoft.com>  Fri, 16 January 2026 16:47:00 +0000
 
 az-dcap-client (1.12.3) stable; urgency=medium
   * Updating the TLS version to 1.3 to be Azure compliant

@@ -702,17 +702,15 @@ bool get_cache_expiration_time(
     try
     {
         int cache_expiry_env_variable = check_cache_expiry_env_variable();
+        get_cache_expiry_value_from_service(
+            cache_control, cache_max_age, cache_time_seconds);
 
-        if (cache_expiry_env_variable == DEFAULT_CACHE_EXPIRY)
+        // Set the caching expiry value to min of the collateral expiry value
+        // and AZDCAP_CACHE_EXPIRY_IN_SECONDS(if set my customer)
+        if (cache_expiry_env_variable > 0)
         {
-            get_cache_expiry_value_from_service(
-                cache_control, cache_max_age, cache_time_seconds);
+            cache_time_seconds = min(cache_time_seconds, cache_expiry_env_variable);
         }
-        else
-        {
-            cache_time_seconds = cache_expiry_env_variable;
-        }
-
         
         if (cache_time_seconds < 0)
         {
@@ -1841,31 +1839,37 @@ quote3_error_t store_certificate_internal(
     retval = convert_to_intel_error(get_cache_header_operation);
     time_t expiration_time = 0;
 
-    try
+    if (retval == SGX_QL_SUCCESS)
     {
-        if (get_cache_expiration_time(
+        try
+        {
+            if (get_cache_expiration_time(
                 "", cache_control, cached_file_name, expiration_time))
-        {
-            local_cache_add(
-                cached_file_name, expiration_time, buf_size, *pp_quote_config);
-            log(SGX_QL_LOG_INFO,
-                "Stored certificate in cache in the following location: %s.",
-                get_cached_file_location(cached_file_name).c_str());
+            {
+                local_cache_add(
+                    cached_file_name, expiration_time, buf_size, *pp_quote_config);
+                log(SGX_QL_LOG_INFO,
+                    "Stored certificate in cache in the following location: %s.",
+                    get_cached_file_location(cached_file_name).c_str());
+            }
+            else
+            {
+                log(SGX_QL_LOG_ERROR,
+                    "Unable to retrieve the certificate expiry when writing to "
+                    "local cache.");
+            }
         }
-        else
+        catch (const std::exception& ex)
         {
-            log(SGX_QL_LOG_ERROR,
-                "Unable to retrieve the certificate expiry when writing to "
-                "local cache.");
+            log(SGX_QL_LOG_ERROR, "Exception occuered when trying to add certificate to cache.");
         }
     }
-    catch (const std::exception& ex)
+    else
     {
-        log(SGX_QL_LOG_ERROR, "Unable to add certificate to local cache.");
+        log(SGX_QL_LOG_ERROR, "Unable to retrieve the certificate expiry when writing to local cache.");
     }
 
     retval = SGX_QL_SUCCESS;
-
     return retval;
 }
 
