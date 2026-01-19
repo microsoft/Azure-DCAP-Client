@@ -39,6 +39,7 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+	setup: advanced
       
     - name: Update permissions
       run: sudo chmod +x ./.github/workflows/scripts/install_prereqs.cmd
