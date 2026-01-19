@@ -709,7 +709,7 @@ bool get_cache_expiration_time(
         // and AZDCAP_CACHE_EXPIRY_IN_SECONDS(if set my customer)
         if (cache_expiry_env_variable > 0)
         {
-            cache_time_seconds = min(cache_time_seconds, cache_expiry_env_variable);
+            cache_time_seconds = min(cache_time_seconds, static_cast<time_t>(cache_expiry_env_variable));
         }
         
         if (cache_time_seconds < 0)
