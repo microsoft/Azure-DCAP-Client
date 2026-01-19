@@ -101,7 +101,6 @@
     <ClInclude Include="ext\intel\sgx_key.h" />
     <ClInclude Include="ext\intel\sgx_attributes.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="resources\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dcap_provider.rc" />
