@@ -424,7 +424,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-|
+            script: |
               while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
                 echo "Waiting for dpkg lock to be released..."
                 sleep 5
