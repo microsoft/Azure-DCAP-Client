@@ -121,25 +121,25 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo apt-get install nlohmann-json3-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install nlohmann-json3-dev -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "sudo apt-get install sqlite3 -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install sqlite3 -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo apt-get install libsqlite3-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libsqlite3-dev -y"
               
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
-            script: "sudo apt-get install cmake -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install cmake -y"
               
       - name: Clone Azure DCAP 
         uses: ./.github/actions/actionAzVmRunCommand
@@ -215,7 +215,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 4h
+        run: sleep 0h
 
       - name: Cleanup
         if: always()
@@ -437,25 +437,25 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo apt-get install nlohmann-json3-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install nlohmann-json3-dev -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "sudo apt-get install sqlite3 -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install sqlite3 -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo apt-get install libsqlite3-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libsqlite3-dev -y"
               
       - name: Install libgtest
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installLibgtest"
-            script: "sudo apt-get install libgtest-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libgtest-dev -y"
               
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
@@ -519,7 +519,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 4h
+        run: sleep 0h
 
       - name: Cleanup
         if: always()
@@ -623,37 +623,37 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "sudo tdnf install pkg-config -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install pkg-config -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "sudo tdnf install nlohmann-json-devel -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install nlohmann-json-devel -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "sudo tdnf install sqlite -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "sudo tdnf install sqlite-devel -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite-devel -y"
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGit"
-            script: "sudo tdnf install git -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install git -y"
 
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
-            script: "sudo tdnf install cmake -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install cmake -y"
             
       - name: Install kernel-headers
         uses: ./.github/actions/actionAzVmRunCommand
@@ -753,7 +753,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 4h
+        run: sleep 0h
 
       - name: Cleanup
         if: always()
