@@ -103,12 +103,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: |
-              while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-                echo "Waiting for dpkg lock to be released..."
-                sleep 5
-              done
-              sudo apt-get install libcurl4-openssl-dev -y
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libcurl4-openssl-dev -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
@@ -424,12 +419,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: |
-              while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-                echo "Waiting for dpkg lock to be released..."
-                sleep 5
-              done
-              sudo apt install libcurl4-openssl-dev -y
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libcurl4-openssl-dev -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
@@ -627,12 +617,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: |
-              while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-                echo "Waiting for dpkg lock to be released..."
-                sleep 5
-              done
-              sudo tdnf install libcurl-devel -y
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install libcurl-devel -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
