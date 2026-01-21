@@ -97,7 +97,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installLibSSL"
-            script: "sudo apt-get install libssl-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libssl-dev -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
@@ -109,13 +109,13 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "sudo apt-get install pkg-config -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install pkg-config -y"
               
       - name: Install buildEssential
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBuildEssential"
-            script: "sudo apt-get install build-essential -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install build-essential -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
@@ -215,7 +215,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 0h
+        run: sleep 4h
 
       - name: Cleanup
         if: always()
@@ -413,7 +413,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installLibSSL"
-            script: "sudo apt-get install libssl-dev -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install libssl-dev -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
@@ -425,13 +425,13 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "sudo apt-get install pkg-config -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install pkg-config -y"
               
       - name: Install buildEssential
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBuildEssential"
-            script: "sudo apt install build-essential -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt install build-essential -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
@@ -461,7 +461,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
-            script: "sudo apt-get install cmake -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install cmake -y"
               
       - name: Install Google test
         uses: ./.github/actions/actionAzVmRunCommand
@@ -519,7 +519,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 0h
+        run: sleep 4h
 
       - name: Cleanup
         if: always()
@@ -753,7 +753,7 @@ jobs:
 
       - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
         if: failure()
-        run: sleep 0h
+        run: sleep 4h
 
       - name: Cleanup
         if: always()
