@@ -126,8 +126,8 @@ static constexpr uint8_t TDX_TEST_FMSPC[] =
     {0x00, 0x80, 0x6F, 0x05, 0x00, 0x00};
 
 const uint16_t custom_param_length = 45;
-const char* custom_param = "tcbEvaluationDataNumber=11;region=us central";
-std::string tcbEvaluationDataNumber = "11";
+const char* custom_param = "tcbEvaluationDataNumber=14;region=us central";
+std::string tcbEvaluationDataNumber = "14";
 
 const uint16_t incorrect_custom_param_length = 24;
 const char* incorrect_custom_param = "tcbEvaluationDataNum=11";
@@ -554,6 +554,19 @@ static void GetCrlTestICXV3()
     VerifyCrlOutput(params);
 }
 
+static void GetCrlTestICXV4()
+{
+    static const char* TEST_CRL_URL =
+        "https://api.trustedservices.intel.com/sgx/certification/v4/pckcrl?ca=platform&encoding=pem";
+    sgx_ql_get_revocation_info_params_t params = {
+        SGX_QL_REVOCATION_INFO_VERSION_1,
+        sizeof(ICX_TEST_FMSPC),
+        ICX_TEST_FMSPC,
+        1,
+        &TEST_CRL_URL };
+    VerifyCrlOutput(params);
+}
+
 static inline void VerifyCollateralCommon(sgx_ql_qve_collateral_t* collateral)
 {
     ASSERT_TRUE(collateral != nullptr);
@@ -620,7 +633,44 @@ static void GetVerificationCollateralTest()
 //
 // Fetches and validates verification APIs of QPL with custom params provided
 //
-static void GetVerificationCollateralTestWithParams()
+static void GetVerificationCollateralTestICXWithCustomParams()
+{
+    // Test input (choose an arbitrary Azure server)
+    sgx_ql_qve_collateral_t* collateral = nullptr;
+    std::string tcbInfoTcbEvaluationDataNumber;
+    std::string enclaveIdentityTcbEvaluationDataNumber;
+    nlohmann::json json_body;
+    quote3_error_t result =
+        sgx_ql_get_quote_verification_collateral_with_params(
+            ICX_TEST_FMSPC,
+            sizeof(ICX_TEST_FMSPC),
+            "processor",
+            custom_param,
+            custom_param_length,
+            &collateral);
+    ASSERT_EQ(SGX_QL_SUCCESS, result);
+    json_body = nlohmann::json::parse(collateral->tcb_info);
+    extract_from_json(
+        json_body.flatten(),
+        "/tcbInfo/tcbEvaluationDataNumber",
+        &tcbInfoTcbEvaluationDataNumber);
+    ASSERT_TRUE(
+        tcbInfoTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
+    json_body = nlohmann::json::parse(collateral->qe_identity);
+    extract_from_json(
+        json_body.flatten(),
+        "/enclaveIdentity/tcbEvaluationDataNumber",
+        &enclaveIdentityTcbEvaluationDataNumber);
+    ASSERT_TRUE(
+        enclaveIdentityTcbEvaluationDataNumber.compare(
+            tcbEvaluationDataNumber) == 0);
+    VerifyCollateral(collateral);
+}
+
+//
+// Fetches and validates verification APIs of QPL with custom params provided
+//
+static void GetVerificationCollateralTestWithCustomParams()
 {
     // Test input (choose an arbitrary Azure server)
     sgx_ql_qve_collateral_t* collateral = nullptr;
@@ -634,7 +684,7 @@ static void GetVerificationCollateralTestWithParams()
             custom_param,
             custom_param_length,
             &collateral);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
+    ASSERT_EQ(SGX_QL_SUCCESS, result);
     json_body = nlohmann::json::parse(collateral->tcb_info);
     extract_from_json(
         json_body.flatten(),
@@ -672,7 +722,7 @@ static void GetVerificationCollateralTestWithIncorrectParams()
 //
 // Fetches and validates verification APIs of QPL
 //
-static void GetVerificationCollateralTestICXV3()
+static void GetVerificationCollateralTestICX()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral(
@@ -685,41 +735,9 @@ static void GetVerificationCollateralTestICXV3()
 }
 
 //
-// Fetches and validates verification APIs of QPL with custom params provided
-//
-static void GetVerificationCollateralTestICXV3WithParams()
-{
-    sgx_ql_qve_collateral_t* collateral = nullptr;
-    std::string tcbEvaluationDataNumber;
-    std::string enclaveIdentityTcbEvaluationDataNumber;
-    quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
-            ICX_TEST_FMSPC,
-            sizeof(ICX_TEST_FMSPC),
-            "platform",
-            custom_param,
-            custom_param_length,
-            &collateral);
-    ASSERT_TRUE(SGX_QL_SUCCESS == result);
-    nlohmann::json json_body = nlohmann::json::parse(collateral->tcb_info);
-    extract_from_json(
-        json_body.flatten(),
-        "/tcbInfo/tcbEvaluationDataNumber",
-        &tcbEvaluationDataNumber);
-    ASSERT_TRUE(tcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
-    json_body = nlohmann::json::parse(collateral->qe_identity);
-    extract_from_json(
-        json_body.flatten(),
-        "/enclaveIdentity/tcbEvaluationDataNumber",
-        &enclaveIdentityTcbEvaluationDataNumber);
-    ASSERT_TRUE(
-        enclaveIdentityTcbEvaluationDataNumber.compare(tcbEvaluationDataNumber) == 0);
-    VerifyCollateral(collateral);
-}
-
-//
 // Validates the return code if curl request to the THIM service failed.
 //
-static void GetVerificationCollateralTestICXV3WithIncorrectParams()
+static void GetVerificationCollateralTestICXWithIncorrectParams()
 {
     sgx_ql_qve_collateral_t* collateral = nullptr;
     quote3_error_t result = sgx_ql_get_quote_verification_collateral_with_params(
@@ -876,7 +894,7 @@ boolean RunQuoteProviderTestsWithCustomParams(bool caching_enabled = false)
     auto duration_curl_cert = MeasureFunction(GetCertsTest);
     GetCrlTest();
     auto duration_curl_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestWithParams);
+        MeasureFunction(GetVerificationCollateralTestWithCustomParams);
     GetRootCACrlTest();
 
     //
@@ -886,7 +904,7 @@ boolean RunQuoteProviderTestsWithCustomParams(bool caching_enabled = false)
     GetCrlTest();
     GetRootCACrlTest();
     auto duration_local_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestWithParams);
+        MeasureFunction(GetVerificationCollateralTestWithCustomParams);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification_with_params,
@@ -902,16 +920,16 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     local_cache_clear();
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
-    auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_curl_verification = MeasureFunction(GetVerificationCollateralTestICX);
     GetRootCACrlTest();
 
     //
     // Second pass: Ensure that we ONLY get data from the cache
     //
     auto duration_local_cert = MeasureFunction(GetCertsTestICXV3);
-    GetCrlTestICXV3();
+    GetCrlTestICXV4();
     GetRootCACrlTest();
-    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTestICXV3);
+    auto duration_local_verification = MeasureFunction(GetVerificationCollateralTestICX);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification,
@@ -921,13 +939,13 @@ boolean RunQuoteProviderTestsICXV3(bool caching_enabled = false)
     return true;
 }
 
-boolean RunQuoteProviderTestsICXV3WithParam(bool caching_enabled = false)
+boolean RunQuoteProviderTestsICXV3WithCustomParams(bool caching_enabled = false)
 {
     local_cache_clear();
     auto duration_curl_cert = MeasureFunction(GetCertsTestICXV3);
     GetCrlTestICXV3();
     auto duration_curl_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+        MeasureFunction(GetVerificationCollateralTestICXWithCustomParams);
     GetRootCACrlTest();
 
     //
@@ -937,7 +955,7 @@ boolean RunQuoteProviderTestsICXV3WithParam(bool caching_enabled = false)
     GetCrlTestICXV3();
     GetRootCACrlTest();
     auto duration_local_verification_with_params =
-        MeasureFunction(GetVerificationCollateralTestICXV3WithParams);
+        MeasureFunction(GetVerificationCollateralTestICXWithCustomParams);
     VerifyDurationChecks(
         duration_local_cert,
         duration_local_verification_with_params,
@@ -1304,7 +1322,7 @@ TEST(testQuoteProv, quoteProviderTestsData)
 #endif
 }
 
-TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
+TEST(testQuoteProv, quoteProviderTestsV2Data)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -1325,7 +1343,47 @@ TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
 #endif
 }
 
-TEST(testQuoteProv, quoteProviderTestsV2Data)
+TEST(testQuoteProv, quoteProviderTestsV3Data)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironment("v3");
+    ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
+    ASSERT_TRUE(GetQveIdentityTest());
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, quoteProviderTestsV4Data)
+{
+    libary_type_t library = LoadFunctions();
+    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+
+    //
+    // Get the data from the service
+    //
+    SetupEnvironment("v4");
+    ASSERT_TRUE(RunQuoteProviderTests());
+    ASSERT_TRUE(RunQuoteProviderTestsWithCustomParams());
+    ASSERT_TRUE(GetQveIdentityTest());
+
+#if defined __LINUX__
+    dlclose(library);
+#else
+    FreeLibrary(library);
+#endif
+}
+
+TEST(testQuoteProv, quoteProviderTestsV2DataFromService)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -1357,7 +1415,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
     SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
-    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1367,7 +1425,7 @@ TEST(testQuoteProv, quoteProviderTestsV3DataFromService)
 #endif
 }
 
-TEST(testQuoteProv, quoteProviderTestsV3Data)
+TEST(testQuoteProv, quoteProviderTestsV4DataFromService)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -1375,10 +1433,11 @@ TEST(testQuoteProv, quoteProviderTestsV3Data)
     //
     // Get the data from the service
     //
-    SetupEnvironment("v3");
+    SetupEnvironment("v4");
+    SetupEnvironmentToReachSecondary();
     ASSERT_TRUE(RunQuoteProviderTests());
     ASSERT_TRUE(RunQuoteProviderTestsICXV3());
-    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithParam());
+    ASSERT_TRUE(RunQuoteProviderTestsICXV3WithCustomParams());
     ASSERT_TRUE(GetQveIdentityTest());
 
 #if defined __LINUX__
@@ -1417,7 +1476,9 @@ TEST(testQuoteProv, quoteProviderTestsWithIncorrectCustomParam)
     SetupEnvironment("v2");
     GetVerificationCollateralTestWithIncorrectParams();
     SetupEnvironment("v3");
-    GetVerificationCollateralTestICXV3WithIncorrectParams();
+    GetVerificationCollateralTestICXWithIncorrectParams();
+    SetupEnvironment("v4");
+    GetVerificationCollateralTestICXWithIncorrectParams();
 
 #if defined __LINUX__
     dlclose(library);
@@ -1453,7 +1514,7 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
     //
     // Get the data from the service
     //
-    SetupEnvironment("v2");
+    SetupEnvironment("v4");
     SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
     ASSERT_TRUE(RunCachePermissionTests(&library));
@@ -1473,7 +1534,7 @@ TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
     //
     // Get the data from the service
     //
-    SetupEnvironment("v2");
+    SetupEnvironment("v4");
     SetupEnvironmentToReachSecondary();
     ReloadLibrary(&library, false);
     ASSERT_TRUE(

@@ -117,5 +117,6 @@ typedef sgx_plat_error_t (*sgx_ql_set_logging_function_t)(
     sgx_ql_logging_function_t logger);
 
 const std::string customParam = "customParameter";
+const int MAX_CACHE_TIME_SECONDS = 86400;
 
 #endif // #ifndef PLATFORM_QUOTE_PROVIDER_H
