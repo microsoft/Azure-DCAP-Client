@@ -1770,6 +1770,7 @@ static quote3_error_t get_collateral(
     {
         log(SGX_QL_LOG_ERROR, "Exception occurred while getting collateral.");
     }
+    return SGX_QL_ERROR_UNEXPECTED;
 }
 
 bool check_cache(
