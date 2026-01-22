@@ -371,7 +371,7 @@ static int check_cache_expiry_env_variable()
 
     if (cache_expiry.empty())
     {
-        log(SGX_QL_LOG_INFO, "Using cache expiry time of the colleral.");
+        log(SGX_QL_LOG_INFO, "Using cache expiry time of the collateral.");
         return cache_expiry_int;
     }
 
@@ -421,51 +421,66 @@ static int check_cache_expiry_env_variable()
 
 static std::string get_region_url()
 {
-    std::string result;
-    log(SGX_QL_LOG_INFO, "Attempting to retrieve region url from cache.");
-
-    if (get_region_url_from_cache(result))
-    {
-        log(SGX_QL_LOG_INFO, "Region url successfully retrieved from cache.");
-    }
-    else
-    {
-        log(SGX_QL_LOG_INFO,
-            "Region url not found in cache. Attempting to retrieve it from "
-            "Azure Instance Metadata Service.");
-
-        if (get_region_url_from_service(result))
+        std::string result;
+        log(SGX_QL_LOG_INFO, "Attempting to retrieve region url from cache.");
+        
+        try
         {
-            log(SGX_QL_LOG_INFO,
-                "Region url successfully retrieved from Azure Instance "
-                "Metadata Service. Proceeding to store it in cache.");
+            if (get_region_url_from_cache(result))
+            {
+                log(SGX_QL_LOG_INFO, "Region url successfully retrieved from cache.");
+            }
+            else
+            {
+                log(SGX_QL_LOG_INFO,
+                    "Region url not found in cache. Attempting to retrieve it from "
+                    "Azure Instance Metadata Service.");
 
-            std::transform(
-                result.begin(),
-                result.end(),
-                result.begin(),
-                [](unsigned char c) { return std::tolower(c); });
+                if (get_region_url_from_service(result))
+                {
+                    log(SGX_QL_LOG_INFO,
+                        "Region url successfully retrieved from Azure Instance "
+                        "Metadata Service. Proceeding to store it in cache.");
 
-            time_t max_age = 0;
-            tm* max_age_s = localtime(&max_age);
-            // We don't check expiration for region cache, so there's no need to
-            // worry about its expiration date
-            int cache_time_seconds = 0;
+                    std::transform(
+                        result.begin(),
+                        result.end(),
+                        result.begin(),
+                        [](unsigned char c) { return std::tolower(c); });
 
-            max_age_s->tm_sec += cache_time_seconds;
-            time_t expiration_time = time(nullptr) + mktime(max_age_s);
+                    time_t max_age = 0;
+                    tm* max_age_s = localtime(&max_age);
+                    // We don't check expiration for region cache, so there's no need to
+                    // worry about its expiration date
+                    int cache_time_seconds = 0;
 
-            log(SGX_QL_LOG_INFO, "Caching region url '%s'", result.c_str());
+                    max_age_s->tm_sec += cache_time_seconds;
+                    time_t expiration_time = time(nullptr) + mktime(max_age_s);
 
-            local_cache_add(
-                region_cache_name,
-                expiration_time,
-                result.size(),
-                result.c_str());
+                    log(SGX_QL_LOG_INFO, "Caching region url '%s'", result.c_str());
+
+                    local_cache_add(
+                        region_cache_name,
+                        expiration_time,
+                        result.size(),
+                        result.c_str());
+                }
+            }
         }
-    }
+        catch (const std::runtime_error& error)
+        {
+            log(SGX_QL_LOG_WARNING,
+                "Runtime exception thrown, error: %s",
+                error.what());
+            // Swallow adding file to cache. Library can
+            // operate without caching
+        }
+        catch (const std::exception& ex)
+        {
+            log(SGX_QL_LOG_ERROR, "Exception occurred while getting regional URL.");
+        }
 
-    return result;
+        return result;
 }
 
 // This function can throw a curl_easy::error
@@ -757,7 +772,7 @@ bool get_cache_expiration_time(
     log(
         SGX_QL_LOG_INFO,
         "Collateral '%s' will remain valid in cache for '%d' seconds. "
-        "Expiration=%s (epoch=%lld)",
+        "Expiration = %s (epoch=%lld)",
         url.c_str(),
         cache_time_seconds,
         exp_str.c_str(),
@@ -1711,7 +1726,7 @@ static quote3_error_t get_collateral(
                 if (get_cache_expiration_time(cache_control, "" ,url, expiry))
                 {
                     local_cache_add(
-                        url,
+                        url.c_str(),
                         expiry,
                         response_body.size(),
                         response_body.data());
@@ -1750,6 +1765,10 @@ static quote3_error_t get_collateral(
                    ? SGX_QL_NO_QUOTE_COLLATERAL_DATA
                    : SGX_QL_NETWORK_ERROR;
 #endif
+    }
+    catch (const std::exception& ex)
+    {
+        log(SGX_QL_LOG_ERROR, "Exception occurred while getting collateral.");
     }
 }
 
@@ -1861,7 +1880,7 @@ quote3_error_t store_certificate_internal(
         }
         catch (const std::exception& ex)
         {
-            log(SGX_QL_LOG_ERROR, "Exception occuered when trying to add certificate to cache.");
+            log(SGX_QL_LOG_ERROR, "Exception occurred when trying to add certificate to cache.");
         }
     }
     else
