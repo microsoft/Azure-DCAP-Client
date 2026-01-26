@@ -77,4 +77,22 @@ jobs:
         run: |
             result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneAzureDcap" --instance-view)
             echo -e "$result"
-            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
+            if [[ "$result" == *"DCAP_Build_Step_Completed_Successfully"* ]]; then echo "Step successfully executed"; else exit 1; fi
+
+      - name: Build Azure DCAP
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --location $location \
+              --name "buildAzureDcap" \
+              --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the result of building dcap
+        shell: bash
+        run: |
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildAzureDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Completed_Successfully"* ]]; then echo "Step successfully executed"; else exit 1; fi
