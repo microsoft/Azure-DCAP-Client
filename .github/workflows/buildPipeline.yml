@@ -77,7 +77,7 @@ jobs:
         run: |
             result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneAzureDcap" --instance-view)
             echo -e "$result"
-            if [[ "$result" == *"DCAP_Build_Step_Completed_Successfully"* ]]; then echo "Step successfully executed"; else exit 1; fi
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
 
       - name: Build Azure DCAP
         uses: azure/CLI@v2
@@ -95,4 +95,4 @@ jobs:
         run: |
             result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildAzureDcap" --instance-view)
             echo -e "$result"
-            if [[ "$result" == *"DCAP_Build_Step_Completed_Successfully"* ]]; then echo "Step successfully executed"; else exit 1; fi
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
