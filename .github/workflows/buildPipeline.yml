@@ -15,7 +15,227 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-            
+  # This job tests running on hardware with a custom path to libdcap_quoteprov.so
+  ACCTest:          
+    strategy:
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
+      max-parallel: 1
+      matrix:
+        sizeName: [IceLake, CoffeeLake]
+        imageName: ["Ubuntu20_04"]
+        buildType: [RelWithDebInfo, Debug]
+        include:
+          - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
+            imageName: Ubuntu20_04
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+            location: uksouth
+          - sizeName: IceLake
+            size: Standard_DC4s_v3
+            location: westus
+          
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      os: linux
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}${{ matrix.buildType }}
+      rgName: dcap-github-actions-agents-rg
+      location: ${{ matrix.location }}
+      branchName: ${{ github.head_ref }}
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+          
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Create VM
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image ${{ matrix.imageUrn }} \
+              --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+      
+      - name: Sleep to let the VM start
+        run: sleep 60
+      
+      - name: Install software properties common
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSoftwarePropertiesCommon"
+            script: "sudo apt-get install software-properties-common -y"
+              
+      - name: Add ppa repository
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "addPpaRepository"
+            script: "sudo add-apt-repository ppa:team-xbmc/ppa -y"
+              
+      - name: Update apt-get
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
+              
+      - name: Install libSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
+              
+      - name: Install openSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installOpenSSL"
+            script: "sudo apt-get install libcurl4-openssl-dev -y"
+              
+      - name: Install PkgConfig
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
+              
+      - name: Install buildEssential
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuildEssential"
+            script: "sudo apt-get install build-essential -y"
+              
+      - name: Install nlohmann json
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
+              
+      - name: Install sqlite3
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
+              
+      - name: Install sqlite3 dev
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
+              
+      - name: Install CMake
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
+              
+      - name: Clone Azure DCAP 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneAzureDcap"
+            script: "sudo git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+              
+      - name: Update DCAP submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && sudo git submodule update --init --recursive"
+              
+      - name: Configure Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo ./configure"
+              
+      - name: Make Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make"
+                            
+      - name: Clone openenclave 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneOpenEnclave"
+            script: "sudo git clone --recursive https://github.com/openenclave/openenclave.git /openenclave"
+                            
+      - name: Update openenclave submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateOpenEnclaveSubmodule"
+            script: "mkdir /openenclave/build && cd /openenclave/build && sudo git submodule update --recursive --init"
+                            
+      - name: Install Ansible
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installAnsible"
+            script: "cd /openenclave && sudo scripts/ansible/install-ansible.sh"
+                            
+      - name: Setup ACC 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "setupACC"
+            script: "cd /openenclave && sudo ansible-playbook scripts/ansible/oe-contributors-acc-setup.yml"
+                            
+      - name: CMake openenclave with ninja
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeOpenEnclave"
+            script: "cd /openenclave/build && sudo cmake /openenclave -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}"
+                            
+      - name: Make openenclave with ninja
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeOpenEnclave"
+            script: "cd /openenclave/build && sudo ninja -v"
+                            
+      - name: Run openenclave tests excluding samples test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "testOpenEnclave"
+            script: "export AZDCAP_REGION_URL=\"thimt2-dev-cbn01p\" && export AZDCAP_BASE_CERT_URL_TDX=\".thim.azure-test.net/sgx/certification\" && cd /openenclave/build && LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -E samples"
+                            
+      - name: Run openenclave samples test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "testOpenEnclaveSamples"
+            script: "cd /openenclave/build && sudo LD_LIBRARY_PATH=/AzureDCAP/src/Linux ctest --output-on-failure -R samples"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
+              
+              
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
@@ -60,8 +280,8 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
-
-      - name: Clean up the previous execution
+      
+      - name: Clone the DCAP repo after cleaning up the previous execution
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -69,14 +289,486 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --location $location \
-              --name "cleanPreviousRunData" \
-              --script "C:/dcapBuild/CleanPreviousClonedRepo.ps1"
-
-      - name: Get the result of cleaning the old repository
+              --name "cloneDcap" \
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch $branchName"
+              
+      - name: Get the result of cloning the repository
         shell: bash
         run: |
-            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cleanPreviousRunData" --instance-view)
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)
             echo -e "$result"
-            if [[ "$result" == *"Old_DCAP_Build_Step_Successfully_Cleaned"* ]]; then echo "Step successfully executed"; else exit 1; fi
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
+             
+      - name: Build Azure DCAP
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --location $location \
+              --name "buildDcap" \
+              --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the result of building dcap
+        shell: bash
+        run: |
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
       
-     
+      - name: Run Azure DCAP unit tests
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --location $location \
+              --name "unitTestDcap" \
+              --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the result of the unit tests
+        shell: bash
+        run: |
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
+
+      - name: Stop VM
+        if: always()
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm deallocate \
+              --resource-group $rgName \
+              --name $vmName
+
+
+  # This job runs DCAP end to end tests 
+  DCAPE2ETest:
+    strategy:
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
+      max-parallel: 1
+      matrix:
+        sizeName: [CoffeeLake]
+        imageName: ["Ubuntu20_04", "Ubuntu22_04"]
+        include:
+          - imageUrn: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
+            imageName: Ubuntu22_04
+          - imageUrn: "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest"
+            imageName: Ubuntu20_04
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+            location: westus
+            
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      os: linux
+      vmName: dcapE2ETestBuildVM${{ github.run_number }}${{ matrix.sizeName }}${{ matrix.imageName }}
+      rgName: dcap-github-actions-agents-rg
+      branchName: ${{ github.head_ref }}
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+          
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            
+      - name: Create VM
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image ${{ matrix.imageUrn }} \
+              --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard
+              
+      - name: Sleep to let the VM start
+        run: sleep 60
+              
+      - name: Update apt-get
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateAptGet"
+            script: "sudo apt-get update -y"
+              
+      - name: Install libSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibSSL"
+            script: "sudo apt-get install libssl-dev -y"
+              
+      - name: Install openSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installOpenSSL"
+            script: "sudo apt install libcurl4-openssl-dev -y"
+              
+      - name: Install PkgConfig
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPkgConfig"
+            script: "sudo apt-get install pkg-config -y"
+              
+      - name: Install buildEssential
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBuildEssential"
+            script: "sudo apt install build-essential -y"
+              
+      - name: Install nlohmann json
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installNlohmannJson"
+            script: "sudo apt-get install nlohmann-json3-dev -y"
+              
+      - name: Install sqlite3
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3"
+            script: "sudo apt-get install sqlite3 -y"
+              
+      - name: Install sqlite3 dev
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3Dev"
+            script: "sudo apt-get install libsqlite3-dev -y"
+              
+      - name: Install libgtest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installLibgtest"
+            script: "sudo apt-get install libgtest-dev -y"
+              
+      - name: Install CMake
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installCMake"
+            script: "sudo apt-get install cmake -y"
+              
+      - name: Install Google test
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGoogleTest"
+            script: "cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && cd lib && sudo cp *.a /usr/lib"
+              
+      - name: Clone Azure DCAP 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneAzureDcap"
+            script: "git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+              
+      - name: Update submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && git submodule update --init --recursive"
+              
+      - name: Configure Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && ./configure"
+              
+      - name: Make Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && make"
+              
+      - name: Make Install Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeInstallAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make install"
+              
+      - name: CMake DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
+              
+      - name: Make DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/ && sudo cp sgx_ql_lib_common.h /usr/include/ && cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+              
+      - name: Run DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
+              
+
+  # This job runs DCAP end to end tests 
+  # Mariner is based on Fedora and requires different commands from Ubuntu 
+  AzureLinuxBuild:    
+    strategy:
+      # Launch a VM and build once per each combination of linux image, VM size and buildType
+      max-parallel: 1
+      matrix:
+        sizeName: [CoffeeLake]
+        imageName: ["Mariner2", "AzureLinux3"]
+        buildType: [RelWithDebInfo, Debug]
+        include:
+          - imageUrn: "MicrosoftCBLMariner:cbl-mariner:cbl-mariner-2-gen2:latest"
+            imageName: Mariner2
+          - imageUrn: "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-gen2:latest"
+            imageName: AzureLinux3
+          - sizeName: CoffeeLake
+            size: Standard_DC4s_v2
+            location: uksouth
+          
+    # OS of the Github VM calling Azure CLI
+    runs-on: ubuntu-latest
+    
+    # Job environment variables
+    env:
+      os: linux
+      vmName: dcapACCTestBuildVM${{ github.run_number }}${{ matrix.imageName }}${{ matrix.buildType }}
+      rgName: dcap-github-actions-agents-rg
+      branchName: ${{ github.head_ref }}
+
+      
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+          
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Create VM
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm create \
+              --resource-group $rgName \
+              --name $vmName \
+              --image ${{ matrix.imageUrn }} \
+              --size ${{ matrix.size }} \
+              --location ${{ matrix.location }} \
+              --admin-username ${{ secrets.BUILD_VM_USERNAME }} \
+              --admin-password ${{ secrets.BUILD_VM_PASSWORD }} \
+              --nic-delete-option delete \
+              --os-disk-delete-option delete \
+              --public-ip-sku Standard \
+              --os-disk-size-gb 10
+      
+      - name: Sleep to let the VM start
+        run: sleep 60
+            
+      - name: Update packages through dnf
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "dnfUpgrade"
+            script: "sudo tdnf upgrade -y"
+            
+      - name: Install kernel devel, automake, glibc,  glibc-devel and libSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPrerequisites1"
+            script: "sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
+              
+      - name: Install openSSL
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installOpenSSL"
+            script: "sudo tdnf install libcurl-devel -y"
+              
+      - name: Install PkgConfig
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installPkgConfig"
+            script: "sudo tdnf install pkg-config -y"
+              
+      - name: Install nlohmann json
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installNlohmannJson"
+            script: "sudo tdnf install nlohmann-json-devel -y"
+              
+      - name: Install sqlite3
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3"
+            script: "sudo tdnf install sqlite -y"
+              
+      - name: Install sqlite3 dev
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installSqlite3Dev"
+            script: "sudo tdnf install sqlite-devel -y"
+              
+      - name: Install git
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGit"
+            script: "sudo tdnf install git -y"
+
+      - name: Install CMake
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installCMake"
+            script: "sudo tdnf install cmake -y"
+            
+      - name: Install kernel-headers
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installKernelHeaders"
+            script: 'sudo tdnf install kernel-headers -y'
+            
+      - name: Install binutils 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installBinutils"
+            script: 'sudo tdnf install binutils -y'
+            
+      - name: Install gcc 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGcc"
+            script: 'sudo tdnf install gcc -y'
+            
+      - name: Install g++ 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "installGplusplus"
+            script: 'sudo tdnf install g++ -y'
+            
+      - name: Clone GoogleTest 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneGoogleTest"
+            script: 'sudo git clone https://github.com/google/googletest.git /GoogleTest'
+              
+      - name: CMake GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeGoogleTest"
+            script: "cd /GoogleTest && sudo mkdir build && cd build && sudo cmake .."
+            
+      - name: Make GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeGoogleTest"
+            script: "cd /GoogleTest/build && sudo make"
+            
+      - name: Make Install GoogleTest
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeInstallGoogleTest"
+            script: "cd /GoogleTest/build && sudo make install"
+              
+      - name: Clone Azure DCAP 
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cloneAzureDcap"
+            script: "sudo git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git /AzureDCAP"
+              
+      - name: Update DCAP submodule
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "updateSubmodule"
+            script: "cd /AzureDCAP && sudo git submodule update --init --recursive"
+              
+      - name: Configure Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "configureAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo ./configure"
+              
+      - name: Make Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make"
+              
+      - name: Make Install Azure DCAP
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeInstallAzureDcap"
+            script: "cd /AzureDCAP/src/Linux && sudo make install"
+              
+      - name: CMake DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "cmakeDcapTests"
+            script: "cd /AzureDCAP/src/Linux && cmake CMakeLists.txt"
+              
+      - name: Make DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "makeDcapTests"
+            script: "cd /AzureDCAP/src/ && sudo cp sgx_ql_lib_common.h /usr/include/ && cd /AzureDCAP/src/Linux/ext/intel/ && sudo cp * /usr/include/ && cd ../.. && make"
+              
+      - name: Run DCAP tests
+        uses: ./.github/actions/actionAzVmRunCommand
+        with:
+            commandName: "runDcapTests"
+            script: "cd /AzureDCAP/src/Linux && sudo /sbin/ldconfig -v && ./dcap_provider_utests"
+
+      - name: If the build fails, keep the VM alive for 4 hours for debugging purposes
+        if: failure()
+        run: sleep 4h
+
+      - name: Cleanup
+        if: always()
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm delete \
+              -g $rgName \
+              -n $vmName \
+              --yes
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups"
+            az resource delete \
+              -g $rgName \
+              -n ${{ env.vmName }}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses"
