@@ -59,8 +59,38 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
+
+      - name: Forcefully delete old folder
+        uses: azure/CLI@v2
+        env:
+          TARGET_PATH: "C:\\AzureDCAPNew"
+        with:
+          inlineScript: |
+            az vm run-command invoke \
+              --resource-group $rgName \
+              --name $vmName \
+              --command-id RunPowerShellScript \
+              --scripts @- <<'PS'
+              Param([Parameter(Mandatory=$true)][string]$Path)
+
+              $ErrorActionPreference = 'Stop'
+                if (-not (Test-Path -LiteralPath $Path)) {
+                Write-Host "Path not found: $Path (nothing to delete)"
+                exit 0
+              }
+
+              Write-Host "Attempting force delete of: $Path"
+
+              # 1) Try a straight Delete-Item first
+              try {
+                Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+                Write-Host "Deleted: $Path"
+                exit 0
+              } catch {
+                Write-Host "Simple delete failed: $($_.Exception.Message)"
+              }
       
-      - name: Clone the DCAP repo after cleaning up the previous execution
+      - name: Clone the DCAP repo
         uses: azure/CLI@v2
         with:
           inlineScript: |
