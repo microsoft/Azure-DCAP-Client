@@ -69,13 +69,13 @@ jobs:
               --resource-group $rgName \
               --vm-name $vmName \
               --location $location \
-              --name "cleanPreviousRepo" \
-              --script "C:/dcapBuild/CleanPreviousClonedRepo.ps1
+              --name "cleanPreviousRunData" \
+              --script "C:/dcapBuild/CleanPreviousClonedRepo.ps1"
 
       - name: Get the result of cleaning the old repository
         shell: bash
         run: |
-            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cleanPreviousRepo" --instance-view)
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cleanPreviousRunData" --instance-view)
             echo -e "$result"
             if [[ "$result" == *"Old_DCAP_Build_Step_Successfully_Cleaned"* ]]; then echo "Step successfully executed"; else exit 1; fi
       
