@@ -59,9 +59,12 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
+
       
-      - name: Clone the DCAP repo
+      - name: Clone DCAP repo inside VM
         uses: azure/CLI@v2
+        env:
+          DEST: "C:\\AzureDCAPNew"
         with:
           inlineScript: |
             az vm run-command create \
@@ -69,10 +72,42 @@ jobs:
               --vm-name $vmName \
               --location $location \
               --name "cloneDcap" \
-              --script "git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git C:\AzureDCAPNew && echo `"DCAP_Build_Step_Successfully_Completed`""
-              
+              --command-id RunPowerShellScript \
+              --scripts @- <<'PS'
+            Param([string]$Branch, [string]$Dest)
+
+            $ErrorActionPreference = 'Stop'
+
+            # Clean destination
+            if (Test-Path -LiteralPath $Dest) {
+              Remove-Item -LiteralPath $Dest -Recurse -Force
+            }
+            New-Item -ItemType Directory -Path $Dest -Force | Out-Null
+
+            # Clone
+            git clone -b $Branch --single-branch https://github.com/microsoft/Azure-DCAP-Client.git $Dest
+
+            # Emit success marker
+            Write-Output "DCAP_GIT_CLONE_SUCCESS"
+            PS \
+              --parameters "Branch=$branchName" "Dest=${DEST}"
+
+                    
       - name: Get the result of cloning the repository
         shell: bash
         run: |
-            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)
-            echo -e "$result"             
+            result=$(az vm run-command show \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --name "cloneDcap" \
+              --instance-view)
+
+            echo "$result"
+
+            if [[ "$result" == *"DCAP_GIT_CLONE_SUCCESS"* ]]; then
+              echo "Git clone succeeded!"
+            else
+              echo "Git clone FAILED"
+              exit 1
+            fi
+            
