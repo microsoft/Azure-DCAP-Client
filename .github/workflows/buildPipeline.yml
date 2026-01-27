@@ -69,7 +69,7 @@ jobs:
               --vm-name $vmName \
               --location $location \
               --name "cloneDcap" \
-              --script "git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git C:\AzureDCAPNew"
+              --script "git clone -b $branchName https://github.com/microsoft/Azure-DCAP-Client.git C:\AzureDCAPNew && echo `"DCAP_Build_Step_Successfully_Completed`""
               
       - name: Get the result of cloning the repository
         shell: bash
