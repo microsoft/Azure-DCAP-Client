@@ -14,7 +14,6 @@ permissions:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-        
 
   # Test DCAP build process in Windows
   DCAPWindowsBuildTest:          
@@ -34,7 +33,7 @@ jobs:
       #Windows VM name must be within 15 characters
       vmName: winBuildPers
       rgName: dcap-github-actions-agents-rg
-      location: northeurope
+      location: westus2
       branchName: ${{ github.head_ref }}
 
       
@@ -59,12 +58,9 @@ jobs:
               
       - name: Sleep to let the VM start
         run: sleep 60
-
       
-      - name: Clone DCAP repo inside VM
+      - name: Clone the DCAP repo after cleaning up the previous execution
         uses: azure/CLI@v2
-        env:
-          DEST: "C:\\AzureDCAPNew"
         with:
           inlineScript: |
             az vm run-command create \
@@ -72,42 +68,57 @@ jobs:
               --vm-name $vmName \
               --location $location \
               --name "cloneDcap" \
-              --command-id RunPowerShellScript \
-              --scripts @- <<'PS'
-            Param([string]$Branch, [string]$Dest)
-
-            $ErrorActionPreference = 'Stop'
-
-            # Clean destination
-            if (Test-Path -LiteralPath $Dest) {
-              Remove-Item -LiteralPath $Dest -Recurse -Force
-            }
-            New-Item -ItemType Directory -Path $Dest -Force | Out-Null
-
-            # Clone
-            git clone -b $Branch --single-branch https://github.com/microsoft/Azure-DCAP-Client.git $Dest
-
-            # Emit success marker
-            Write-Output "DCAP_GIT_CLONE_SUCCESS"
-            PS \
-              --parameters "Branch=$branchName" "Dest=${DEST}"
-
-                    
+              --script "C:/dcapBuild/DCAPCloneMain.ps1 -repo https://github.com/microsoft/Azure-DCAP-Client.git -branch $branchName"
+              
       - name: Get the result of cloning the repository
         shell: bash
         run: |
-            result=$(az vm run-command show \
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "cloneDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
+             
+      - name: Build Azure DCAP
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm run-command create \
               --resource-group $rgName \
               --vm-name $vmName \
-              --name "cloneDcap" \
-              --instance-view)
+              --location $location \
+              --name "buildDcap" \
+              --script "C:/dcapBuild/DCAPBuildMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the result of building dcap
+        shell: bash
+        run: |
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "buildDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
+      
+      - name: Run Azure DCAP unit tests
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm run-command create \
+              --resource-group $rgName \
+              --vm-name $vmName \
+              --location $location \
+              --name "unitTestDcap" \
+              --script "C:/dcapBuild/DCAPUnitTestsMain.ps1 -BuildType ${{ matrix.buildType }}"
+              
+      - name: Get the result of the unit tests
+        shell: bash
+        run: |
+            result=$(az vm run-command show --resource-group $rgName --vm-name $vmName --name "unitTestDcap" --instance-view)
+            echo -e "$result"
+            if [[ "$result" == *"DCAP_Build_Step_Successfully_Completed"* ]]; then echo "Step successfully executed"; else exit 1; fi
 
-            echo "$result"
-
-            if [[ "$result" == *"DCAP_GIT_CLONE_SUCCESS"* ]]; then
-              echo "Git clone succeeded!"
-            else
-              echo "Git clone FAILED"
-              exit 1
-            fi
+      - name: Stop VM
+        if: always()
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az vm deallocate \
+              --resource-group $rgName \
+              --name $vmName
             
