@@ -1526,7 +1526,7 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
 #endif
 }
 
-/*TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
+TEST(testQuoteProv, testRestrictAccessToFilesystemForCustomParamCollateral)
 {
     libary_type_t library = LoadFunctions();
     ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
@@ -1545,7 +1545,7 @@ TEST(testQuoteProv, testRestrictAccessToFilesystem)
 #else
     FreeLibrary(library);
 #endif
-}*/
+}
 
 TEST(testQuoteProvServiceVM, quoteProviderServiceVMTestsData)
 {
