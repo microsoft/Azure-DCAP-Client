@@ -1128,7 +1128,7 @@ boolean RunCachePermissionTests(libary_type_t* library)
     int permissions[] = {0700, 0400, 0200, 0000};
     setenv("AZDCAP_CACHE", permission_folder, 1);
 #else
-    auto permission_folder = "C:\\Users\\winBuild\\test_permission";
+    auto permission_folder = ".\\test_permission";
     permission_type_t permissions[] = {
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
@@ -1170,7 +1170,7 @@ boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* l
     int permissions[] = {0700, 0400, 0200, 0000};
     setenv("AZDCAP_CACHE", permission_folder, 1);
 #else
-    auto permission_folder = "C:\\Users\\winBuild\\test_permission";
+    auto permission_folder = ".\\test_permission";
     permission_type_t permissions[] = {
         {STANDARD_RIGHTS_ALL, SET_ACCESS},
         {GENERIC_READ | GENERIC_WRITE, DENY_ACCESS},
@@ -1185,7 +1185,7 @@ boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* l
     {
         ReloadLibrary(library);
         make_folder(permission_folder, permission);
-        RunQuoteProviderTestsWithCustomParams(is_caching_allowed(permission));
+        RunQuoteProviderTestsICXV3WithCustomParams(is_caching_allowed(permission));
         allow_access(permission_folder);
         remove_folder(permission_folder);
     }
@@ -1196,9 +1196,9 @@ boolean RunCachePermissionTestsWithCustomParamToFetchCollateral(libary_type_t* l
     {
         ReloadLibrary(library);
         make_folder(permission_folder, permissions[0]);
-        RunQuoteProviderTestsWithCustomParams(true);
+        RunQuoteProviderTestsICXV3WithCustomParams(true);
         change_permission(permission_folder, permission);
-        RunQuoteProviderTestsWithCustomParams(false);
+        RunQuoteProviderTestsICXV3WithCustomParams(false);
         allow_access(permission_folder);
         remove_folder(permission_folder);
     }
@@ -1227,7 +1227,6 @@ void SetupEnvironment(std::string version)
         setenv("AZDCAP_COLLATERAL_VERSION", version.c_str(), 1);
     }
 #else
-    std::stringstream version_var;
     if (!version.empty())
     {
         EXPECT_TRUE(SetEnvironmentVariableA(
@@ -1300,6 +1299,22 @@ void SetupEnvironmentToReachSecondary()
     setenv("AZDCAP_BYPASS_BASE_URL", "true", 1);
 #else
     EXPECT_TRUE(SetEnvironmentVariableA("AZDCAP_BYPASS_BASE_URL", "true"));
+#endif
+}
+
+void SetUpEnvironmentToCacheExpiryTime(std::string cache_expiry)
+{
+#if defined __LINUX__
+    if (!cache_expiry.empty())
+    {
+        setenv("AZDCAP_CACHE_EXPIRY_IN_SECONDS", cache_expiry.c_str(), 1);
+}
+#else
+    if (!cache_expiry.empty())
+    {
+        EXPECT_TRUE(SetEnvironmentVariableA(
+            "AZDCAP_CACHE_EXPIRY_IN_SECONDS", cache_expiry.c_str()));
+    }
 #endif
 }
 
