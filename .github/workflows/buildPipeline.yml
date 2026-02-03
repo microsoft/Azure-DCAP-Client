@@ -228,11 +228,11 @@ jobs:
               --yes
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}NSG \
+              -n ${vmName}NSG \
               --resource-type "Microsoft.Network/networkSecurityGroups"
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}PublicIP \
+              -n ${vmName}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
               
               
@@ -532,11 +532,11 @@ jobs:
               --yes
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}NSG \
+              -n ${env.vmName}NSG \
               --resource-type "Microsoft.Network/networkSecurityGroups"
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}PublicIP \
+              -n ${env.vmName}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
               
 
@@ -766,9 +766,9 @@ jobs:
               --yes
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}NSG \
+              -n ${vmName}NSG \
               --resource-type "Microsoft.Network/networkSecurityGroups"
             az resource delete \
               -g $rgName \
-              -n ${{ env.vmName }}PublicIP \
+              -n ${vmName}PublicIP \
               --resource-type "Microsoft.Network/publicIPAddresses"
