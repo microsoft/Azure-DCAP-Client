@@ -228,12 +228,19 @@ jobs:
               --yes
             az resource delete \
               -g $rgName \
-              -n ${vmName}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups"
+              -n ${vmName}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses" \
+              --verbose
             az resource delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses"
+              -n ${vmName}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups" \
+              --verbose
+            az resource delete \
+              -g $rgName \
+              -n ${vmName}VNET \
+              --resource-type "Microsoft.Network/virtualNetwork" \
+              --verbose
               
               
 
@@ -425,7 +432,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "sudo apt-get install pkg-config -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo apt-get install pkg-config -y"
               
       - name: Install buildEssential
         uses: ./.github/actions/actionAzVmRunCommand
@@ -532,12 +539,19 @@ jobs:
               --yes
             az resource delete \
               -g $rgName \
-              -n ${vmName}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups"
+              -n ${vmName}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses" \
+              --verbose
             az resource delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses"
+              -n ${vmName}NSG \
+              --resource-type "Microsoft.Network/networkSecurityGroups" \
+              --verbose
+            az resource delete \
+              -g $rgName \
+              -n ${vmName}VNET \
+              --resource-type "Microsoft.Network/virtualNetwork" \
+              --verbose
               
 
   # This job runs DCAP end to end tests 
@@ -611,7 +625,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPrerequisites1"
-            script: "sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
+            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
@@ -767,11 +781,16 @@ jobs:
               --verbose
             az resource delete \
               -g $rgName \
+              -n ${vmName}PublicIP \
+              --resource-type "Microsoft.Network/publicIPAddresses" \
+              --verbose
+            az resource delete \
+              -g $rgName \
               -n ${vmName}NSG \
               --resource-type "Microsoft.Network/networkSecurityGroups" \
               --verbose
             az resource delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses" \
+              -n ${vmName}VNET \
+              --resource-type "Microsoft.Network/virtualNetwork" \
               --verbose
