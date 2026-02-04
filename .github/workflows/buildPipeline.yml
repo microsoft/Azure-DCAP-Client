@@ -85,7 +85,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "addPpaRepository"
-            script: "sudo add-apt-repository ppa:team-xbmc/ppa -y"
+            script: for i in {1..5}; do sudo add-apt-repository ppa:team-xbmc/ppa -y && break || { echo "Retry $i..."; sleep 10; }; done
               
       - name: Update apt-get
         uses: ./.github/actions/actionAzVmRunCommand
@@ -613,73 +613,73 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPrerequisites1"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install kernel-devel -y && sudo dnf install automake -y && sudo dnf install glibc -y && sudo dnf install glibc-devel -y && sudo dnf install openssl-devel -y"
               
       - name: Install openSSL
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installOpenSSL"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install libcurl-devel -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install libcurl-devel -y"
               
       - name: Install PkgConfig
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installPkgConfig"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install pkg-config -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install pkg-config -y"
               
       - name: Install nlohmann json
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installNlohmannJson"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install nlohmann-json-devel -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install nlohmann-json-devel -y"
               
       - name: Install sqlite3
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite -y"
               
       - name: Install sqlite3 dev
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installSqlite3Dev"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite-devel -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install sqlite-devel -y"
               
       - name: Install git
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGit"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install git -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install git -y"
 
       - name: Install CMake
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installCMake"
-            script: "while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install cmake -y"
+            script: "while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install cmake -y"
             
       - name: Install kernel-headers
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installKernelHeaders"
-            script: 'while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install kernel-headers -y'
+            script: 'while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install kernel-headers -y'
             
       - name: Install binutils 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installBinutils"
-            script: 'while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install binutils -y'
+            script: 'while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install binutils -y'
             
       - name: Install gcc 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGcc"
-            script: 'while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install gcc -y'
+            script: 'while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install gcc -y'
             
       - name: Install g++ 
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "installGplusplus"
-            script: 'while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done; sudo tdnf install g++ -y'
+            script: 'while sudo fuser /var/lib/rpm/* >/dev/null 2>&1; do sleep 5; done; sudo tdnf install g++ -y'
             
       - name: Clone GoogleTest 
         uses: ./.github/actions/actionAzVmRunCommand
