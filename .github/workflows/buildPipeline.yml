@@ -226,21 +226,15 @@ jobs:
               -g $rgName \
               -n $vmName \
               --yes
-            az resource delete \
+            az network public-ip delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses" \
-              --verbose
-            az resource delete \
+              -n ${vmName}PublicIP || true
+            az network nsg delete \
               -g $rgName \
-              -n ${vmName}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups" \
-              --verbose
-            az resource delete \
+              -n ${vmName}NSG || true
+            az network vnet delete \
               -g $rgName \
-              -n ${vmName}VNET \
-              --resource-type "Microsoft.Network/virtualNetwork" \
-              --verbose
+              -n ${vmName}VNET || true
               
               
 
@@ -537,21 +531,15 @@ jobs:
               -g $rgName \
               -n $vmName \
               --yes
-            az resource delete \
+            az network public-ip delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses" \
-              --verbose
-            az resource delete \
+              -n ${vmName}PublicIP || true
+            az network nsg delete \
               -g $rgName \
-              -n ${vmName}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups" \
-              --verbose
-            az resource delete \
+              -n ${vmName}NSG || true
+            az network vnet delete \
               -g $rgName \
-              -n ${vmName}VNET \
-              --resource-type "Microsoft.Network/virtualNetwork" \
-              --verbose
+              -n ${vmName}VNET || true
               
 
   # This job runs DCAP end to end tests 
@@ -779,18 +767,12 @@ jobs:
               -n $vmName \
               --yes \
               --verbose
-            az resource delete \
+            az network public-ip delete \
               -g $rgName \
-              -n ${vmName}PublicIP \
-              --resource-type "Microsoft.Network/publicIPAddresses" \
-              --verbose
-            az resource delete \
+              -n ${vmName}PublicIP || true
+            az network nsg delete \
               -g $rgName \
-              -n ${vmName}NSG \
-              --resource-type "Microsoft.Network/networkSecurityGroups" \
-              --verbose
-            az resource delete \
+              -n ${vmName}NSG || true
+            az network vnet delete \
               -g $rgName \
-              -n ${vmName}VNET \
-              --resource-type "Microsoft.Network/virtualNetwork" \
-              --verbose
+              -n ${vmName}VNET || true
