@@ -85,7 +85,7 @@ jobs:
         uses: ./.github/actions/actionAzVmRunCommand
         with:
             commandName: "addPpaRepository"
-            script: for i in {1..5}; do sudo add-apt-repository ppa:team-xbmc/ppa -y && break || { echo "Retry $i..."; sleep 10; }; done
+            script: "for i in {1..5}; do sudo add-apt-repository ppa:team-xbmc/ppa -y && break; echo Retry $i; sleep 10; done"
               
       - name: Update apt-get
         uses: ./.github/actions/actionAzVmRunCommand
