@@ -42,7 +42,7 @@ namespace dcap_provider_tests
         {
             {
                 auto curl =
-                    curl_easy::create("https://www.microsoft.com", nullptr);
+                    curl_easy::create("https://www.google.com", nullptr);
                 Assert::IsTrue(
                     static_cast<bool>(curl), L"Create curl_easy object.");
 
@@ -71,7 +71,7 @@ namespace dcap_provider_tests
 
         TEST_METHOD(GetHeader)
         {
-            auto curl = curl_easy::create("https://www.microsoft.com", nullptr);
+            auto curl = curl_easy::create("https://www.google.com", nullptr);
             Assert::IsTrue(
                 static_cast<bool>(curl), L"Create curl_easy object.");
 

@@ -2,19 +2,20 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.DCAP</id>
-        <version>1.12.3</version>
+        <version>1.13.0</version>
         <!-- Authors contain text that appears directly on the gallery -->
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes>
-		Updating the TLS version to 1.3 to be Azure compliant 
+		Updating default api version to v4
+		Adding env variable to set cache expiry time by the user
 	  </releaseNotes>
         <description>
-            This library serves as a quoting data provider plugin for the Intel SGX Data Center Attestation Primitives (DCAP). Specifically, the Intel DCAP library will search out and load provider plugins, such as the Azure DCAP Client.
-            This provider plugin is then used to fetch certain data files, such as platform certificates, TCB structures, and revocation lists.
-            The Azure DCAP Client fetches artifacts from an Azure-internal caching service. The purpose of this cache is to ensure that all Azure hosts always have the correct data available and local within the Azure cloud.
-            The data serviced by the Azure cache are all Intel-originating, and are rooted to Intel CAs. The cache serves simply to ensure that there are no external dependencies on Intel for workloads running on Azure infrastructure.
+		Intel is deprecating api verison v2/v3. To stay compliant Azure DCAP
+		default api-version is updated to v4.
+		Adding env variable to set cache expiry time by the user. The value can
+		be set between 0 to 86400 seconds(24 hours).
         </description>
         <projectUrl>https://github.com/Microsoft/Azure-DCAP-Client/</projectUrl>
         <copyright>&#169; Microsoft Corporation. All rights reserved.</copyright>

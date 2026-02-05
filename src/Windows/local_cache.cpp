@@ -242,6 +242,7 @@ wil::unique_hfile OpenHandle(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dw
         file.reset(CreateFile(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
             dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile));
 		retry = false;
+
 		if (!file && (GetLastError() == ERROR_SHARING_VIOLATION) && (i < MAX_RETRY)) {
 			retry = true;
 		}
@@ -270,9 +271,8 @@ extern "C" void local_cache_add(const std::string& id, time_t expiry, size_t dat
     header.expiry = expiry;
 
     std::wstring filename = get_file_name(id);
-
     wil::unique_hfile file(OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
-    throw_if(!file, "Create file failed");
+    throw_if(!file, "Create file failed.");
 
     DWORD headerwritten;
     DWORD datawritten;
