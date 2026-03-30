@@ -1,3 +1,9 @@
+az-dcap-client (1.13.1) stable; urgency=medium
+  * Updating default api version to v4.
+  * Adding env variable to set cache expiry time by the user
+  
+-- Gunjan Munjal<gumunjal@microsoft.com>  Tue, 31 March 2026 00:47:00 +0000
+
 az-dcap-client (1.13.0) stable; urgency=medium
   * Updating default api version to v4.
   * Adding env variable to set cache expiry time by the user
