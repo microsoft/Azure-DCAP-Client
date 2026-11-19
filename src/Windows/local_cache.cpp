@@ -26,6 +26,9 @@
 
 constexpr uint16_t CACHE_V1 = 1;
 
+// Upper bound on the payload of a single cache entry.
+constexpr LONGLONG MAX_CACHE_ENTRY_DATA_SIZE = 64 * 1024 * 1024;
+
 static std::wstring g_cache_dirname;
 
 static void throw_if(bool should_throw, const std::string& error)
@@ -264,6 +267,7 @@ extern "C" void local_cache_add(const std::string& id, time_t expiry, size_t dat
     throw_if(id.empty(), "The 'id' parameter must not be empty.");
     throw_if(data_size == 0, "Data cannot be empty.");
     throw_if(data == nullptr, "Data pointer must not be NULL.");
+    throw_if(data_size > MAXDWORD, "Data is too large to cache.");
 
     init();
     CacheEntryHeaderV1 header{};
@@ -274,14 +278,18 @@ extern "C" void local_cache_add(const std::string& id, time_t expiry, size_t dat
     wil::unique_hfile file(OpenHandle(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
     throw_if(!file, "Create file failed.");
 
-    DWORD headerwritten;
-    DWORD datawritten;
+    DWORD headerwritten = 0;
+    DWORD datawritten = 0;
 
     throw_if(!WriteFile(file.get(), &header, sizeof(header), &headerwritten, nullptr),
         "Header write to local cache failed");
+    throw_if(headerwritten != sizeof(header),
+        "Incomplete header write to local cache");
 
     throw_if(!WriteFile(file.get(), data, (DWORD)data_size, &datawritten, nullptr),
         "Data write to local cache failed");
+    throw_if(datawritten != (DWORD)data_size,
+        "Incomplete data write to local cache");
 
 }
 
@@ -299,17 +307,30 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
         return nullptr;
     }
 
+    // Malformed entries are removed so they are refetched instead of re-read.
+    auto reject = [&](const char* reason) {
+        file.reset();
+        DeleteFileW(filename.c_str());
+        throw std::runtime_error(reason);
+    };
+
     CacheEntryHeaderV1 *header;
     char buf[sizeof(CacheEntryHeaderV1)] = { 0 };
     DWORD headerread = 0;
 
     throw_if(!ReadFile(file.get(), &buf, sizeof(CacheEntryHeaderV1), &headerread, nullptr), "Header read from local cache failed");
 
-    throw_if(
-        headerread != sizeof(CacheEntryHeaderV1),
-        "Incomplete read of cache header");
+    if (headerread != sizeof(CacheEntryHeaderV1))
+    {
+        reject("Incomplete read of cache header");
+    }
 
     header = (CacheEntryHeaderV1*)buf;
+
+    if (header->version != CACHE_V1)
+    {
+        reject("Unsupported cache entry version");
+    }
 
     if (checkExpiration && header->expiry <= time(nullptr))
     {
@@ -320,13 +341,36 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
         return nullptr;
     }
 
-    DWORD size = GetFileSize(file.get(), nullptr);
-    DWORD datasize = size - sizeof(CacheEntryHeaderV1);
+    LARGE_INTEGER size{};
+    throw_if(!GetFileSizeEx(file.get(), &size), "Unable to get cache file size");
+
+    const LONGLONG payload_size = size.QuadPart - (LONGLONG)sizeof(CacheEntryHeaderV1);
+    if (payload_size <= 0 || payload_size > MAX_CACHE_ENTRY_DATA_SIZE)
+    {
+        reject("Cache entry has an invalid size");
+    }
+
+    const DWORD datasize = (DWORD)payload_size;
     auto cache_entry = std::make_unique<std::vector<uint8_t>>(datasize);
 
     DWORD dataread = 0;
 	throw_if(!ReadFile(file.get(), cache_entry->data(), datasize, &dataread, nullptr), "Error reading cached file data");
-	throw_if(dataread != datasize, "Read returned fewer bytes than expected.");
+	if (dataread != datasize)
+	{
+		reject("Read returned fewer bytes than expected.");
+	}
 
     return cache_entry;
+}
+
+void local_cache_remove(const std::string& id)
+{
+    throw_if(id.empty(), "The 'id' parameter must not be empty.");
+    init();
+
+    std::wstring filename = get_file_name(id);
+    if (!DeleteFileW(filename.c_str()) && GetLastError() != ERROR_FILE_NOT_FOUND)
+    {
+        throw std::runtime_error("Error removing cache entry, error code " + std::to_string(GetLastError()));
+    }
 }

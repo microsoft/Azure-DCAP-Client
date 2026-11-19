@@ -4,18 +4,23 @@
 #include <gtest/gtest.h>
 
 #include "../local_cache.h"
+#include "../cache_validation.h"
 #include "dcap_provider.h"
 #include "sgx_ql_lib_common.h"
 
 #include <sys/stat.h>
 #include <chrono>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <fstream>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #if defined(__LINUX__)
+#include <dirent.h>
 #include <dlfcn.h>
 #include <tgmath.h>
 #else
@@ -1597,3 +1602,221 @@ TEST(testQuoteProvServiceVM, quoteProviderServiceVMTestsData)
     FreeLibrary(library);
 #endif
 }
+
+#if defined __LINUX__
+//
+// End-to-end tests for the PCK certificate cache read by check_cache().
+// A certificate is stored with store_certificate() (the CertRefresher entry
+// point) and read back through sgx_ql_get_quote_config() (the QGS entry point).
+//
+typedef bool (*store_certificate_t)(
+    const std::string& qe_id,
+    const std::string& cpu_svn,
+    const std::string& pce_svn,
+    const std::string& pce_id,
+    const std::string& response_body);
+
+static constexpr char CERT_CACHE_TEST_DIR[] = "./test_cert_cache";
+// Linux CacheEntryHeaderV1 is packed: uint16_t version + time_t expiry.
+static constexpr size_t LINUX_CACHE_HEADER_SIZE = sizeof(uint16_t) + sizeof(time_t);
+
+// Byte values are symmetric so the hex encoding does not depend on endianness.
+static uint8_t cache_test_qe_id[16] = {0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                                       0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                                       0x11, 0x11, 0x11, 0x11};
+static sgx_cpu_svn_t cache_test_cpu_svn = {{0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                            0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
+                                            0x22, 0x22, 0x22, 0x22}};
+static sgx_isv_svn_t cache_test_pce_svn = 0x0303;
+
+static sgx_ql_pck_cert_id_t cache_test_id = {cache_test_qe_id,
+                                             sizeof(cache_test_qe_id),
+                                             &cache_test_cpu_svn,
+                                             &cache_test_pce_svn,
+                                             nullptr,
+                                             0,
+                                             0,
+                                             0x0404};
+
+static const std::string cache_test_response =
+    R"({"pckCert":"-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----\n",)"
+    R"("sgx-Pck-Certificate-Issuer-Chain":"TEST-CHAIN",)"
+    R"("sgx-Tcbm":"222222222222222222222222222222220303",)"
+    R"("cacheMaxAge":"3600"})";
+
+static std::string SetUpCertCacheTestEnvironment()
+{
+    EXPECT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
+    remove_folder(CERT_CACHE_TEST_DIR);
+    // Create both levels: the library resolves its cache directory once per
+    // process and only creates it on that first call.
+    const std::string cache_dir = std::string(CERT_CACHE_TEST_DIR) + "/.az-dcap-client";
+    EXPECT_EQ(0, mkdir(CERT_CACHE_TEST_DIR, 0700));
+    EXPECT_EQ(0, mkdir(cache_dir.c_str(), 0700));
+    setenv("AZDCAP_CACHE", CERT_CACHE_TEST_DIR, 1);
+    setenv("AZDCAP_BYPASS_BASE_URL", "true", 1);
+    // Unreachable endpoint: a cache miss fails fast instead of hitting the network.
+    setenv("AZDCAP_SECONDARY_BASE_CERT_URL", "http://127.0.0.1:9", 1);
+    return cache_dir;
+}
+
+static void TearDownCertCacheTestEnvironment()
+{
+    unsetenv("AZDCAP_SECONDARY_BASE_CERT_URL");
+    unsetenv("AZDCAP_BYPASS_BASE_URL");
+    remove_folder(CERT_CACHE_TEST_DIR);
+}
+
+static std::vector<std::string> ListCacheFiles(const std::string& cache_dir)
+{
+    std::vector<std::string> files;
+    DIR* dir = opendir(cache_dir.c_str());
+    if (dir == nullptr)
+    {
+        return files;
+    }
+
+    while (dirent* entry = readdir(dir))
+    {
+        const std::string name = entry->d_name;
+        if (name != "." && name != "..")
+        {
+            files.push_back(cache_dir + "/" + name);
+        }
+    }
+    closedir(dir);
+    return files;
+}
+
+static std::vector<uint8_t> ReadFileBytes(const std::string& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    return std::vector<uint8_t>(
+        (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+static void WriteFileBytes(const std::string& path, const std::vector<uint8_t>& bytes)
+{
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+}
+
+static bool FileExists(const std::string& path)
+{
+    struct stat buffer;
+    return stat(path.c_str(), &buffer) == 0;
+}
+
+// Stores the test certificate and returns the path of the single cache file.
+static std::string StoreTestCertificate(void* library, const std::string& cache_dir)
+{
+    auto store_certificate = reinterpret_cast<store_certificate_t>(
+        dlsym(library, "store_certificate"));
+    EXPECT_NE(store_certificate, nullptr);
+    if (store_certificate == nullptr)
+    {
+        return "";
+    }
+
+    EXPECT_TRUE(store_certificate(
+        "11111111111111111111111111111111",
+        "22222222222222222222222222222222",
+        "0303",
+        "0404",
+        cache_test_response));
+
+    const auto files = ListCacheFiles(cache_dir);
+    EXPECT_EQ(1u, files.size());
+    return files.empty() ? "" : files[0];
+}
+
+// Corrupts the cached certificate, then expects sgx_ql_get_quote_config() to
+// reject it instead of returning it, and to remove it from the cache.
+static void ExpectMalformedCertificateRejected(
+    void (*corrupt)(std::vector<uint8_t>& blob))
+{
+    void* library = LoadFunctions();
+    const std::string cache_dir = SetUpCertCacheTestEnvironment();
+
+    const std::string cache_file = StoreTestCertificate(library, cache_dir);
+    ASSERT_FALSE(cache_file.empty());
+
+    auto bytes = ReadFileBytes(cache_file);
+    ASSERT_GT(bytes.size(), LINUX_CACHE_HEADER_SIZE);
+    std::vector<uint8_t> blob(bytes.begin() + LINUX_CACHE_HEADER_SIZE, bytes.end());
+    corrupt(blob);
+    bytes.resize(LINUX_CACHE_HEADER_SIZE);
+    bytes.insert(bytes.end(), blob.begin(), blob.end());
+    WriteFileBytes(cache_file, bytes);
+
+    sgx_ql_config_t* config = nullptr;
+    const quote3_error_t result = sgx_ql_get_quote_config(&cache_test_id, &config);
+
+    // The fallback endpoint is unreachable, so the call fails cleanly.
+    EXPECT_NE(SGX_QL_SUCCESS, result);
+    EXPECT_EQ(nullptr, config);
+    EXPECT_FALSE(FileExists(cache_file));
+
+    if (config != nullptr)
+    {
+        sgx_ql_free_quote_config(config);
+    }
+    TearDownCertCacheTestEnvironment();
+    dlclose(library);
+}
+
+TEST(testQuoteProvCache, storedCertificateHasNoHeapPointer)
+{
+    void* library = LoadFunctions();
+    const std::string cache_dir = SetUpCertCacheTestEnvironment();
+
+    const std::string cache_file = StoreTestCertificate(library, cache_dir);
+    ASSERT_FALSE(cache_file.empty());
+
+    const auto bytes = ReadFileBytes(cache_file);
+    ASSERT_GT(bytes.size(), LINUX_CACHE_HEADER_SIZE + sizeof(sgx_ql_config_t));
+    const uint8_t* blob = bytes.data() + LINUX_CACHE_HEADER_SIZE;
+    const size_t blob_size = bytes.size() - LINUX_CACHE_HEADER_SIZE;
+
+    EXPECT_TRUE(is_valid_cached_quote_config(blob, blob_size));
+    const uint8_t* pointer_bytes = blob + offsetof(sgx_ql_config_t, p_cert_data);
+    for (size_t i = 0; i < sizeof(uint8_t*); ++i)
+    {
+        EXPECT_EQ(0, pointer_bytes[i]) << "p_cert_data byte " << i << " was persisted";
+    }
+
+    // The entry is still served from the cache with a rebuilt pointer.
+    sgx_ql_config_t* config = nullptr;
+    ASSERT_EQ(SGX_QL_SUCCESS, sgx_ql_get_quote_config(&cache_test_id, &config));
+    ASSERT_NE(nullptr, config);
+    EXPECT_EQ(blob_size - sizeof(sgx_ql_config_t), config->cert_data_size);
+    EXPECT_EQ(reinterpret_cast<uint8_t*>(config) + sizeof(sgx_ql_config_t), config->p_cert_data);
+    EXPECT_EQ('\0', config->p_cert_data[config->cert_data_size - 1]);
+    sgx_ql_free_quote_config(config);
+
+    TearDownCertCacheTestEnvironment();
+    dlclose(library);
+}
+
+TEST(testQuoteProvCache, rejectsOverstatedCertDataSize)
+{
+    ExpectMalformedCertificateRejected([](std::vector<uint8_t>& blob) {
+        const uint32_t huge = 0x00ffffff;
+        memcpy(blob.data() + offsetof(sgx_ql_config_t, cert_data_size), &huge, sizeof(huge));
+    });
+}
+
+TEST(testQuoteProvCache, rejectsBlobSmallerThanConfig)
+{
+    ExpectMalformedCertificateRejected([](std::vector<uint8_t>& blob) {
+        blob.resize(sizeof(sgx_ql_config_t) / 2);
+    });
+}
+
+TEST(testQuoteProvCache, rejectsMissingNulTerminator)
+{
+    ExpectMalformedCertificateRejected([](std::vector<uint8_t>& blob) {
+        blob.back() = 'X';
+    });
+}
+#endif

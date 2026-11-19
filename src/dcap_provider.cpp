@@ -4,6 +4,7 @@
 #include "dcap_provider.h"
 #include <curl_easy.h>
 #include "local_cache.h"
+#include "cache_validation.h"
 #include "private.h"
 
 #include <cassert>
@@ -174,6 +175,16 @@ static std::unique_ptr<std::vector<uint8_t>> try_cache_get(
         return local_cache_get(cert_url, checkExpiration);
     }
     catch (const std::runtime_error& error)
+    {
+        log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
+        return nullptr;
+    }
+    catch (const std::bad_alloc&)
+    {
+        log(SGX_QL_LOG_WARNING, "Unable to access cache: out of memory");
+        return nullptr;
+    }
+    catch (const std::length_error& error)
     {
         log(SGX_QL_LOG_WARNING, "Unable to access cache: %s", error.what());
         return nullptr;
@@ -619,6 +630,12 @@ static inline quote3_error_t fill_qpl_string_buffer(
     char*& buffer,
     uint32_t& bufferLength)
 {
+    if (content.size() >= std::numeric_limits<uint32_t>::max())
+    {
+        log(SGX_QL_LOG_ERROR, "Content is too large to return to the caller");
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+
     // Allocate memory for the structure fields +1 to include null character
     bufferLength = (uint32_t)content.size() + 1;
     buffer = new char[bufferLength];
@@ -638,6 +655,12 @@ static inline quote3_error_t fill_qpl_string_buffer(
     uint32_t& bufferLength)
 {
     content.push_back(0);
+    if (content.size() > std::numeric_limits<uint32_t>::max())
+    {
+        log(SGX_QL_LOG_ERROR, "Content is too large to return to the caller");
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+
     bufferLength = (uint32_t)content.size();
     buffer = new char[bufferLength];
     if (!buffer)
@@ -645,7 +668,7 @@ static inline quote3_error_t fill_qpl_string_buffer(
         log(SGX_QL_LOG_ERROR, "Out of memory thrown");
         return SGX_QL_ERROR_OUT_OF_MEMORY;
     }
-    memcpy(buffer, content.data(), content.size());
+    memcpy(buffer, content.data(), bufferLength);
     return SGX_QL_SUCCESS;
 }
 
@@ -1780,6 +1803,24 @@ bool check_cache(
     bool fetch_from_cache = false;
     if (auto cache_hit = try_cache_get(cached_file_name))
     {
+        if (!is_valid_cached_quote_config(cache_hit->data(), cache_hit->size()))
+        {
+            log(SGX_QL_LOG_WARNING,
+                "Cached quote config '%s' is malformed; ignoring it.",
+                cached_file_name.c_str());
+            try
+            {
+                local_cache_remove(cached_file_name);
+            }
+            catch (const std::exception& error)
+            {
+                log(SGX_QL_LOG_WARNING,
+                    "Unable to remove malformed cache entry: %s",
+                    error.what());
+            }
+            return false;
+        }
+
         fetch_from_cache = true;
         log(SGX_QL_LOG_INFO,
             "Fetching quote config from cache: '%s'.",
@@ -1866,8 +1907,22 @@ quote3_error_t store_certificate_internal(
             if (get_cache_expiration_time(
                 "", cache_control, cached_file_name, expiration_time))
             {
+                // Do not persist the in-memory p_cert_data pointer; check_cache
+                // rebuilds it on read.
+                std::vector<uint8_t> cache_entry(
+                    reinterpret_cast<const uint8_t*>(*pp_quote_config),
+                    reinterpret_cast<const uint8_t*>(*pp_quote_config) +
+                        buf_size);
+                constexpr size_t cert_data_pointer_size = sizeof(uint8_t*);
+                memset(
+                    cache_entry.data() + offsetof(sgx_ql_config_t, p_cert_data),
+                    0,
+                    cert_data_pointer_size);
                 local_cache_add(
-                    cached_file_name, expiration_time, buf_size, *pp_quote_config);
+                    cached_file_name,
+                    expiration_time,
+                    cache_entry.size(),
+                    cache_entry.data());
                 log(SGX_QL_LOG_INFO,
                     "Stored certificate in cache in the following location: %s.",
                     get_cached_file_location(cached_file_name).c_str());
@@ -3080,6 +3135,21 @@ extern "C" quote3_error_t sgx_ql_get_root_ca_crl(
         uint32_t bufferSize;
         auto retval =
             fill_qpl_string_buffer(root_ca_crl, *pp_root_ca_crl, bufferSize);
+        if (retval != SGX_QL_SUCCESS)
+        {
+            return retval;
+        }
+
+        if (bufferSize > std::numeric_limits<uint16_t>::max())
+        {
+            log(SGX_QL_LOG_ERROR,
+                "Root CA CRL size %u does not fit the uint16_t size field",
+                bufferSize);
+            sgx_ql_free_root_ca_crl(*pp_root_ca_crl);
+            *pp_root_ca_crl = nullptr;
+            return SGX_QL_ERROR_UNEXPECTED;
+        }
+
         *p_root_ca_crl_size = (uint16_t)bufferSize;
         return retval;
     }

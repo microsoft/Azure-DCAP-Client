@@ -91,6 +91,7 @@
     <None Include="resources\default1.bin" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MsBuildProjectDirectory)\..\..\cache_validation.h" />
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\dcap_provider.h" />
     <ClInclude Include="$(MsBuildProjectDirectory)\..\..\private.h" />
     <ClInclude Include="..\..\environment.h" />
