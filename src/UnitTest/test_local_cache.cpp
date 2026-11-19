@@ -15,7 +15,9 @@
 #include <thread>
 #include <stdexcept>
 #if defined(__LINUX__)
+#include <dirent.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #else
@@ -485,30 +487,80 @@ TEST(testLocalCache, GetRejectsFifoWithoutBlocking)
     EXPECT_FALSE(PathExists(path));
 }
 
-TEST(testLocalCache, AddRefusesFifoWithoutBlocking)
+//
+// File squatting: another local user plants something at a cache entry path
+// before or between writes. The cache must not follow, write through, block
+// on, or return what was planted.
+//
+static const uint8_t squat_data[] = "fresh entry";
+
+static std::string SeedEntry(const std::string& id)
 {
-    const std::string id = "AddRefusesFifoWithoutBlocking";
+    // local_cache_add initializes the cache directory.
+    static const uint8_t seed = 1;
+    local_cache_add(id, now() + 60, sizeof(seed), &seed);
+    return get_cached_file_location(id);
+}
+
+static std::string CacheDirectory(const std::string& id)
+{
+    const std::string path = get_cached_file_location(id);
+    return path.substr(0, path.rfind('/'));
+}
+
+// A file outside the cache directory, on the same file system.
+static std::string VictimPath(const std::string& id)
+{
+    return CacheDirectory(id) + "/../" + id + ".victim";
+}
+
+static void WriteFileContents(const std::string& path, const std::string& contents)
+{
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out << contents;
+}
+
+static std::string ReadFileContents(const std::string& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    return std::string(
+        (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+static bool IsRegularFile(const std::string& path)
+{
+    struct stat buf{};
+    return lstat(path.c_str(), &buf) == 0 && S_ISREG(buf.st_mode);
+}
+
+static bool HasSquatData(const std::string& id)
+{
+    auto entry = local_cache_get(id);
+    return entry != nullptr && entry->size() == sizeof(squat_data) &&
+           memcmp(entry->data(), squat_data, sizeof(squat_data)) == 0;
+}
+
+static std::string ValidEntryBytes()
+{
+    const auto bytes = MakeCacheEntry(1, now() + 60, {1, 2, 3});
+    return std::string(bytes.begin(), bytes.end());
+}
+
+TEST(testLocalCache, AddReplacesFifoWithoutBlocking)
+{
+    const std::string id = "AddReplacesFifoWithoutBlocking";
     const std::string path = ReplaceWithFifo(id);
 
-    auto refused = std::async(std::launch::async, [&id]() {
-        static const uint8_t data[] = "data";
-        try
-        {
-            local_cache_add(id, now() + 60, sizeof(data), data);
-            return false;
-        }
-        catch (const std::runtime_error&)
-        {
-            return true;
-        }
+    auto added = std::async(std::launch::async, [&id]() {
+        local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
     });
 
-    if (refused.wait_for(FIFO_TEST_TIMEOUT) != std::future_status::ready)
+    if (added.wait_for(FIFO_TEST_TIMEOUT) != std::future_status::ready)
     {
         // Open the read end so the blocked writer returns; keep it open until
         // the writer finishes so the writer cannot get SIGPIPE.
         const int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
-        refused.wait();
+        added.wait();
         if (fd != -1)
         {
             close(fd);
@@ -517,8 +569,162 @@ TEST(testLocalCache, AddRefusesFifoWithoutBlocking)
         FAIL() << "local_cache_add blocked on a FIFO cache entry";
     }
 
-    EXPECT_TRUE(refused.get());
+    EXPECT_NO_THROW(added.get());
+    EXPECT_TRUE(IsRegularFile(path));
+    EXPECT_TRUE(HasSquatData(id));
+}
+
+TEST(testLocalCache, AddReplacesSymlinkWithoutFollowingIt)
+{
+    const std::string id = "AddReplacesSymlinkWithoutFollowingIt";
+    const std::string path = SeedEntry(id);
+    const std::string victim = VictimPath(id);
+    WriteFileContents(victim, "do not overwrite");
+    ASSERT_EQ(0, unlink(path.c_str()));
+    ASSERT_EQ(0, symlink(victim.c_str(), path.c_str()));
+
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+
+    EXPECT_EQ("do not overwrite", ReadFileContents(victim));
+    EXPECT_TRUE(IsRegularFile(path));
+    EXPECT_TRUE(HasSquatData(id));
+    unlink(victim.c_str());
+}
+
+TEST(testLocalCache, GetDoesNotFollowSymlink)
+{
+    const std::string id = "GetDoesNotFollowSymlink";
+    const std::string path = SeedEntry(id);
+    const std::string victim = VictimPath(id);
+    WriteFileContents(victim, ValidEntryBytes());
+    ASSERT_EQ(0, unlink(path.c_str()));
+    ASSERT_EQ(0, symlink(victim.c_str(), path.c_str()));
+
+    // Following the link would return {1, 2, 3}; it is treated as a miss.
+    EXPECT_TRUE(local_cache_get(id) == nullptr);
+    EXPECT_TRUE(PathExists(victim));
+
     unlink(path.c_str());
+    unlink(victim.c_str());
+}
+
+TEST(testLocalCache, AddDoesNotWriteThroughHardLink)
+{
+    const std::string id = "AddDoesNotWriteThroughHardLink";
+    const std::string path = SeedEntry(id);
+    const std::string victim = VictimPath(id);
+    WriteFileContents(victim, "do not overwrite");
+    ASSERT_EQ(0, unlink(path.c_str()));
+    ASSERT_EQ(0, link(victim.c_str(), path.c_str()));
+
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+
+    EXPECT_EQ("do not overwrite", ReadFileContents(victim));
+    EXPECT_TRUE(HasSquatData(id));
+    unlink(victim.c_str());
+}
+
+TEST(testLocalCache, GetRejectsHardLinkedEntry)
+{
+    const std::string id = "GetRejectsHardLinkedEntry";
+    const std::string path = SeedEntry(id);
+    const std::string victim = VictimPath(id);
+    WriteFileContents(victim, ValidEntryBytes());
+    ASSERT_EQ(0, unlink(path.c_str()));
+    ASSERT_EQ(0, link(victim.c_str(), path.c_str()));
+
+    EXPECT_THROW(local_cache_get(id), std::runtime_error);
+    EXPECT_FALSE(PathExists(path));
+    EXPECT_TRUE(PathExists(victim));
+    unlink(victim.c_str());
+}
+
+TEST(testLocalCache, LockedEntryDoesNotBlock)
+{
+    const std::string id = "LockedEntryDoesNotBlock";
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+    const std::string path = get_cached_file_location(id);
+
+    // Another open file description holding an exclusive lock, as a process
+    // that planted or opened the entry could.
+    const int fd = open(path.c_str(), O_RDONLY);
+    ASSERT_NE(-1, fd);
+    ASSERT_EQ(0, flock(fd, LOCK_EX));
+
+    auto missed = std::async(std::launch::async, [&id]() {
+        return local_cache_get(id) == nullptr;
+    });
+
+    if (missed.wait_for(FIFO_TEST_TIMEOUT) != std::future_status::ready)
+    {
+        flock(fd, LOCK_UN);
+        missed.wait();
+        close(fd);
+        FAIL() << "local_cache_get blocked on a locked cache entry";
+    }
+
+    // A locked entry is treated as a miss.
+    EXPECT_TRUE(missed.get());
+
+    // The writer does not take a lock on the entry, so it is not blocked.
+    EXPECT_NO_THROW(local_cache_add(id, now() + 60, sizeof(squat_data), squat_data));
+    close(fd);
+    EXPECT_TRUE(HasSquatData(id));
+}
+
+TEST(testLocalCache, EntriesAreNotWritableByOthersWithZeroUmask)
+{
+    const std::string id = "EntriesAreNotWritableByOthersWithZeroUmask";
+
+    const mode_t old_umask = umask(0);
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+    umask(old_umask);
+
+    struct stat buf{};
+    ASSERT_EQ(0, lstat(get_cached_file_location(id).c_str(), &buf));
+    EXPECT_EQ(0u, buf.st_mode & (S_IWGRP | S_IWOTH));
+}
+
+TEST(testLocalCache, AddLeavesNoTemporaryFiles)
+{
+    const std::string id = "AddLeavesNoTemporaryFiles";
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+
+    const std::string path = get_cached_file_location(id);
+    const std::string prefix = path.substr(path.rfind('/') + 1) + ".tmp.";
+    size_t temporary_files = 0;
+    DIR* dir = opendir(CacheDirectory(id).c_str());
+    ASSERT_NE(nullptr, dir);
+    while (dirent* entry = readdir(dir))
+    {
+        if (std::string(entry->d_name).compare(0, prefix.size(), prefix) == 0)
+        {
+            ++temporary_files;
+        }
+    }
+    closedir(dir);
+    EXPECT_EQ(0u, temporary_files);
+}
+
+TEST(testLocalCache, RefusesWorldWritableCacheDirectory)
+{
+    const std::string id = "RefusesWorldWritableCacheDirectory";
+    local_cache_add(id, now() + 60, sizeof(squat_data), squat_data);
+
+    const std::string dir = CacheDirectory(id);
+    struct stat buf{};
+    ASSERT_EQ(0, stat(dir.c_str(), &buf));
+    const mode_t original_mode = buf.st_mode & 07777;
+    ASSERT_EQ(0, chmod(dir.c_str(), original_mode | S_IWOTH));
+
+    EXPECT_THROW(local_cache_get(id), std::runtime_error);
+    EXPECT_THROW(
+        local_cache_add(id, now() + 60, sizeof(squat_data), squat_data),
+        std::runtime_error);
+
+    ASSERT_EQ(0, chmod(dir.c_str(), original_mode));
+    EXPECT_TRUE(HasSquatData(id));
 }
 #endif
 

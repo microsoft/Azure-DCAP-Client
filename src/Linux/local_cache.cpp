@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include <mutex>
+#include <random>
 
 #include <fcntl.h>
 #include <ftw.h>
@@ -23,6 +24,12 @@ constexpr uint16_t CACHE_V1 = 1;
 
 // Upper bound on the payload of a single cache entry.
 constexpr off_t MAX_CACHE_ENTRY_DATA_SIZE = 64 * 1024 * 1024;
+
+// Modes for new cache directories and entries (further restricted by the
+// umask). Neither is ever writable by other users, so other local users
+// cannot plant or replace cache entries.
+constexpr mode_t CACHE_DIRECTORY_MODE = 0775;
+constexpr mode_t CACHE_FILE_MODE = 0644;
 
 constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 
@@ -105,7 +112,10 @@ public:
 
         if (this->fd != -1)
         {
-            const int lock_op = (flags & (O_WRONLY | O_RDWR)) ? LOCK_EX : LOCK_SH;
+            // LOCK_NB: a lock held by another process (for example one that
+            // planted the file) must not block the caller indefinitely.
+            const int lock_op =
+                ((flags & (O_WRONLY | O_RDWR)) ? LOCK_EX : LOCK_SH) | LOCK_NB;
             RETRY_ON_EINTR(::flock(this->fd, lock_op), "flock");
         }
     }
@@ -130,8 +140,10 @@ public:
     }
 
     // Returns true if the open file is a regular file (not a FIFO, device,
-    // directory, ...).
-    bool is_regular_file()
+    // directory, ...) and no other hard link refers to it. A link count of
+    // 0 is fine: a writer replaced the entry after it was opened, and the
+    // open file is still the complete previous entry.
+    bool is_single_link_regular_file()
     {
         struct stat buf{};
         if (::fstat(this->fd, &buf) == -1)
@@ -139,7 +151,43 @@ public:
             this->fail("Error calling fstat on file");
             return false;
         }
-        return S_ISREG(buf.st_mode);
+        return S_ISREG(buf.st_mode) && buf.st_nlink <= 1;
+    }
+
+    // Creates and opens a new, empty file with a random name next to
+    // `name` and returns its path. O_EXCL | O_NOFOLLOW: never opens an
+    // existing file and never follows a symlink, whatever else is in the
+    // directory.
+    std::string create_temporary(const std::string& name, mode_t mode)
+    {
+        std::random_device random;
+        for (int attempt = 0; attempt < 16; ++attempt)
+        {
+            char suffix[32];
+            snprintf(suffix, sizeof(suffix), ".tmp.%08x%08x", random(), random());
+            const std::string temp_name = name + suffix;
+
+            do
+            {
+                this->fd = ::open(
+                    temp_name.c_str(),
+                    O_CREAT | O_EXCL | O_WRONLY | O_NOFOLLOW | O_CLOEXEC,
+                    mode);
+            } while (this->fd == -1 && errno == EINTR);
+
+            if (this->fd != -1)
+            {
+                return temp_name;
+            }
+
+            if (errno != EEXIST)
+            {
+                break;
+            }
+        }
+
+        this->fail("Error creating temporary cache file");
+        return "";
     }
 
     // Returns the number of bytes read; less than data_size only at end of file.
@@ -279,7 +327,7 @@ static void init_callback()
         if (cache_location != 0 && strcmp(cache_location, "") != 0)
         {
             dirname = cache_location + application_name;
-            make_dir(dirname, 0777);
+            make_dir(dirname, CACHE_DIRECTORY_MODE);
             g_cache_dirname = dirname;
             return;
         }
@@ -299,6 +347,24 @@ static void init_callback()
     throw std::runtime_error("No cache location was found. Please define one of the following environment variables to enable caching: " + environment_variable_list);
 }
 
+// Refuses a cache directory that any local user can create files in:
+// entries planted there could replace or redirect cached data.
+static void check_cache_directory(const std::string& dirname)
+{
+    struct stat buf{};
+    if (stat(dirname.c_str(), &buf) != 0)
+    {
+        throw_errno("Error checking cache directory '" + dirname + "'");
+    }
+
+    if ((buf.st_mode & S_IWOTH) != 0)
+    {
+        throw std::runtime_error(
+            "Cache directory '" + dirname +
+            "' is writable by all users; refusing to use it.");
+    }
+}
+
 static void init()
 {
     std::lock_guard<std::mutex> lock(cache_directory_lock);
@@ -306,6 +372,10 @@ static void init()
     {
         init_callback();
     }
+
+    // Checked on every use so a directory whose permissions change while
+    // the process runs is not trusted.
+    check_cache_directory(g_cache_dirname);
 }
 
 static std::string sha256(size_t data_size, const void* data)
@@ -419,15 +489,30 @@ extern "C" void local_cache_add(
     header.version = CACHE_V1;
     header.expiry = expiry;
 
+    // Write the entry to a new temporary file, then rename it over the entry
+    // path. rename() replaces whatever is at that path (a symlink, hard link,
+    // FIFO or file planted there) without following or writing through it,
+    // and readers only ever see a complete entry.
+    const std::string file_name = get_file_name(id);
     file cache_entry;
     cache_entry.throw_on_error();
-    // O_NONBLOCK: opening a FIFO planted at this path fails instead of
-    // blocking until a reader appears.
-    cache_entry.open(get_file_name(id), O_CREAT | O_WRONLY | O_NONBLOCK, 0666);
-    throw_if(!cache_entry.is_regular_file(), "Cache entry is not a regular file.");
-    cache_entry.truncate();
-    cache_entry.write(&header, sizeof(header));
-    cache_entry.write(data, data_size);
+    const std::string temp_name =
+        cache_entry.create_temporary(file_name, CACHE_FILE_MODE);
+    try
+    {
+        cache_entry.write(&header, sizeof(header));
+        cache_entry.write(data, data_size);
+        cache_entry.close();
+        if (rename(temp_name.c_str(), file_name.c_str()) != 0)
+        {
+            throw_errno("Error replacing cache entry");
+        }
+    }
+    catch (...)
+    {
+        unlink(temp_name.c_str());
+        throw;
+    }
 }
 
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
@@ -443,7 +528,9 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     file cache_file;
     // O_NONBLOCK: opening a FIFO planted at this path returns immediately
     // instead of blocking until a writer appears.
-    cache_file.open(file_name, O_RDONLY | O_NONBLOCK);
+    // O_NOFOLLOW: a symlink planted at this path is not followed; the open
+    // fails and the entry is treated as missing.
+    cache_file.open(file_name, O_RDONLY | O_NONBLOCK | O_NOFOLLOW);
     if (cache_file.failed())
     {
         return nullptr;
@@ -459,10 +546,11 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     };
 
     // Only regular files are valid cache entries (not FIFOs, devices or
-    // directories).
-    if (!cache_file.is_regular_file())
+    // directories), and only with a single link: a hard link planted at
+    // this path would expose another file's contents.
+    if (!cache_file.is_single_link_regular_file())
     {
-        reject("Cache entry is not a regular file");
+        reject("Cache entry is not a regular file with a single link");
     }
 
     CacheEntryHeaderV1 header{};
