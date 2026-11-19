@@ -21,6 +21,9 @@
 
 constexpr uint16_t CACHE_V1 = 1;
 
+// Upper bound on the payload of a single cache entry.
+constexpr off_t MAX_CACHE_ENTRY_DATA_SIZE = 64 * 1024 * 1024;
+
 constexpr locale_t NULL_LOCALE = reinterpret_cast<locale_t>(0);
 
 static std::string g_cache_dirname = "";
@@ -126,14 +129,77 @@ public:
         RETRY_ON_EINTR(::ftruncate(this->fd, 0), "ftruncate");
     }
 
-    void read(void* data, size_t data_size)
+    // Returns true if the open file is a regular file (not a FIFO, device,
+    // directory, ...).
+    bool is_regular_file()
     {
-        RETRY_ON_EINTR(::read(this->fd, data, data_size), "read");
+        struct stat buf{};
+        if (::fstat(this->fd, &buf) == -1)
+        {
+            this->fail("Error calling fstat on file");
+            return false;
+        }
+        return S_ISREG(buf.st_mode);
+    }
+
+    // Returns the number of bytes read; less than data_size only at end of file.
+    size_t read(void* data, size_t data_size)
+    {
+        size_t total = 0;
+        while (total < data_size)
+        {
+            ssize_t rc;
+            do
+            {
+                rc = ::read(
+                    this->fd,
+                    static_cast<char*>(data) + total,
+                    data_size - total);
+            } while (rc == -1 && errno == EINTR);
+
+            if (rc == -1)
+            {
+                this->fail("Error calling read on file");
+                break;
+            }
+
+            if (rc == 0)
+            {
+                break;
+            }
+
+            total += static_cast<size_t>(rc);
+        }
+
+        return total;
     }
 
     void write(const void* data, size_t data_size)
     {
-        RETRY_ON_EINTR(::write(this->fd, data, data_size), "write");
+        size_t total = 0;
+        while (total < data_size)
+        {
+            ssize_t rc;
+            do
+            {
+                rc = ::write(
+                    this->fd,
+                    static_cast<const char*>(data) + total,
+                    data_size - total);
+            } while (rc == -1 && errno == EINTR);
+
+            if (rc <= 0)
+            {
+                if (rc == 0)
+                {
+                    errno = EIO;
+                }
+                this->fail("Error calling write on file");
+                break;
+            }
+
+            total += static_cast<size_t>(rc);
+        }
     }
 
     off_t seek(off_t offset, int whence)
@@ -355,7 +421,10 @@ extern "C" void local_cache_add(
 
     file cache_entry;
     cache_entry.throw_on_error();
-    cache_entry.open(get_file_name(id), O_CREAT | O_WRONLY, 0666);
+    // O_NONBLOCK: opening a FIFO planted at this path fails instead of
+    // blocking until a reader appears.
+    cache_entry.open(get_file_name(id), O_CREAT | O_WRONLY | O_NONBLOCK, 0666);
+    throw_if(!cache_entry.is_regular_file(), "Cache entry is not a regular file.");
     cache_entry.truncate();
     cache_entry.write(&header, sizeof(header));
     cache_entry.write(data, data_size);
@@ -372,7 +441,9 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 
     const auto file_name = get_file_name(id);
     file cache_file;
-    cache_file.open(file_name, O_RDONLY);
+    // O_NONBLOCK: opening a FIFO planted at this path returns immediately
+    // instead of blocking until a writer appears.
+    cache_file.open(file_name, O_RDONLY | O_NONBLOCK);
     if (cache_file.failed())
     {
         return nullptr;
@@ -380,8 +451,30 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 
     cache_file.throw_on_error();
 
+    // Malformed entries are removed so they are refetched instead of re-read.
+    auto reject = [&](const char* reason) {
+        cache_file.close();
+        unlink(file_name.c_str());
+        throw std::runtime_error(reason);
+    };
+
+    // Only regular files are valid cache entries (not FIFOs, devices or
+    // directories).
+    if (!cache_file.is_regular_file())
+    {
+        reject("Cache entry is not a regular file");
+    }
+
     CacheEntryHeaderV1 header{};
-    cache_file.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if (cache_file.read(&header, sizeof(header)) != sizeof(header))
+    {
+        reject("Incomplete read of cache header");
+    }
+
+    if (header.version != CACHE_V1)
+    {
+        reject("Unsupported cache entry version");
+    }
 	
     if (checkExpiration)
     {
@@ -396,12 +489,34 @@ std::unique_ptr<std::vector<uint8_t>> local_cache_get(
 		}
     }
 
-    const int start_of_data = cache_file.seek(0, SEEK_CUR);
-    const int end_of_data = cache_file.seek(0, SEEK_END);
-    const int data_size = end_of_data - start_of_data;
+    const off_t start_of_data = cache_file.seek(0, SEEK_CUR);
+    const off_t end_of_data = cache_file.seek(0, SEEK_END);
+    const off_t data_size = end_of_data - start_of_data;
+    if (data_size <= 0 || data_size > MAX_CACHE_ENTRY_DATA_SIZE)
+    {
+        reject("Cache entry has an invalid size");
+    }
     cache_file.seek(start_of_data, SEEK_SET);
 
-    auto cache_entry = std::make_unique<std::vector<uint8_t>>(data_size);
-    cache_file.read(reinterpret_cast<char*>(cache_entry->data()), data_size);
+    auto cache_entry =
+        std::make_unique<std::vector<uint8_t>>(static_cast<size_t>(data_size));
+    if (cache_file.read(cache_entry->data(), cache_entry->size()) !=
+        cache_entry->size())
+    {
+        reject("Incomplete read of cache data");
+    }
     return cache_entry;
+}
+
+void local_cache_remove(const std::string& id)
+{
+    throw_if(id.empty(), "The 'id' parameter must not be empty.");
+
+    init();
+
+    const auto file_name = get_file_name(id);
+    if (unlink(file_name.c_str()) != 0 && errno != ENOENT)
+    {
+        throw_errno("Error removing cache entry");
+    }
 }

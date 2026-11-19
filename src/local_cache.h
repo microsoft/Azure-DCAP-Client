@@ -40,6 +40,12 @@ extern "C" void local_cache_add(
 //
 std::unique_ptr<std::vector<uint8_t>> local_cache_get(
     const std::string& id, bool checkExpiration = true);
+
+//
+// Remove a cache entry if it exists. A missing entry is not an error.
+// Throws std::exception (or subtype) on error.
+//
+void local_cache_remove(const std::string& id);
 	
 
 //
